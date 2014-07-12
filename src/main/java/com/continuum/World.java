@@ -26,7 +26,7 @@ public class World extends RenderObject
 	private PerlinNoiseGenerator pGen = new PerlinNoiseGenerator();
 
 	// World dimensions
-	private static final Vector3f worldDimensions = new Vector3f(1024, 256, 1024);
+	private static final Vector3f worldDimensions = new Vector3f(1024, 128, 1024);
 
 	// Time since last chunk update
 	long timeSinceLastChunkUpdate = 0;
@@ -58,7 +58,7 @@ public class World extends RenderObject
 						// Render active chunks only
 						chunks[x][y][z].render();
 
-						if (System.currentTimeMillis() - timeSinceLastChunkUpdate > 50) {
+						if (System.currentTimeMillis() - timeSinceLastChunkUpdate > 15) {
 							if (chunks[x][y][z].updateDisplayList()) {
 								timeSinceLastChunkUpdate = System.currentTimeMillis();
 							}

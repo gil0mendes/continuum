@@ -23,6 +23,11 @@ public  abstract class RenderObject
 	public void render() {}
 
 	/**
+	 * Update method
+	 */
+	public void update() {}
+
+	/**
 	 * Get object position.
 	 *
 	 * @return Current position

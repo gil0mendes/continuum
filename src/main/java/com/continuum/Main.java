@@ -26,18 +26,11 @@ public class Main
 	// Logger
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
 
-	// Mouse settings
-	public static final float MOUSE_SENS = 0.09f;
-	public static final boolean INVERT_Y_AXIS = false;
-
 	// World
 	private World world;
 
 	// Player
-	private Player mainChar;
-
-	// Helper
-	private Helper helper;
+	private Player player;
 
 	// Start logger
 	static {
@@ -124,8 +117,11 @@ public class Main
 		// Start main loop
 		while (!Display.isCloseRequested() && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
 			if (Display.isVisible()) {
+				// Process inputs
 				processKeyboard();
 				processMouse();
+
+				// Update and rend scene
 				update();
 				render();
 			} else {
@@ -153,33 +149,27 @@ public class Main
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_FOG);
+		//glEnable(GL_FOG);
 
 		// Disable OpenGL features
 		glDisable(GL_LIGHTING);
 		glDisable(GL_COLOR_MATERIAL);
 
 		// Configure some features
-		glFogi(GL_FOG_MODE, GL_LINEAR);
-		glFogf(GL_FOG_DENSITY, 1.0f);
-		glHint(GL_FOG_HINT, GL_DONT_CARE);
-		glFogf(GL_FOG_START, 512.0f);
-		glFogf(GL_FOG_END, 1024.0f);
-
-		try {
-			Class.forName("continuum.Chunk");
-		} catch (ClassNotFoundException ex) {
-			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		//glFogi(GL_FOG_MODE, GL_LINEAR);
+		//glFogf(GL_FOG_DENSITY, 1.0f);
+		//glHint(GL_FOG_HINT, GL_DONT_CARE);
+		//glFogf(GL_FOG_START, 512.0f);
+		//glFogf(GL_FOG_END, 1024.0f);
 
 		// Initialize world
 		this.world = new World();
 
 		// Initialize player
-		this.mainChar = new Player(this.world);
+		this.player = new Player(this.world);
 
-		// Instance helper
-		this.helper = new Helper();
+		// Initialize Chunks
+		Chunk.init();
 	}
 
 	/**
@@ -208,11 +198,12 @@ public class Main
 		glPushMatrix();
 
 		// Render player
-		mainChar.render();
+		this.player.render();
 
 		// Render world
-		world.render();
+		this.world.render();
 
+		// Draw coordinate axis
 		glBegin(GL_LINES);
 		glColor3f(255.0f, 0.0f, 0.0f);
 		glVertex3f(0.0f, 0.0f, 0.0f);
@@ -232,21 +223,16 @@ public class Main
 		glEnd();
 
 		glPopMatrix();
+
+		Helper.getInstance().frameRendered();
 	}
 
 	/**
 	 * Update main char
 	 */
 	private void update() {
-		mainChar.yaw(Mouse.getDX() * MOUSE_SENS);
-
-		if (!INVERT_Y_AXIS) {
-			mainChar.pitch(-1 * (Mouse.getDY() * MOUSE_SENS));
-		} else {
-			mainChar.pitch(Mouse.getDY() * MOUSE_SENS);
-		}
-
-		helper.frameRendered();
+		this.world.update();
+		this.player.update();
 	}
 
 	// --- PROCESS
@@ -262,27 +248,22 @@ public class Main
 	private void processKeyboard() {
 		if (Keyboard.isKeyDown(Keyboard.KEY_W))//move forward
 		{
-			if (!Keyboard.isRepeatEvent()) {
-				mainChar.walkForward();
-			}
+			this.player.walkForward();
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S))//move backwards
 		{
-			if (!Keyboard.isRepeatEvent()) {
-				mainChar.walkBackwards();
-			}
+			this.player.walkBackwards();
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A))//strafe left
 		{
-			if (!Keyboard.isRepeatEvent()) {
-				mainChar.strafeLeft();
-			}
+			this.player.strafeLeft();
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D))//strafe right
 		{
-			if (!Keyboard.isRepeatEvent()) {
-				mainChar.strafeRight();
-			}
+			this.player.strafeRight();
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_SPACE)) {
+			this.player.jump();
 		}
 	}
 
