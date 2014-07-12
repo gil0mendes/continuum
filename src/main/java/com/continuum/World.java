@@ -235,7 +235,7 @@ public class World extends RenderObject {
 			Chunk c = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z];
 			return c.getBlock((int) blockCoord.x, (int) blockCoord.y, (int) blockCoord.z);
 		} catch (Exception e) {
-			return 0;
+			return -1;
 		}
 	}
 

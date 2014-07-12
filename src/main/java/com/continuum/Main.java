@@ -16,6 +16,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.PixelFormat;
 
 /**
  * Created by gil0mendes on 11/07/14.
@@ -100,7 +101,7 @@ public class Main
 		Display.setDisplayMode(new DisplayMode((int) DISPLAY_WIDTH, (int) DISPLAY_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle("Continuum");
-		Display.create();
+		Display.create(new PixelFormat().withDepthBits(24).withSamples(0).withSRGB(true));
 
 		// Keyboard
 		Keyboard.create();
@@ -136,7 +137,7 @@ public class Main
 			lastFpsTime += delta;
 			fps++;
 
-			// Update the FPS display in the title bar (only) at every second passed
+			// Update the FPS display in the title bar each second passed
 			if (lastFpsTime >= 1000) {
 				Display.setTitle(GAME_TITLE + " (FPS: " + fps + ")");
 				lastFpsTime = 0;
@@ -166,8 +167,11 @@ public class Main
 	private void initGL() {
 		// Enable OpenGL features
 		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_FOG);
+		glEnable(GL_TEXTURE_2D);
+		glDepthFunc(GL_LEQUAL);
 
 		// --- Configure FOG
 		float[] fogColor = {0.75f, 0.75f, 0.75f, 1f};;
@@ -178,11 +182,11 @@ public class Main
 		glFog(GL_FOG_COLOR, fogColorBuffer);
 		glFogi(GL_FOG_MODE, GL_LINEAR);
 		glFogf(GL_FOG_DENSITY, 1.0f);
-		glFogf(GL_FOG_START, 256.0f);
-		glFogf(GL_FOG_END, 512.0f);
+		glFogf(GL_FOG_START, 600.0f);
+		glFogf(GL_FOG_END, 800.0f);
 
 		// Initialize world
-		this.world = new World("WORLD1", "XXX");
+		this.world = new World("WORLD1", "XYZ");
 
 		// Initialize player
 		this.player = new Player(this.world);
@@ -214,7 +218,7 @@ public class Main
 	 * Render the scene
 	 */
 	private void render() {
-		glClearColor(world.getDaylight()-0.25f, world.getDaylight(), world.getDaylight()+0.25f, 1.0f);
+		glClearColor(world.getDaylight() - 0.25f, world.getDaylight(), world.getDaylight() + 0.25f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
 

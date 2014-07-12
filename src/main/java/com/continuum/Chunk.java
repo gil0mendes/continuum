@@ -23,6 +23,9 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class Chunk extends RenderObject {
 
+	// Logger
+	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
 	boolean isEmpty = true;
 
 	// The actual block ids for the chunk
@@ -30,6 +33,8 @@ public class Chunk extends RenderObject {
 
 	int displayListOpaque = -1;
 	int displayListTranslucent = -1;
+	static int lastDLCountO = 0;
+	static int lastDLCountT = 0;
 	static List<Integer> displayListsOpaque = new ArrayList<Integer>();
 	static List<Integer> displayListsTranslucent = new ArrayList<Integer>();
 
@@ -112,25 +117,25 @@ public class Chunk extends RenderObject {
 
 							if ((translucent && BlockHelper.isBlockTypeTranslucent(block)) || (!translucent && !BlockHelper.isBlockTypeTranslucent(block))) {
 
-								boolean drawFront = true, drawBack = true, drawLeft = true, drawRight = true, drawTop = true, drawBottom = true;
+								boolean drawFront, drawBack, drawLeft, drawRight, drawTop, drawBottom;
 
 								int blockToCheck = parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y, z - 1))));
-								drawFront = shouldSideBeDrawn(blockToCheck);
+								drawFront = checkBlockTypeToDraw(blockToCheck);
 
 								blockToCheck = parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y, z + 1))));
-								drawBack = shouldSideBeDrawn(blockToCheck);
+								drawBack = checkBlockTypeToDraw(blockToCheck);
 
 								blockToCheck = parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x - 1, y, z))));
-								drawLeft = shouldSideBeDrawn(blockToCheck);
+								drawLeft = checkBlockTypeToDraw(blockToCheck);
 
 								blockToCheck = parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x + 1, y, z))));
-								drawRight = shouldSideBeDrawn(blockToCheck);
+								drawRight = checkBlockTypeToDraw(blockToCheck);
 
 								blockToCheck = parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y + 1, z))));
-								drawTop = shouldSideBeDrawn(blockToCheck);
+								drawTop = checkBlockTypeToDraw(blockToCheck);
 
 								blockToCheck = parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y - 1, z))));
-								drawBottom = shouldSideBeDrawn(blockToCheck);
+								drawBottom = checkBlockTypeToDraw(blockToCheck);
 
 								if (drawTop) {
 									Vector3f colorOffset = BlockHelper.getColorOffsetFor(block, BlockHelper.SIDE.TOP);
@@ -279,19 +284,20 @@ public class Chunk extends RenderObject {
 	}
 
 	public static void renderAllChunks() {
-
+		long timeStart = System.currentTimeMillis();
 		for (int i = displayListsTranslucent.size() - 1; i >= 0; i--) {
 			bufferDisplayListsT.put(displayListsTranslucent.get(i));
 		}
 
+		lastDLCountT = displayListsTranslucent.size();
 		for (Integer i : displayListsOpaque) {
 			bufferDisplayListsO.put(i);
 		}
 
+		lastDLCountO = displayListsOpaque.size();
+
 		bufferDisplayListsO.rewind();
 		bufferDisplayListsT.rewind();
-
-		glEnable(GL_TEXTURE_2D);
 
 		// Draw the opaque elements first
 		glCallLists(bufferDisplayListsO);
@@ -301,7 +307,8 @@ public class Chunk extends RenderObject {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glCallLists(bufferDisplayListsT);
 		glDisable(GL_BLEND);
-		glDisable(GL_TEXTURE_2D);
+
+		LOGGER.log(Level.INFO, "Rendered chunks in {0} ms", System.currentTimeMillis() - timeStart);
 	}
 
 	public static void init() {
@@ -397,7 +404,7 @@ public class Chunk extends RenderObject {
 		return result;
 	}
 
-	private boolean shouldSideBeDrawn(int blockToCheck) {
+	private boolean checkBlockTypeToDraw(int blockToCheck) {
 		return (blockToCheck == 0 || BlockHelper.isBlockTypeTranslucent(blockToCheck));
 	}
 
