@@ -19,6 +19,8 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 
 /**
+ * Entry point class
+ *
  * Created by gil0mendes on 11/07/14.
  */
 public class Main
@@ -129,6 +131,10 @@ public class Main
 	 */
 	public void start() {
 		while (!Display.isCloseRequested()) {
+			// Process the keyboard and mouse input
+			processKeyboard();
+			processMouse();
+
 			// Sync. at 60 FPS
 			Display.sync(60);
 
@@ -152,10 +158,6 @@ public class Main
 
 			// Update Display
 			Display.update();
-
-			// Process the keyboard and mouse input
-			processKeyboard();
-			processMouse();
 		}
 
 		Display.destroy();
@@ -172,6 +174,8 @@ public class Main
 		glEnable(GL_FOG);
 		glEnable(GL_TEXTURE_2D);
 		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// --- Configure FOG
 		float[] fogColor = {0.75f, 0.75f, 0.75f, 1f};;
@@ -185,11 +189,14 @@ public class Main
 		glFogf(GL_FOG_START, 600.0f);
 		glFogf(GL_FOG_END, 800.0f);
 
-		// Initialize world
-		this.world = new World("WORLD1", "XYZ");
-
 		// Initialize player
-		this.player = new Player(this.world);
+		this.player = new Player();
+
+		// Initialize world
+		this.world = new World("WORLD1", "XYZ", this.player);
+
+		// Set parent for player
+		this.player.setParent(this.world);
 
 		// Initialize Chunks
 		Chunk.init();
