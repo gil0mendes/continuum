@@ -1,11 +1,13 @@
 package com.continuum;
 
 import static org.lwjgl.opengl.GL11.*;
+
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.lwjgl.util.glu.*;
 
 /**
@@ -15,7 +17,7 @@ import org.lwjgl.util.glu.*;
  */
 public class World extends RenderObject {
 	// Daylight intensity
-	private float daylight = 0.9f;
+	private float daylight = 0.8f;
 
 	private Random rand;
 
@@ -147,17 +149,16 @@ public class World extends RenderObject {
 		displayListSun = glGenLists(1);
 		glNewList(displayListSun, GL_COMPILE);
 		glColor4f(1.0f, 0.8f, 0.0f, 1.0f);
-		s.draw(120.0f, 16, 32);
+		s.draw(256.0f, 16, 32);
 		glEndList();
 	}
 
 	@Override
 	public void render() {
-
 		// Draw the sun
 		glPushMatrix();
 		glDisable(GL_FOG);
-		glTranslatef(Configuration.viewingDistanceInChunks.x * Chunk.chunkDimensions.x, Configuration.viewingDistanceInChunks.y * Chunk.chunkDimensions.y * 2f, Configuration.viewingDistanceInChunks.z * Chunk.chunkDimensions.z);
+		glTranslatef(Configuration.viewingDistanceInChunks.x * Chunk.chunkDimensions.x * 1.5f, Configuration.viewingDistanceInChunks.y * Chunk.chunkDimensions.y, Configuration.viewingDistanceInChunks.z * Chunk.chunkDimensions.z * 1.5f);
 		glCallList(displayListSun);
 		glEnable(GL_FOG);
 		glPopMatrix();
@@ -227,9 +228,9 @@ public class World extends RenderObject {
 		}
 
 		// Generate the treetop
-		for (int y =height/4; y < height + 2; y += 2) {
-			for (int x = -(height/2 - y/2); x <= (height/2 - y/2); x++) {
-				for (int z = -(height/2 - y/2); z <= (height/2 - y/2); z++) {
+		for (int y = height / 4; y < height + 2; y += 2) {
+			for (int x = -(height / 2 - y / 2); x <= (height / 2 - y / 2); x++) {
+				for (int z = -(height / 2 - y / 2); z <= (height / 2 - y / 2); z++) {
 					if (rand.nextFloat() < 0.95 && !(x == 0 && z == 0)) {
 						setBlock(new Vector3f(pos.x + x, pos.y + y, pos.z + z), 0x6);
 					}
@@ -241,6 +242,7 @@ public class World extends RenderObject {
 
 	/**
 	 * Sets the type of a block at a given position.
+	 *
 	 * @param pos
 	 * @param type
 	 */
@@ -251,16 +253,30 @@ public class World extends RenderObject {
 		try {
 			Chunk c = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z];
 
-			// Create a new chunk if needed
-			if (c == null) {
-				c = new Chunk(this, new Vector3f(chunkPos.x, chunkPos.y, chunkPos.z));
-				//LOGGER.log(Level.INFO, "Generating chunk at X: {0}, Y: {1}, Z: {2}", new Object[]{chunkPos.x, chunkPos.y, chunkPos.z});
-				chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z] = c;
-			}
+			Chunk c1 = chunks[(int) chunkPos.x - 1][(int) chunkPos.y][(int) chunkPos.z];
+			Chunk c2 = chunks[(int) chunkPos.x + 1][(int) chunkPos.y][(int) chunkPos.z];
+			Chunk c3 = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z - 1];
+			Chunk c4 = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z + 1];
 
 			// Generate or update the corresponding chunk
 			c.setBlock(blockCoord, type, true);
-			chunkUpdateQueue.add(c);
+
+			// Update surrounding chunks if needed
+			if ((int) blockCoord.x == 0) {
+				c1.dirty = true;
+				chunkUpdateQueue.add(c1);
+			} else if ((int) blockCoord.x == (int) Chunk.chunkDimensions.x - 1) {
+				c2.dirty = true;
+				chunkUpdateQueue.add(c2);
+			}
+
+			if ((int) blockCoord.z == 0) {
+				c3.dirty = true;
+				chunkUpdateQueue.add(c3);
+			} else if ((int) blockCoord.z == (int) Chunk.chunkDimensions.z - 1) {
+				c4.dirty = true;
+				chunkUpdateQueue.add(c4);
+			}
 		} catch (Exception e) {
 			return;
 		}
@@ -316,14 +332,22 @@ public class World extends RenderObject {
 	 * Calculate the corresponding chunk for a given position within the world.
 	 */
 	private Vector3f calcChunkPos(Vector3f pos) {
-		return new Vector3f((int) (pos.x / Chunk.chunkDimensions.x), (int) (pos.y / Chunk.chunkDimensions.y), (int) (pos.z / Chunk.chunkDimensions.z));
+		if (pos != null) {
+			return new Vector3f((int) (pos.x / Chunk.chunkDimensions.x), (int) (pos.y / Chunk.chunkDimensions.y), (int) (pos.z / Chunk.chunkDimensions.z));
+		}
+
+		return null;
 	}
 
 	/**
 	 * Calculate the position of a world-block within a specific chunk.
 	 */
 	private Vector3f calcBlockPos(Vector3f pos, Vector3f chunkPos) {
-		return new Vector3f(pos.x - (chunkPos.x * Chunk.chunkDimensions.x), pos.y - (chunkPos.y * Chunk.chunkDimensions.y), pos.z - (chunkPos.z * Chunk.chunkDimensions.z));
+		if (pos != null && chunkPos != null) {
+			return new Vector3f(pos.x - (chunkPos.x * Chunk.chunkDimensions.x), pos.y - (chunkPos.y * Chunk.chunkDimensions.y), pos.z - (chunkPos.z * Chunk.chunkDimensions.z));
+		}
+
+		return null;
 	}
 
 	public float getDaylight() {
