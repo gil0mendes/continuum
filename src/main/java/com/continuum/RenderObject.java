@@ -27,7 +27,7 @@ public  abstract class RenderObject
 	 *
 	 * @return Current position
 	 */
-	public final Vector3f getPosition() {
+	public Vector3f getPosition() {
 		return position;
 	}
 
@@ -36,7 +36,7 @@ public  abstract class RenderObject
 	 *
 	 * @param newPostion
 	 */
-	public final void setPosition(Vector3f newPostion) {
+	public void setPosition(Vector3f newPostion) {
 		this.position = newPostion;
 	}
 

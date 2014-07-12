@@ -1,17 +1,22 @@
 package com.continuum;
 
 import org.lwjgl.util.vector.Vector3f;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.newdawn.slick.opengl.Texture;
+
 import java.io.FileInputStream;
+
 import org.newdawn.slick.opengl.TextureLoader;
+
 import static org.lwjgl.opengl.GL11.*;
 
 /**
  * Class for chunk.
- *
+ * <p/>
  * Created by gil0mendes on 12/07/14.
  */
 public class Chunk extends RenderObject {
@@ -36,6 +41,12 @@ public class Chunk extends RenderObject {
 	// Size of one single chunk
 	public static final Vector3f chunkDimensions = new Vector3f(64, 128, 64);
 
+	// Is dirty
+	private boolean dirty = false;
+
+	// The parent world
+	private World parent = null;
+
 	static {
 		try {
 			textureMap = TextureLoader.getTexture("PNG", new FileInputStream(Chunk.class.getResource("Terrain.png").getPath()), GL_NEAREST);
@@ -44,8 +55,9 @@ public class Chunk extends RenderObject {
 		}
 	}
 
-	public Chunk(Vector3f position) {
+	public Chunk(World parent, Vector3f position) {
 		this.position = position;
+		this.parent = parent;
 
 		// Generate and assign the chunk id
 		chunkID = maxChunkID;
@@ -74,9 +86,9 @@ public class Chunk extends RenderObject {
 	}
 
 	public boolean updateDisplayList() {
-
-		if (this.displayListDebugID == -1) {
-			this.displayListDebugID = glGenLists(1);
+		// Draw the outline
+		if (dirty) {
+			displayListDebugID = glGenLists(1);
 
 			glNewList(displayListDebugID, GL_COMPILE);
 			glColor3f(255.0f, 0.0f, 0.0f);
@@ -113,7 +125,8 @@ public class Chunk extends RenderObject {
 			glEndList();
 		}
 
-		if (displayListID == -1) {
+		// If the chunk changed, recreate the display list
+		if (dirty) {
 			displayListID = glGenLists(1);
 
 			textureMap.bind();
@@ -127,61 +140,37 @@ public class Chunk extends RenderObject {
 
 						if (blocks[x][y][z] > 0) {
 
-
 							boolean drawFront = true, drawBack = true, drawLeft = true, drawRight = true, drawTop = true, drawBottom = true;
 
-							if (z - 1 >= 0) {
-								if (blocks[x][y][z - 1] != 0) {
-									drawFront = false;
-								}
-							} else {
+							if (parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y, z - 1)))) != 0) {
 								drawFront = false;
 							}
 
-							if (z + 1 < chunkDimensions.z) {
-								if (blocks[x][y][z + 1] != 0) {
-									drawBack = false;
-								}
-							} else {
+							if (parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y, z + 1)))) != 0) {
 								drawBack = false;
 							}
 
-							if (x - 1 >= 0) {
-								if (blocks[x - 1][y][z] != 0) {
-									drawLeft = false;
-								}
-							} else {
+
+							if (parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x - 1, y, z)))) != 0) {
 								drawLeft = false;
 							}
 
-							if (x + 1 < chunkDimensions.x) {
-								if (blocks[x + 1][y][z] != 0) {
-									drawRight = false;
-								}
-							} else {
+
+							if (parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x + 1, y, z)))) != 0) {
 								drawRight = false;
 							}
 
-							if (y + 1 < chunkDimensions.y) {
-								if (blocks[x][y + 1][z] != 0) {
-									drawTop = false;
-								}
-							} else {
+							if (parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y + 1, z)))) != 0) {
 								drawTop = false;
 							}
 
-							if (y - 1 >= 0) {
-								if (blocks[x][y - 1][z] != 0) {
-									drawBottom = false;
-								}
-							} else {
+							if (parent.getBlock(new Vector3f(getBlockWorldPos(new Vector3f(x, y - 1, z)))) != 0) {
 								drawBottom = false;
 							}
 
 							glColor3f(1.0f, 1.0f, 1.0f);
 
 							if (drawFront) {
-
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.FRONT).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.FRONT).y;
 
@@ -325,36 +314,42 @@ public class Chunk extends RenderObject {
 							glColor3f(1.0f - shadowIntens, 1.0f - shadowIntens, 1.0f - shadowIntens);
 
 							if (drawTop) {
+								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.TOP).x;
+								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.TOP).y;
+
 								quadCounter++;
 
-								glTexCoord2f(0.0f, 0.0f);
+								glTexCoord2f(texOffsetX, texOffsetY);
 								glVertex3f(-0.5f + x, 0.5f + y, 0.5f + z);
 
-								glTexCoord2f(0.0625f, 0.0f);
+								glTexCoord2f(texOffsetX + 0.0625f, texOffsetY);
 								glVertex3f(0.5f + x, 0.5f + y, 0.5f + z);
 
-								glTexCoord2f(0.0625f, 0.0625f);
+								glTexCoord2f(texOffsetX + 0.0625f, texOffsetY + 0.0625f);
 								glVertex3f(0.5f + x, 0.5f + y, -0.5f + z);
 
-								glTexCoord2f(0.0f, 0.0625f);
+								glTexCoord2f(texOffsetX, texOffsetY + 0.0625f);
 								glVertex3f(-0.5f + x, 0.5f + y, -0.5f + z);
 							}
 
 							glColor3f(1.0f, 1.0f, 1.0f);
 
 							if (drawBottom) {
+								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.BOTTOM).x;
+								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.BOTTOM).y;
+
 								quadCounter++;
 
-								glTexCoord2f(0.0f, 0.0625f);
+								glTexCoord2f(texOffsetX, texOffsetY + 0.0625f);
 								glVertex3f(-0.5f + x, -0.5f + y, -0.5f + z);
 
-								glTexCoord2f(0.0625f, 0.0625f);
+								glTexCoord2f(texOffsetX + 0.0625f, texOffsetY + 0.0625f);
 								glVertex3f(0.5f + x, -0.5f + y, -0.5f + z);
 
-								glTexCoord2f(0.0625f, 0.0f);
+								glTexCoord2f(texOffsetX + 0.0625f, texOffsetY);
 								glVertex3f(0.5f + x, -0.5f + y, 0.5f + z);
 
-								glTexCoord2f(0.0f, 0.0f);
+								glTexCoord2f(texOffsetX, texOffsetY);
 								glVertex3f(-0.5f + x, -0.5f + y, 0.5f + z);
 							}
 
@@ -366,8 +361,8 @@ public class Chunk extends RenderObject {
 			glEnd();
 			glEndList();
 
+			dirty = false;
 			return true;
-
 		}
 
 		return false;
@@ -376,8 +371,7 @@ public class Chunk extends RenderObject {
 	@Override
 	public void render() {
 
-		if (displayListID >= 0) {
-
+		if (displayListID != -1) {
 			glPushMatrix();
 			glTranslatef(position.x * (int) chunkDimensions.x, position.y * (int) chunkDimensions.y, position.z * (int) chunkDimensions.z);
 
@@ -392,11 +386,35 @@ public class Chunk extends RenderObject {
 		}
 	}
 
-	public int getBlock(int x, int y, int z) {
-		return blocks[x][y][z];
+	/**
+	 * Get block type from position
+	 *
+	 * @param pos
+	 * @return
+	 */
+	public int getBlock(Vector3f pos) {
+		return this.blocks[(int) pos.x][(int) pos.y][(int) pos.z];
 	}
 
-	public void setBlock(int x, int y, int z, int type) {
-		blocks[x][y][z] = type;
+	/**
+	 * Set block type to a position
+	 *
+	 * @param pos
+	 * @param type
+	 */
+	public void setBlock(Vector3f pos, int type) {
+		this.blocks[(int) pos.x][(int) pos.y][(int) pos.z] = type;
+		this.dirty = true;
+	}
+
+	/**
+	 * Get block position in the world
+	 *
+	 * @param pos
+	 * @return
+	 */
+	public Vector3f getBlockWorldPos(Vector3f pos) {
+		Vector3f v = new Vector3f(pos.x + position.x * chunkDimensions.x, pos.y + position.y * chunkDimensions.y, pos.z + position.z * chunkDimensions.z);
+		return v;
 	}
 }

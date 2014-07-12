@@ -173,10 +173,10 @@ public class Main
 		}
 
 		// Initialize world
-		this.world = new World(mainChar);
+		this.world = new World();
 
 		// Initialize player
-		this.mainChar = new Player();
+		this.mainChar = new Player(this.world);
 
 		// Instance helper
 		this.helper = new Helper();
@@ -262,19 +262,27 @@ public class Main
 	private void processKeyboard() {
 		if (Keyboard.isKeyDown(Keyboard.KEY_W))//move forward
 		{
-			mainChar.walkForward();
+			if (!Keyboard.isRepeatEvent()) {
+				mainChar.walkForward();
+			}
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S))//move backwards
 		{
-			mainChar.walkBackwards();
+			if (!Keyboard.isRepeatEvent()) {
+				mainChar.walkBackwards();
+			}
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A))//strafe left
 		{
-			mainChar.strafeLeft();
+			if (!Keyboard.isRepeatEvent()) {
+				mainChar.strafeLeft();
+			}
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D))//strafe right
 		{
-			mainChar.strafeRight();
+			if (!Keyboard.isRepeatEvent()) {
+				mainChar.strafeRight();
+			}
 		}
 	}
 

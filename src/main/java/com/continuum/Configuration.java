@@ -1,6 +1,7 @@
 package com.continuum;
 
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
 
 /**
  * CLass with some configurations
@@ -9,10 +10,10 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class Configuration {
 	// Display debug
-	public static boolean displayDebug = true;
+	public static boolean displayDebug = false;
 
 	// View distance
-	public static Vector2f viewingDistanceInChunks = new Vector2f(64.0f,64.0f);
+	public static Vector3f viewingDistanceInChunks = new Vector3f(64.0f, 2.0f, 64.0f);
 
 	public static Vector2f calcTextureMapCoords(int x, int y) {
 		return new Vector2f(1.0f/(float) x,1.0f/(float) y);
