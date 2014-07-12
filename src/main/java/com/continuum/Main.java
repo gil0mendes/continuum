@@ -8,6 +8,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -18,6 +19,14 @@ import org.lwjgl.opengl.DisplayMode;
  */
 public class Main
 {
+	// Time at last frame
+	private long lastFrame;
+
+	// Frames per second
+	private int fps;
+
+	// Last fps time
+	protected long lastFPS;
 
 	// Window settings
 	public static final float DISPLAY_WIDTH = 1152.0f;
@@ -59,7 +68,7 @@ public class Main
 			main = new Main();
 
 			main.create();
-			main.run();
+			main.start();
 		} catch (Exception ex) {
 			LOGGER.log(Level.SEVERE, ex.toString(), ex);
 		} finally {
@@ -76,6 +85,35 @@ public class Main
 	 * Empty constructor
 	 */
 	public Main() {}
+
+	/**
+	 * Get the time in milliseconds
+	 *
+	 * @return The system time in milliseconds
+	 */
+	public long getTime() {
+		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+	}
+
+	public int getDelta() {
+		long time = getTime();
+		int delta = (int) (time - lastFrame);
+		lastFrame = time;
+
+		return delta;
+	}
+
+	/**
+	 * Calculate the FPS and set it in the title bar
+	 */
+	public void updateFPS() {
+		if (getTime() - lastFPS > 1000) {
+			Display.setTitle("FPS: " + fps);
+			fps = 0;
+			lastFPS += 1000;
+		}
+		fps++;
+	}
 
 	/**
 	 * Create and initialize Display, Keyboard, Mouse and main loop.
@@ -113,29 +151,25 @@ public class Main
 	/**
 	 * Start main loop
 	 */
-	public void run() {
-		// Start main loop
-		while (!Display.isCloseRequested() && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-			if (Display.isVisible()) {
-				// Process inputs
-				processKeyboard();
-				processMouse();
+	public void start() {
+		//initGL();
+		getDelta();
+		lastFPS = getTime();
 
-				// Update and rend scene
-				update();
-				render();
-			} else {
-				if (Display.isDirty()) {
-					render();
-				}
+		while (!Display.isCloseRequested()) {
+			int delta = getDelta();
 
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException ex) {}
-			}
+			processKeyboard();
+			processMouse();
+
+			update(delta);
+			render();
 
 			Display.update();
+			Display.sync(60);
 		}
+
+		Display.destroy();
 	}
 
 	/**
@@ -168,6 +202,9 @@ public class Main
 		// Initialize player
 		this.player = new Player(this.world);
 
+		// Set player in the world
+		this.world.setPlayer(this.player);
+
 		// Initialize Chunks
 		Chunk.init();
 	}
@@ -180,7 +217,7 @@ public class Main
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(64.0f, DISPLAY_WIDTH / DISPLAY_HEIGHT, 1f, 1024f);
+		gluPerspective(64.0f, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.1f, 1024f);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -223,16 +260,14 @@ public class Main
 		glEnd();
 
 		glPopMatrix();
-
-		Helper.getInstance().frameRendered();
 	}
 
 	/**
 	 * Update main char
 	 */
-	private void update() {
-		this.world.update();
-		this.player.update();
+	public void update(int delta) {
+		world.update(delta);
+		player.update(delta);
 	}
 
 	// --- PROCESS

@@ -24,8 +24,10 @@ public  abstract class RenderObject
 
 	/**
 	 * Update method
+	 *
+	 * @param delta
 	 */
-	public void update() {}
+	public void update(int delta) {}
 
 	/**
 	 * Get object position.

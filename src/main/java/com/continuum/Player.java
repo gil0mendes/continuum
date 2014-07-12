@@ -11,7 +11,7 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class Player extends RenderObject {
 	// Viewing direction of the player
-	private float yaw = 0.0f;
+	private float yaw = 135.0f;
 	private float pitch = 0.0f;
 
 	// Walking speed
@@ -33,7 +33,7 @@ public class Player extends RenderObject {
 	 */
 	public Player(World parent) {
 		this.parent = parent;
-		this.position = new Vector3f(0.0f, -100.0f, 0.0f);
+		this.position = new Vector3f(0f, 256f, 0f);
 	}
 
 	/**
@@ -49,29 +49,53 @@ public class Player extends RenderObject {
 	}
 
 	@Override
-	public void update() {
-		// Update view direction
-		this.yaw(Mouse.getDX());
-		this.pitch(-1 * Mouse.getDY());
+	public void update(int delta) {
+		Vector3f direction = new Vector3f();
 
-		this.getPosition().y += this.acc.y + (this.gravity * Helper.getInstance().calcInterpolation());
+		if (acc.x >= 0) {
+			direction.x = 1;
+		} else {
+			direction.x = -1;
+		}
+
+		if (acc.z >= 0) {
+			direction.z = 1;
+		} else {
+			direction.z = -1;
+		}
 
 		// Check if player is hitting something
-		if (!this.parent.isHitting(new Vector3f(this.getPosition().x, this.getPosition().y - 4.0f, this.getPosition().z))) {
-			if (this.gravity > -1.0f) {
-				this.gravity -= 0.1f;
+		if (parent.isHitting(new Vector3f(getPosition().x + direction.x * 2, getPosition().y - 1.0f, getPosition().z + direction.z * 2))) {
+			acc.x = 0.0f;
+			acc.z = 0.0f;
+		}
+
+		if (!parent.isHitting(new Vector3f(getPosition().x, getPosition().y - 2.0f, getPosition().z))) {
+			if (gravity > -1.0f) {
+				gravity -= 0.1f;
 			}
-		} else {
-			this.gravity = 0.0f;
+		}
+
+		// Update view direction
+		yaw(Mouse.getDX() * 0.1f);
+		pitch(-1 * Mouse.getDY() * 0.1f);
+
+		getPosition().y += acc.y + (gravity * 0.1f * delta);
+		getPosition().x += acc.x * 0.001f * delta;
+		getPosition().z += acc.z * 0.001f * delta;
+
+		// Check if player are in the ground
+		if (parent.isHitting(new Vector3f(getPosition().x, getPosition().y - 2.0f, getPosition().z))) {
+			gravity = 0.0f;
 		}
 	}
 
 	public void yaw(float diff) {
-		yaw += diff * Helper.getInstance().calcInterpolation();
+		yaw += diff;
 	}
 
 	public void pitch(float diff) {
-		pitch += diff * Helper.getInstance().calcInterpolation();
+		pitch += diff;
 	}
 
 	public void walkForward() {
@@ -99,10 +123,8 @@ public class Player extends RenderObject {
 	 */
 	public void jump() {
 		// Check if its hitting something
-		if (parent.isHitting(new Vector3f(getPosition().x, getPosition().y - 4.0f, getPosition().z))) {
-			if (this.gravity >= 0) {
-				this.gravity += 1.0f;
-			}
+		if (parent.isHitting(new Vector3f(getPosition().x, getPosition().y - 2.0f, getPosition().z))) {
+			this.gravity += 2.0f;
 		}
 	}
 }
