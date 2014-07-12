@@ -199,8 +199,11 @@ public class Player extends RenderObject {
 	private void processMovement(long delta) {
 
 		if (getParent() != null) {
-			if (Keyboard.isKeyDown(Keyboard.KEY_R)) {
+			if (Keyboard.isKeyDown(Keyboard.KEY_R)) {//reset position
 				resetPlayer();
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_T)) {//generate trees
+				parent.generateTrees();
 			}
 			if (Keyboard.isKeyDown(Keyboard.KEY_W))//move forward
 			{

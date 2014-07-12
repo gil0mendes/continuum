@@ -232,8 +232,8 @@ public class Main
 		// Render player
 		this.player.render();
 
-		// Render all chunks
-		Chunk.renderAllChunks();
+		// Render world
+		this.world.render();
 	}
 
 	/**
