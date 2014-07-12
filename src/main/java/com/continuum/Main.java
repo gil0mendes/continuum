@@ -182,7 +182,7 @@ public class Main
 		glFogf(GL_FOG_END, 512.0f);
 
 		// Initialize world
-		this.world = new World("WORLD1", "-7492801512473941435");
+		this.world = new World("WORLD1", "XXX");
 
 		// Initialize player
 		this.player = new Player(this.world);
