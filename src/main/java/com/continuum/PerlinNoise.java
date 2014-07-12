@@ -5,7 +5,7 @@ import java.util.Random;
 /**
  * 3D perlin noise function as shown in the book "Physically Based Rendering".
  */
-public class PerlinNoiseGenerator
+public class PerlinNoise
 {
 	Random rand;
 
@@ -39,7 +39,7 @@ public class PerlinNoiseGenerator
 			138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
 	};
 
-	public PerlinNoiseGenerator(String seed) {
+	public PerlinNoise(String seed) {
 		rand = new Random(seed.hashCode());
 
 		for (int i = 0; i < noisePerm.length; i++) {

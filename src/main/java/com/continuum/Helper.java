@@ -1,5 +1,7 @@
 package com.continuum;
 
+import org.lwjgl.util.vector.Vector3f;
+
 /**
  * Created by gil0mendes on 12/07/14.
  */
@@ -24,4 +26,8 @@ public class Helper {
 	 * Constructor
 	 */
 	public Helper() {}
+
+	public Vector3f calcPlayerOrigin() {
+		return new Vector3f(Chunk.chunkDimensions.x * Configuration.viewingDistanceInChunks.x/2, 128 ,(Chunk.chunkDimensions.z * Configuration.viewingDistanceInChunks.z) / 2);
+	}
 }

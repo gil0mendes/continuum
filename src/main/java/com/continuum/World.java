@@ -32,7 +32,7 @@ public class World extends RenderObject {
 
 	// The perlin noise generator used
 	// for creating the procedural terrain
-	private PerlinNoiseGenerator pGen;
+	private PerlinNoise pGen;
 
 	// Player
 	private Player player = null;
@@ -42,12 +42,11 @@ public class World extends RenderObject {
 	 *
 	 * @param title
 	 * @param seed
-	 * @param player
 	 */
 	public World(String title, String seed, Player p) {
 		this.player = p;
 		rand = new Random(seed.hashCode());
-		pGen = new PerlinNoiseGenerator(seed);
+		pGen = new PerlinNoise(seed);
 
 		chunks = new Chunk[(int) Configuration.viewingDistanceInChunks.x][(int) Configuration.viewingDistanceInChunks.y][(int) Configuration.viewingDistanceInChunks.z];
 
@@ -74,32 +73,6 @@ public class World extends RenderObject {
 	}
 
 	public void init() {
-//        dayNight.schedule(new TimerTask() {
-//
-//            @Override
-//            public void run() {
-//
-//                daylight -= 0.15;
-//                LOGGER.log(Level.INFO, "Updating daylight to {0}.", daylight);
-//
-//                if (daylight < 0.25f) {
-//                    daylight = 0.75f;
-//                }
-//
-//                for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
-//                    for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
-//                        for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
-//                            Chunk c = chunks[x][y][z];
-//
-//                            if (c != null) {
-//                                chunkUpdateQueue.add(c);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }, 30000, 30000);
-
 		updateThread.start();
 	}
 
@@ -108,19 +81,16 @@ public class World extends RenderObject {
 	 */
 	@Override
 	public void update(long delta) {
-
 		int chunkUpdates = 0;
 
 		if (!updateThread.isAlive()) {
-
-
-
-			LOGGER.log(Level.INFO, "Updating {0} chunks.", chunkUpdateQueue.size());
+			//LOGGER.log(Level.INFO, "Updating {0} chunks.", chunkUpdateQueue.size());
 
 			List<Chunk> deletedElements = new ArrayList<Chunk>();
 
 			for (Chunk c : chunkUpdateQueue) {
-				if (chunkUpdates < 3) {
+				if (chunkUpdates < 2) {
+					c.calcSunlight();
 					c.updateDisplayList();
 					deletedElements.add(c);
 					chunkUpdates++;
@@ -129,13 +99,9 @@ public class World extends RenderObject {
 				}
 			}
 
-
 			for (Chunk c : deletedElements) {
 				chunkUpdateQueue.remove(c);
 			}
-
-
-
 		}
 	}
 
@@ -143,6 +109,11 @@ public class World extends RenderObject {
 	 * Generates the world on a per chunk basis.
 	 */
 	public final void generateChunk(Vector3f chunkPosition) {
+		Chunk c = chunks[(int) chunkPosition.x][(int) chunkPosition.y][(int) chunkPosition.z];
+
+		if (c != null) {
+			c.clear();
+		}
 
 		Vector3f chunkOrigin = new Vector3f(chunkPosition.x * Chunk.chunkDimensions.x, chunkPosition.y * Chunk.chunkDimensions.y, chunkPosition.z * Chunk.chunkDimensions.z);
 
@@ -185,6 +156,8 @@ public class World extends RenderObject {
 				}
 			}
 		}
+
+		chunks[(int) chunkPosition.x][(int) chunkPosition.y][(int) chunkPosition.z].calcSunlight();
 	}
 
 	private void generateTree(Vector3f pos) {
@@ -251,6 +224,18 @@ public class World extends RenderObject {
 		}
 	}
 
+	public final float getLight(Vector3f pos) {
+		Vector3f chunkPos = calcChunkPos(pos);
+		Vector3f blockCoord = calcBlockPos(pos, chunkPos);
+
+		try {
+			Chunk c = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z];
+			return c.getLight((int) blockCoord.x, (int) blockCoord.y, (int) blockCoord.z);
+		} catch (Exception ex) {
+			return 0.0f;
+		}
+	}
+
 	/**
 	 * Returns true if the given position is hitting a block below.
 	 */
@@ -286,7 +271,7 @@ public class World extends RenderObject {
 	 */
 	private float calcTerrainElevation(float x, float z) {
 		float result = 0.0f;
-		result += pGen.noise(0.009f * x, 0.009f, 0.009f * z) * 128.0f;
+		result += pGen.noise(0.0009f * x, 0.0009f, 0.0009f * z) * 256.0f;
 		return result;
 	}
 

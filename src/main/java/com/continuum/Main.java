@@ -174,7 +174,7 @@ public class Main
 		glEnable(GL_FOG);
 		glEnable(GL_TEXTURE_2D);
 		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_BLEND);
+		//glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// --- Configure FOG
@@ -186,14 +186,14 @@ public class Main
 		glFog(GL_FOG_COLOR, fogColorBuffer);
 		glFogi(GL_FOG_MODE, GL_LINEAR);
 		glFogf(GL_FOG_DENSITY, 1.0f);
-		glFogf(GL_FOG_START, 600.0f);
-		glFogf(GL_FOG_END, 800.0f);
+		glFogf(GL_FOG_START, Configuration.viewingDistance - 16);
+		glFogf(GL_FOG_END, Configuration.viewingDistance);
 
 		// Initialize player
 		this.player = new Player();
 
 		// Initialize world
-		this.world = new World("WORLD1", "XYZ", this.player);
+		this.world = new World("WORLD1", "1234345678", this.player);
 
 		// Set parent for player
 		this.player.setParent(this.world);
