@@ -54,16 +54,6 @@ public class Main
 	}
 
 	public static void main(String[] args) {
-		// Start debug window
-		if (Configuration.displayDebug) {
-			java.awt.EventQueue.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					new DebugWindow().setVisible(true);
-				}
-			});
-		}
-
 		Main main = null;
 
 		// Try create the main window

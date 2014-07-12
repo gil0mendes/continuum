@@ -9,9 +9,6 @@ import org.lwjgl.util.vector.Vector3f;
  * Created by gil0mendes on 12/07/14.
  */
 public class Configuration {
-	// Display debug
-	public static boolean displayDebug = false;
-
 	// View distance
 	public static Vector3f viewingDistanceInChunks = new Vector3f(64.0f, 2.0f, 64.0f);
 
