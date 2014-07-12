@@ -50,12 +50,14 @@ public class Main
 
 	public static void main(String[] args) {
 		// Start debug window
-		java.awt.EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				new DebugWindow().setVisible(true);
-			}
-		});
+		if (Configuration.displayDebug) {
+			java.awt.EventQueue.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					new DebugWindow().setVisible(true);
+				}
+			});
+		}
 
 		Main main = null;
 
@@ -161,8 +163,8 @@ public class Main
 		glFogi(GL_FOG_MODE, GL_LINEAR);
 		glFogf(GL_FOG_DENSITY, 1.0f);
 		glHint(GL_FOG_HINT, GL_DONT_CARE);
-		glFogf(GL_FOG_START, 300.0f);
-		glFogf(GL_FOG_END, 400.0f);
+		glFogf(GL_FOG_START, 512.0f);
+		glFogf(GL_FOG_END, 1024.0f);
 
 		try {
 			Class.forName("continuum.Chunk");

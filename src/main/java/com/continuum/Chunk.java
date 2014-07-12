@@ -28,6 +28,7 @@ public class Chunk extends RenderObject {
 
 	// After init. display lists are used for rendering the chunks
 	int displayListID = -1;
+	int displayListDebugID = -1;
 
 	// Texture map
 	static Texture textureMap;
@@ -41,7 +42,6 @@ public class Chunk extends RenderObject {
 		} catch (IOException ex) {
 			Logger.getLogger(Chunk.class.getName()).log(Level.SEVERE, null, ex);
 		}
-
 	}
 
 	public Chunk(Vector3f position) {
@@ -75,6 +75,44 @@ public class Chunk extends RenderObject {
 
 	public boolean updateDisplayList() {
 
+		if (this.displayListDebugID == -1) {
+			this.displayListDebugID = glGenLists(1);
+
+			glNewList(displayListDebugID, GL_COMPILE);
+			glColor3f(255.0f, 0.0f, 0.0f);
+			glBegin(GL_LINE_LOOP);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
+			glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
+			glVertex3f(0.0f, chunkDimensions.y, 0.0f);
+			glEnd();
+
+			glBegin(GL_LINE_LOOP);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glVertex3f(0.0f, 0.0f, chunkDimensions.z);
+			glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
+			glVertex3f(0.0f, chunkDimensions.y, 0.0f);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glEnd();
+
+			glBegin(GL_LINE_LOOP);
+			glVertex3f(0.0f, 0.0f, chunkDimensions.z);
+			glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
+			glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
+			glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
+			glVertex3f(0.0f, 0.0f, chunkDimensions.z);
+			glEnd();
+
+			glBegin(GL_LINE_LOOP);
+			glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
+			glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
+			glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
+			glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
+			glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
+			glEnd();
+			glEndList();
+		}
+
 		if (displayListID == -1) {
 			displayListID = glGenLists(1);
 
@@ -96,36 +134,48 @@ public class Chunk extends RenderObject {
 								if (blocks[x][y][z - 1] != 0) {
 									drawFront = false;
 								}
+							} else {
+								drawFront = false;
 							}
 
 							if (z + 1 < chunkDimensions.z) {
 								if (blocks[x][y][z + 1] != 0) {
 									drawBack = false;
 								}
+							} else {
+								drawBack = false;
 							}
 
 							if (x - 1 >= 0) {
 								if (blocks[x - 1][y][z] != 0) {
 									drawLeft = false;
 								}
+							} else {
+								drawLeft = false;
 							}
 
 							if (x + 1 < chunkDimensions.x) {
 								if (blocks[x + 1][y][z] != 0) {
 									drawRight = false;
 								}
+							} else {
+								drawRight = false;
 							}
 
 							if (y + 1 < chunkDimensions.y) {
 								if (blocks[x][y + 1][z] != 0) {
 									drawTop = false;
 								}
+							} else {
+								drawTop = false;
 							}
 
 							if (y - 1 >= 0) {
 								if (blocks[x][y - 1][z] != 0) {
 									drawBottom = false;
 								}
+							} else {
+								drawBottom = false;
 							}
 
 							glColor3f(1.0f, 1.0f, 1.0f);
@@ -137,7 +187,6 @@ public class Chunk extends RenderObject {
 
 								quadCounter++;
 								glTexCoord2f(texOffsetX, texOffsetY);
-
 								glVertex3f(-0.5f + x, 0.5f + y, -0.5f + z);
 
 								glTexCoord2f(texOffsetX + 0.0625f, texOffsetY);
@@ -335,38 +384,7 @@ public class Chunk extends RenderObject {
 			glCallList(displayListID);
 
 			if (Configuration.displayDebug) {
-				// Outline the chunks
-				glColor3f(255.0f, 0.0f, 0.0f);
-				glBegin(GL_LINE_LOOP);
-				glVertex3f(0.0f, 0.0f, 0.0f);
-				glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-				glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
-				glVertex3f(0.0f, chunkDimensions.y, 0.0f);
-				glEnd();
-
-				glBegin(GL_LINE_LOOP);
-				glVertex3f(0.0f, 0.0f, 0.0f);
-				glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-				glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
-				glVertex3f(0.0f, chunkDimensions.y, 0.0f);
-				glVertex3f(0.0f, 0.0f, 0.0f);
-				glEnd();
-
-				glBegin(GL_LINE_LOOP);
-				glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-				glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
-				glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
-				glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
-				glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-				glEnd();
-
-				glBegin(GL_LINE_LOOP);
-				glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-				glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
-				glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
-				glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
-				glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-				glEnd();
+				glCallList(this.displayListDebugID);
 			}
 
 			glPopMatrix();
