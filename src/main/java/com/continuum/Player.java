@@ -22,7 +22,7 @@ public class Player extends RenderObject {
 	private static int WALKING_SPEED = 8;
 
 	// Height of the player in "blocks"
-	private int PLAYER_HEIGHT = 2;
+	private int PLAYER_HEIGHT = 1;
 
 	// Viewing direction of the player
 	private double yaw = 135d;
@@ -136,8 +136,7 @@ public class Player extends RenderObject {
 			} catch (Exception e) {
 			}
 
-			return getParent().isHitting(new Vector3f(getPosition().x + direction.x * 1.0f, getPosition().y - 1.0f, getPosition().z + direction.y * 1.0f));
-
+			return getParent().isHitting(new Vector3f(getPosition().x + direction.x, getPosition().y - PLAYER_HEIGHT + 1, getPosition().z + direction.y));
 		} else {
 			return false;
 		}
@@ -153,20 +152,27 @@ public class Player extends RenderObject {
 		}
 	}
 
+	public Vector3f calcViewBlockPosition() {
+		Vector3f blockPosition = new Vector3f(position);
+		Vector2f viewingDirectionHorizontal = new Vector2f((float) Math.sin(Math.toRadians(yaw)), -1f * (float) Math.cos(Math.toRadians(yaw)));
+		Vector2f viewingDirectionVertical = new Vector2f(-1f * (float) Math.sin(Math.toRadians(pitch)), (float) Math.cos(Math.toRadians(pitch)));
+
+		blockPosition.x += 4f * viewingDirectionHorizontal.x;
+		blockPosition.y += 4f * viewingDirectionVertical.x;
+		blockPosition.z += 4f * viewingDirectionHorizontal.y;
+
+		return blockPosition;
+	}
+
 	/**
 	 * Places a block.
 	 * TODO: Yeah... Should do more than that. :-)
 	 */
 	public void placeBlock() {
 		if (getParent() != null) {
-			Vector3f blockPosition = new Vector3f(position);
-			Vector2f viewingDirection = new Vector2f((float) Math.sin(Math.toRadians(yaw)), -1f * (float) Math.cos(Math.toRadians(yaw)));
+			Vector3f blockPosition = calcViewBlockPosition();
 
-			blockPosition.x += 4f * viewingDirection.x;
-			blockPosition.y += -1f;
-			blockPosition.z += 4f * viewingDirection.y;
-
-			getParent().setBlock(blockPosition, 0x1);
+			getParent().setBlock(blockPosition, 0x2);
 		}
 	}
 
@@ -176,12 +182,7 @@ public class Player extends RenderObject {
 	 */
 	public void removeBlock() {
 		if (getParent() != null) {
-			Vector3f blockPosition = new Vector3f(position);
-			Vector2f viewingDirection = new Vector2f((float) Math.sin(Math.toRadians(yaw)), -1f * (float) Math.cos(Math.toRadians(yaw)));
-
-			blockPosition.x += 2f * viewingDirection.x;
-			blockPosition.y += -1f;
-			blockPosition.z += 2f * viewingDirection.y;
+			Vector3f blockPosition = calcViewBlockPosition();
 
 			getParent().setBlock(blockPosition, 0x0);
 		}
@@ -254,20 +255,14 @@ public class Player extends RenderObject {
 		}
 	}
 
-	private void resetPlayer() {
+	public void resetPlayer() {
 		position = Helper.getInstance().calcPlayerOrigin();
 	}
 
-	/**
-	 * @return the parent
-	 */
 	public World getParent() {
 		return parent;
 	}
 
-	/**
-	 * @param parent the parent to set
-	 */
 	public void setParent(World parent) {
 		this.parent = parent;
 		this.resetPlayer();

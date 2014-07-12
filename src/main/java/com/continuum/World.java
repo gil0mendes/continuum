@@ -1,10 +1,12 @@
 package com.continuum;
 
+import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lwjgl.util.glu.*;
 
 /**
  * World class
@@ -30,6 +32,8 @@ public class World extends RenderObject {
 	// Player
 	private Player player = null;
 
+	private int displayListSun = -1;
+
 	/**
 	 * Init. world
 	 *
@@ -50,13 +54,23 @@ public class World extends RenderObject {
 
 				long timeStart = System.currentTimeMillis();
 
-				LOGGER.log(Level.INFO, "Generating chunks.");
+				LOGGER.log(Level.INFO, "Generating chunks. Please wait.");
 
 				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
 							Chunk c = new Chunk(currentWorld, new Vector3f(x, y, z));
 							chunks[x][y][z] = c;
+						}
+					}
+				}
+
+				LOGGER.log(Level.INFO, "Calculating sunlight. Please wait.");
+
+				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
+					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
+						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
+							Chunk c = chunks[x][y][z];
 							c.calcSunlight();
 						}
 					}
@@ -74,6 +88,8 @@ public class World extends RenderObject {
 					}
 				}
 
+				player.resetPlayer();
+
 				while (true) {
 					for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 						for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
@@ -87,33 +103,35 @@ public class World extends RenderObject {
 						}
 					}
 				}
+
 			}
 		});
-
-		Timer timer = new Timer();
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				daylight -= 0.25f;
-
-				if (daylight < 0.25f) {
-					daylight = 0.9f;
-				}
-
-				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
-					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
-						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
-							Chunk c = chunks[x][y][z];
-							c.dirty = true;
-							addChunkToUpdateQueue(c);
-						}
-					}
-				}
-			}
-		}, 60000, 20000);
+//
+//        Timer t = new Timer();
+//        t.schedule(new TimerTask() {
+//
+//            @Override
+//            public void run() {
+//                daylight -= 0.25f;
+//
+//                if (daylight < 0.25f) {
+//                    daylight = 0.9f;
+//                }
+//
+//                for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
+//                    for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
+//                        for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
+//                            Chunk c = chunks[x][y][z];
+//                            c.dirty = true;
+//                            addChunkToUpdateQueue(c);
+//                        }
+//                    }
+//                }
+//            }
+//        }, 60000, 20000);
 	}
 
-	public synchronized void addChunkToUpdateQueue(Chunk c) {
+	private synchronized void addChunkToUpdateQueue(Chunk c) {
 		chunkUpdateQueue.add(c);
 	}
 
@@ -123,10 +141,27 @@ public class World extends RenderObject {
 
 	public void init() {
 		updateThread.start();
+
+		Sphere s = new Sphere();
+
+		displayListSun = glGenLists(1);
+		glNewList(displayListSun, GL_COMPILE);
+		glColor4f(1.0f, 0.8f, 0.0f, 1.0f);
+		s.draw(120.0f, 16, 32);
+		glEndList();
 	}
 
 	@Override
 	public void render() {
+
+		// Draw the sun
+		glPushMatrix();
+		glDisable(GL_FOG);
+		glTranslatef(Configuration.viewingDistanceInChunks.x * Chunk.chunkDimensions.x, Configuration.viewingDistanceInChunks.y * Chunk.chunkDimensions.y * 2f, Configuration.viewingDistanceInChunks.z * Chunk.chunkDimensions.z);
+		glCallList(displayListSun);
+		glEnable(GL_FOG);
+		glPopMatrix();
+
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
@@ -183,7 +218,8 @@ public class World extends RenderObject {
 	}
 
 	private void generateTree(Vector3f pos) {
-		int height = rand.nextInt() % 4 + 6;
+
+		int height = rand.nextInt() % 6 + 12;
 
 		// Generate tree trunk
 		for (int i = 0; i < height; i++) {
@@ -191,20 +227,20 @@ public class World extends RenderObject {
 		}
 
 		// Generate the treetop
-		for (int y = height - 2; y < height + 2; y++) {
-			for (int x = -2; x <= 2; x++) {
-				for (int z = -2; z <= 2; z++) {
+		for (int y =height/4; y < height + 2; y += 2) {
+			for (int x = -(height/2 - y/2); x <= (height/2 - y/2); x++) {
+				for (int z = -(height/2 - y/2); z <= (height/2 - y/2); z++) {
 					if (rand.nextFloat() < 0.95 && !(x == 0 && z == 0)) {
 						setBlock(new Vector3f(pos.x + x, pos.y + y, pos.z + z), 0x6);
 					}
 				}
 			}
 		}
+
 	}
 
 	/**
 	 * Sets the type of a block at a given position.
-	 *
 	 * @param pos
 	 * @param type
 	 */
@@ -245,6 +281,9 @@ public class World extends RenderObject {
 		}
 	}
 
+	/**
+	 * TODO.
+	 */
 	public final float getLight(Vector3f pos) {
 		Vector3f chunkPos = calcChunkPos(pos);
 		Vector3f blockCoord = calcBlockPos(pos, chunkPos);
@@ -252,13 +291,13 @@ public class World extends RenderObject {
 		try {
 			Chunk c = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z];
 			return c.getLight((int) blockCoord.x, (int) blockCoord.y, (int) blockCoord.z);
-		} catch (Exception ex) {
+		} catch (Exception e) {
 			return 0.0f;
 		}
 	}
 
 	/**
-	 * Returns true if the given position is hitting a block below.
+	 * Returns true if the given position is filled with a block.
 	 */
 	public boolean isHitting(Vector3f pos) {
 		Vector3f chunkPos = calcChunkPos(pos);
@@ -296,5 +335,9 @@ public class World extends RenderObject {
 	 */
 	public Player getPlayer() {
 		return player;
+	}
+
+	public Vector3f getDaylightColor() {
+		return new Vector3f(getDaylight() - 0.25f, getDaylight(), getDaylight() + 0.25f);
 	}
 }
