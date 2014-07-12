@@ -27,6 +27,9 @@ public class Chunk extends RenderObject {
 	// The actual block ids for the chunk
 	int[][][] blocks;
 
+	// Stores the light intensity for each block
+	int[][][] light;
+
 	// Create an unique id for each chunk
 	static int maxChunkID = 0;
 	int chunkID;
@@ -289,11 +292,34 @@ public class Chunk extends RenderObject {
 	}
 
 	/**
+	 * Get light intensity for the requested block.
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	public int getLight(int x, int y, int z) {
+		return light[x][y][z];
+	}
+
+	/**
 	 * Get block type from position
 	 * @return
 	 */
 	public int getBlock(int x, int y, int z) {
 		return blocks[x][y][z];
+	}
+
+	/**
+	 * Get light intensity for the block in position.
+	 *
+	 * @param pos
+	 * @param type
+	 */
+	public void setLight(Vector3f pos, int type) {
+		light[(int) pos.x][(int) pos.y][(int) pos.z] = type;
+		dirty = true;
 	}
 
 	/**

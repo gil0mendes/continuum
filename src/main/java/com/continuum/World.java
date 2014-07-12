@@ -60,15 +60,39 @@ public class World extends RenderObject
 		chunkBoundingBoxID = glGenLists(1);
 
 		glNewList(chunkBoundingBoxID, GL_COMPILE);
-		glBegin(GL_QUADS);
-		glVertex3f(0f, 0f, 0f);
-		glVertex3f(16.0f, 0.0f, 0.0f);
-		glVertex3f(16.0f, 128f, 0.0f);
-		glVertex3f(0.0f, 128f, 0.0f);
-
+		glColor3f(255.0f, 0.0f, 0.0f);
+		glBegin(GL_LINE_LOOP);
 		glVertex3f(0.0f, 0.0f, 0.0f);
-		glVertex3f(0.0f, 0.0f, 16.0f);
+		glVertex3f(Chunk.chunkDimensions.x, 0.0f, 0.0f);
+		glVertex3f(Chunk.chunkDimensions.x, Chunk.chunkDimensions.y, 0.0f);
+		glVertex3f(0.0f, Chunk.chunkDimensions.y, 0.0f);
 		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		glVertex3f(0.0f, 0.0f, 0.0f);
+		glVertex3f(0.0f, 0.0f, Chunk.chunkDimensions.z);
+		glVertex3f(0.0f, Chunk.chunkDimensions.y, Chunk.chunkDimensions.z);
+		glVertex3f(0.0f, Chunk.chunkDimensions.y, 0.0f);
+		glVertex3f(0.0f, 0.0f, 0.0f);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		glVertex3f(0.0f, 0.0f, Chunk.chunkDimensions.z);
+		glVertex3f(Chunk.chunkDimensions.x, 0.0f, Chunk.chunkDimensions.z);
+		glVertex3f(Chunk.chunkDimensions.x, Chunk.chunkDimensions.y, Chunk.chunkDimensions.z);
+		glVertex3f(0.0f, Chunk.chunkDimensions.y, Chunk.chunkDimensions.z);
+		glVertex3f(0.0f, 0.0f, Chunk.chunkDimensions.z);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		glVertex3f(Chunk.chunkDimensions.x, 0.0f, 0.0f);
+		glVertex3f(Chunk.chunkDimensions.x, 0.0f, Chunk.chunkDimensions.z);
+		glVertex3f(Chunk.chunkDimensions.x, Chunk.chunkDimensions.y, Chunk.chunkDimensions.z);
+		glVertex3f(Chunk.chunkDimensions.x, Chunk.chunkDimensions.y, 0.0f);
+		glVertex3f(Chunk.chunkDimensions.x, 0.0f, 0.0f);
+		glEnd();
+		glEndList();
+
 		glEndList();
 	}
 
@@ -81,8 +105,8 @@ public class World extends RenderObject
 		glPushMatrix();
 
 		glDisable(GL_COLOR_MATERIAL);
-		glDepthMask(false);
-		glColorMask(false, false, false, false);
+		//glDepthMask(false);
+		//glColorMask(false, false, false, false);
 
 //        for (int x = 0; x < (int) Configuration.viewingDistanceInChunks.x; x++) {
 //            for (int y = 0; y < (int) Configuration.viewingDistanceInChunks.y; y++) {
@@ -199,6 +223,12 @@ public class World extends RenderObject
 
 	}
 
+	/**
+	 * Sets the type of a block at a given position
+	 *
+	 * @param pos
+	 * @param type
+	 */
 	public final void setBlock(Vector3f pos, int type) {
 		Vector3f chunkPos = calcChunkPos(pos);
 		Vector3f blockCoord = calcBlockPos(pos, chunkPos);
@@ -220,6 +250,12 @@ public class World extends RenderObject
 		}
 	}
 
+	/**
+	 * Returns a block at a position by looking up the containing chunk.
+	 *
+	 * @param pos
+	 * @return
+	 */
 	public final int getBlock(Vector3f pos) {
 		Vector3f chunkPos = calcChunkPos(pos);
 		Vector3f blockCoord = calcBlockPos(pos, chunkPos);
