@@ -1,6 +1,5 @@
 package com.continuum;
 
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.io.IOException;
@@ -32,18 +31,15 @@ public class Chunk extends RenderObject {
 	static int maxChunkID = 0;
 	int chunkID;
 
-	// Count the overall number of quads
-	public static int quadCounter = 0;
-
 	// After init. display lists are used for rendering the chunks
 	int displayListID = -1;
-	int displayListDebugID = -1;
+	//int displayListDebugID = -1;
 
 	// Texture map
 	static Texture textureMap;
 
 	// Size of one single chunk
-	public static final Vector3f chunkDimensions = new Vector3f(32, 128, 32);
+	public static final Vector3f chunkDimensions = new Vector3f(16, 128, 16);
 
 	// Is dirty
 	private boolean dirty = false;
@@ -86,47 +82,49 @@ public class Chunk extends RenderObject {
 
 	public boolean updateDisplayList() {
 		// Draw the outline
-		if (dirty) {
-			displayListDebugID = glGenLists(1);
-
-			glNewList(displayListDebugID, GL_COMPILE);
-			glColor3f(255.0f, 0.0f, 0.0f);
-			glBegin(GL_LINE_LOOP);
-			glVertex3f(0.0f, 0.0f, 0.0f);
-			glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-			glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
-			glVertex3f(0.0f, chunkDimensions.y, 0.0f);
-			glEnd();
-
-			glBegin(GL_LINE_LOOP);
-			glVertex3f(0.0f, 0.0f, 0.0f);
-			glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-			glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
-			glVertex3f(0.0f, chunkDimensions.y, 0.0f);
-			glVertex3f(0.0f, 0.0f, 0.0f);
-			glEnd();
-
-			glBegin(GL_LINE_LOOP);
-			glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-			glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
-			glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
-			glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
-			glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-			glEnd();
-
-			glBegin(GL_LINE_LOOP);
-			glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-			glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
-			glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
-			glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
-			glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-			glEnd();
-			glEndList();
-		}
+		//if (dirty) {
+		//	displayListDebugID = glGenLists(1);
+		//
+		//	glNewList(displayListDebugID, GL_COMPILE);
+		//	glColor3f(255.0f, 0.0f, 0.0f);
+		//	glBegin(GL_LINE_LOOP);
+		//	glVertex3f(0.0f, 0.0f, 0.0f);
+		//	glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
+		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
+		//	glVertex3f(0.0f, chunkDimensions.y, 0.0f);
+		//	glEnd();
+		//
+		//	glBegin(GL_LINE_LOOP);
+		//	glVertex3f(0.0f, 0.0f, 0.0f);
+		//	glVertex3f(0.0f, 0.0f, chunkDimensions.z);
+		//	glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
+		//	glVertex3f(0.0f, chunkDimensions.y, 0.0f);
+		//	glVertex3f(0.0f, 0.0f, 0.0f);
+		//	glEnd();
+		//
+		//	glBegin(GL_LINE_LOOP);
+		//	glVertex3f(0.0f, 0.0f, chunkDimensions.z);
+		//	glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
+		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
+		//	glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
+		//	glVertex3f(0.0f, 0.0f, chunkDimensions.z);
+		//	glEnd();
+		//
+		//	glBegin(GL_LINE_LOOP);
+		//	glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
+		//	glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
+		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
+		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
+		//	glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
+		//	glEnd();
+		//	glEndList();
+		//}
 
 		// If the chunk changed, recreate the display list
 		if (dirty) {
-			displayListID = glGenLists(1);
+			if (displayListID == -1) {
+				displayListID = glGenLists(1);
+			}
 
 			glNewList(displayListID, GL_COMPILE);
 			glBegin(GL_QUADS);
@@ -173,8 +171,6 @@ public class Chunk extends RenderObject {
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.TOP).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.TOP).y;
 
-								quadCounter++;
-
 								glTexCoord2f(texOffsetX, texOffsetY);
 								glVertex3f(-0.5f + x, 0.5f + y, 0.5f + z);
 
@@ -196,7 +192,6 @@ public class Chunk extends RenderObject {
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.FRONT).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.FRONT).y;
 
-								quadCounter++;
 								glTexCoord2f(texOffsetX, texOffsetY);
 								glVertex3f(-0.5f + x, 0.5f + y, -0.5f + z);
 
@@ -217,8 +212,6 @@ public class Chunk extends RenderObject {
 								glColor3f(colorOffset.x * shadowIntens * daylight, colorOffset.y * shadowIntens * daylight, colorOffset.z * shadowIntens * daylight);
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.BACK).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.BACK).y;
-
-								quadCounter++;
 
 								glTexCoord2f(texOffsetX, texOffsetY + 0.0625f);
 								glVertex3f(-0.5f + x, -0.5f + y, 0.5f + z);
@@ -242,8 +235,6 @@ public class Chunk extends RenderObject {
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.LEFT).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.LEFT).y;
 
-								quadCounter++;
-
 								glTexCoord2f(texOffsetX, texOffsetY + 0.0625f);
 								glVertex3f(-0.5f + x, -0.5f + y, -0.5f + z);
 
@@ -263,8 +254,6 @@ public class Chunk extends RenderObject {
 								glColor3f(colorOffset.x * shadowIntens * daylight, colorOffset.y * shadowIntens * daylight, colorOffset.z * shadowIntens * daylight);
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.RIGHT).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.RIGHT).y;
-
-								quadCounter++;
 
 								glTexCoord2f(texOffsetX, texOffsetY);
 								glVertex3f(0.5f + x, 0.5f + y, -0.5f + z);
@@ -286,8 +275,6 @@ public class Chunk extends RenderObject {
 								glColor3f(colorOffset.x * shadowIntens * daylight, colorOffset.y * shadowIntens * daylight, colorOffset.z * shadowIntens * daylight);
 								float texOffsetX = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.BOTTOM).x;
 								float texOffsetY = BlockHelper.getTextureOffsetFor(blocks[x][y][z], BlockHelper.SIDE.BOTTOM).y;
-
-								quadCounter++;
 
 								glTexCoord2f(texOffsetX, texOffsetY + 0.0625f);
 								glVertex3f(-0.5f + x, -0.5f + y, -0.5f + z);
@@ -326,9 +313,9 @@ public class Chunk extends RenderObject {
 
 			glCallList(displayListID);
 
-			if (Configuration.displayDebug) {
-				glCallList(this.displayListDebugID);
-			}
+			//if (Configuration.displayDebug) {
+			//	glCallList(this.displayListDebugID);
+			//}
 
 			glPopMatrix();
 
@@ -346,12 +333,10 @@ public class Chunk extends RenderObject {
 
 	/**
 	 * Get block type from position
-	 *
-	 * @param pos
 	 * @return
 	 */
-	public int getBlock(Vector3f pos) {
-		return this.blocks[(int) pos.x][(int) pos.y][(int) pos.z];
+	public int getBlock(int x, int y, int z) {
+		return blocks[x][y][z];
 	}
 
 	/**

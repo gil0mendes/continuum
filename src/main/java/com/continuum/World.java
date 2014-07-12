@@ -32,35 +32,38 @@ public class World extends RenderObject
 	// Time since last chunk update
 	long timeSinceLastChunkUpdate = 0;
 
+	// Update thread
+	private Thread updateThread = null;
+
 	// Player
 	private Player player = null;
 
 	public World() {
 		chunks = new Chunk[(int) Configuration.viewingDistanceInChunks.x][(int) Configuration.viewingDistanceInChunks.y][(int) Configuration.viewingDistanceInChunks.z];
 
-		Thread t = new Thread(new Runnable() {
+		updateThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				updateWorld();
 			}
 		});
-
-		t.start();
+		updateThread.start();
 	}
 
 	@Override
 	public void render() {
 		glPushMatrix();
 		glTranslatef(-512f, 0.0f, -512f);
+		int chunkUpdates = 0;
 
 		for (int x = 0; x < (int) Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < (int) Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < (int) Configuration.viewingDistanceInChunks.z; z++) {
 					if (chunks[x][y][z] != null) {
 
-						if (System.currentTimeMillis() - timeSinceLastChunkUpdate > 0) {
+						if (chunkUpdates < 15 && !updateThread.isAlive()) {
 							if (chunks[x][y][z].updateDisplayList()) {
-								timeSinceLastChunkUpdate = System.currentTimeMillis();
+								chunkUpdates++;
 							}
 						}
 
@@ -114,7 +117,7 @@ public class World extends RenderObject
 	}
 
 	public final void setBlock(Vector3f pos, int type) {
-		Vector3f chunkPos = new Vector3f((float) Math.floor(pos.x / Chunk.chunkDimensions.x), (float) Math.floor(pos.y / Chunk.chunkDimensions.y), (float) Math.floor(pos.z / Chunk.chunkDimensions.z));
+		Vector3f chunkPos = new Vector3f((int) (pos.x / Chunk.chunkDimensions.x), (int) (pos.y / Chunk.chunkDimensions.y), (int) (pos.z / Chunk.chunkDimensions.z));
 		Vector3f blockCoord = new Vector3f(pos.x - (chunkPos.x * Chunk.chunkDimensions.x), pos.y - (chunkPos.y * Chunk.chunkDimensions.y), pos.z - (chunkPos.z * Chunk.chunkDimensions.z));
 
 		try {
@@ -135,12 +138,12 @@ public class World extends RenderObject
 	}
 
 	public final int getBlock(Vector3f pos) {
-		Vector3f chunkPos = new Vector3f((float) Math.floor(pos.x / Chunk.chunkDimensions.x), (float) Math.floor(pos.y / Chunk.chunkDimensions.y), (float) Math.floor(pos.z / Chunk.chunkDimensions.z));
+		Vector3f chunkPos = new Vector3f((int) (pos.x / Chunk.chunkDimensions.x), (int) (pos.y / Chunk.chunkDimensions.y), (int) (pos.z / Chunk.chunkDimensions.z));
 		Vector3f blockCoord = new Vector3f(pos.x - (chunkPos.x * Chunk.chunkDimensions.x), pos.y - (chunkPos.y * Chunk.chunkDimensions.y), pos.z - (chunkPos.z * Chunk.chunkDimensions.z));
 
 		try {
 			Chunk c = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z];
-			return c.getBlock(blockCoord);
+			return c.getBlock((int) blockCoord.x, (int) blockCoord.y, (int) blockCoord.z);
 		} catch (Exception e) {
 			return 0;
 		}
@@ -150,12 +153,12 @@ public class World extends RenderObject
 		pos.x += 512;
 		pos.z += 512;
 
-		Vector3f chunkPos = new Vector3f((float) Math.floor(pos.x / Chunk.chunkDimensions.x), (float) Math.floor(pos.y / Chunk.chunkDimensions.y), (float) Math.floor(pos.z / Chunk.chunkDimensions.z));
+		Vector3f chunkPos = new Vector3f((int) (pos.x / Chunk.chunkDimensions.x), (int) (pos.y / Chunk.chunkDimensions.y), (int) (pos.z / Chunk.chunkDimensions.z));
 		Vector3f blockCoord = new Vector3f(pos.x - (chunkPos.x * Chunk.chunkDimensions.x), pos.y - (chunkPos.y * Chunk.chunkDimensions.y), pos.z - (chunkPos.z * Chunk.chunkDimensions.z));
 
 		try {
 			Chunk c = chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z];
-			return (c.getBlock(blockCoord) > 0);
+			return (c.getBlock((int) blockCoord.x, (int) blockCoord.y, (int) blockCoord.z) > 0);
 		} catch (Exception e) {
 			return false;
 		}
