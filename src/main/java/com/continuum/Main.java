@@ -25,8 +25,8 @@ public class Main
 	// Constant values
 	public static final String GAME_TITLE = "Continuum (Pre) Alpha";
 	private static long timerTicksPerSecond = Sys.getTimerResolution();
-	public static final float DISPLAY_WIDTH = 800.0f;
-	public static final float DISPLAY_HEIGHT = 600.0f;
+	public static final float DISPLAY_WIDTH = 1024.0f;
+	public static final float DISPLAY_HEIGHT = 768.0f;
 
 	// Logger
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -164,20 +164,10 @@ public class Main
 	 * Initialize OpenGL
 	 */
 	private void initGL() {
-		glClearColor(0.5f, 0.75f, 1.0f, 1.0f);
-		glLineWidth(2.0f);
-
-		// Set shade model
-		glShadeModel(GL_FLAT);
-
 		// Enable OpenGL features
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_FOG);
-
-		// Disable OpenGL features
-		glDisable(GL_NORMALIZE);
-		glDisable(GL_LIGHTING);
 
 		// --- Configure FOG
 		float[] fogColor = {0.75f, 0.75f, 0.75f, 1f};;
@@ -188,18 +178,20 @@ public class Main
 		glFog(GL_FOG_COLOR, fogColorBuffer);
 		glFogi(GL_FOG_MODE, GL_LINEAR);
 		glFogf(GL_FOG_DENSITY, 1.0f);
-		glHint(GL_FOG_HINT, GL_DONT_CARE);
 		glFogf(GL_FOG_START, 256.0f);
 		glFogf(GL_FOG_END, 512.0f);
 
 		// Initialize world
-		this.world = new World("WORLD1", "WoW");
+		this.world = new World("WORLD1", "-7492801512473941435");
 
 		// Initialize player
 		this.player = new Player(this.world);
 
 		// Initialize Chunks
 		Chunk.init();
+
+		// Initialize world
+		world.init();
 	}
 
 	/**
@@ -222,18 +214,15 @@ public class Main
 	 * Render the scene
 	 */
 	private void render() {
+		glClearColor(world.getDaylight()-0.25f, world.getDaylight(), world.getDaylight()+0.25f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
-
-		glPushMatrix();
 
 		// Render player
 		this.player.render();
 
 		// Render all chunks
 		Chunk.renderAllChunks();
-
-		glPopMatrix();
 	}
 
 	/**

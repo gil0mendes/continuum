@@ -1,11 +1,12 @@
 package com.continuum;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.util.vector.Vector3f;
 
-import java.nio.IntBuffer;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * World class
@@ -14,26 +15,32 @@ import java.util.Random;
  */
 public class World extends RenderObject
 {
-	Random rand;
+	// Daylight intensity
+	private float daylight = 0.75f;
+
+	private Random rand;
 
 	// Title of the world
-	String title = "WORLD1";
+	private String title = "WORLD1";
 
 	// Seed
-	String seed = "SEED1";
+	private String seed = "ABCDEF";
 
 	// Used for updating/generating the world
 	private Thread updateThread = null;
 
 	// The chunks to display
-	Chunk[][][] chunks;
+	private Chunk[][][] chunks;
+
+	// Logger
+	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
+	// Day & Night
+	private Timer dayNight = new Timer();
 
 	// The perlin noise generator used
 	// for creating the procedural terrain
 	private PerlinNoiseGenerator pGen;
-
-	// Dimensions of the finite world
-	private static final Vector3f worldDimensions = new Vector3f(128, 256, 128);
 
 	/**
 	 * Init. world
@@ -50,9 +57,49 @@ public class World extends RenderObject
 		updateThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				updateWorld();
+				long timeStart = System.currentTimeMillis();
+
+				LOGGER.log(Level.INFO, "Generating chunks.");
+
+				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
+					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
+						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
+							generateChunk(new Vector3f(x, y, z));
+						}
+					}
+				}
+
+				LOGGER.log(Level.INFO, "World updated ({0}s).", (System.currentTimeMillis() - timeStart) / 1000d);
 			}
 		});
+	}
+
+	public void init() {
+		dayNight.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				daylight -= 0.15;
+
+				if (daylight < 0.25f) {
+					daylight = 0.75f;
+				}
+
+				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
+					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
+						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
+							Chunk c = chunks[x][y][z];
+
+							if (c != null) {
+								LOGGER.log(Level.INFO, "Updating daylight.");
+								c.markAsDirty();
+							}
+						}
+					}
+				}
+			}
+		}, 15000, 15000);
+
 		updateThread.start();
 	}
 
@@ -66,17 +113,14 @@ public class World extends RenderObject
 		for (int x = 0; x < (int) Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < (int) Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < (int) Configuration.viewingDistanceInChunks.z; z++) {
-
 					if (chunks[x][y][z] != null) {
-						if (!updateThread.isAlive()) {
-							if (chunkUpdates < 15) {
+						if (chunkUpdates < 3) {
 
-								boolean updated1 = chunks[x][y][z].updateDisplayList(true);
-								boolean updated2 = chunks[x][y][z].updateDisplayList(false);
+							boolean updated1 = chunks[x][y][z].updateDisplayList(true);
+							boolean updated2 = chunks[x][y][z].updateDisplayList(false);
 
-								if (updated1 || updated2) {
-									chunkUpdates++;
-								}
+							if (updated1 || updated2) {
+								chunkUpdates++;
 							}
 						}
 					}
@@ -87,22 +131,21 @@ public class World extends RenderObject
 
 	/**
 	 * Generates the world.
-	 * 
 	 * NOTE: Will be replaced with a per-chunk-system later.
 	 */
-	public final void updateWorld() {
+	public final void generateChunk(Vector3f chunkPosition) {
 
-		long timeStart = System.currentTimeMillis();
+		Vector3f chunkOrigin = new Vector3f(chunkPosition.x * Chunk.chunkDimensions.x, chunkPosition.y * Chunk.chunkDimensions.y, chunkPosition.z * Chunk.chunkDimensions.z);
 
-		for (int x = 0; x < worldDimensions.x; x++) {
-			for (int z = 0; z < worldDimensions.z; z++) {
-				setBlock(new Vector3f(x, 0, z), 0x3);
+		for (int x = (int) chunkOrigin.x; x < (int) chunkOrigin.x + Chunk.chunkDimensions.x; x++) {
+			for (int z = (int) chunkOrigin.z; z < (int) chunkOrigin.z + Chunk.chunkDimensions.z; z++) {
+				setBlock(new Vector3f(x, 0, z), 0x3, false);
 			}
 
 		}
 
-		for (int x = 0; x < worldDimensions.x; x++) {
-			for (int z = 0; z < worldDimensions.z; z++) {
+		for (int x = (int) chunkOrigin.x; x < (int) chunkOrigin.x + Chunk.chunkDimensions.x; x++) {
+			for (int z = (int) chunkOrigin.z; z < (int) chunkOrigin.z + Chunk.chunkDimensions.z; z++) {
 
 				float height = calcTerrainElevation(x, z) + (calcTerrainRoughness(x, z) * calcTerrainDetail(x, z)) * 64 + 64;
 
@@ -111,28 +154,32 @@ public class World extends RenderObject
 				while (y > 0) {
 					if (getCaveDensityAt(x, y, z) > 0) {
 						if (height == y) {
-							setBlock(new Vector3f(x, y, z), 0x1);
+							setBlock(new Vector3f(x, y, z), 0x1, false);
 
-							if (rand.nextFloat() < 0.01f) {
+							if (rand.nextFloat() < 0.001f) {
 								generateTree(new Vector3f(x, y, z));
 							}
 						} else {
-							setBlock(new Vector3f(x, y, z), 0x2);
-						}
-					}
-
-					if (y < 50) {
-						if (getBlock(new Vector3f(x, y, z)) == 0) {
-							setBlock(new Vector3f(x, y, z), 0x4);
+							setBlock(new Vector3f(x, y, z), 0x2, false);
 						}
 					}
 					y--;
 				}
 
+				// Generate water
+				for (int i = 32; i > 0; i--) {
+					if (getBlock(new Vector3f(x, i, z)) == 0) {
+						setBlock(new Vector3f(x, i, z), 0x4, false);
+					}
+				}
 			}
 		}
 
-		System.out.println("World updated (" + (System.currentTimeMillis() - timeStart) / 1000d + "s).");
+		Chunk c = chunks[(int) chunkPosition.x][(int) chunkPosition.y][(int) chunkPosition.z];
+
+		if (c != null) {
+			c.markAsDirty();
+		}
 	}
 
 	private void generateTree(Vector3f pos) {
@@ -141,15 +188,15 @@ public class World extends RenderObject
 
 		// Generate tree trunk
 		for (int i = 0; i < height; i++) {
-			setBlock(new Vector3f(pos.x, pos.y + i, pos.z), 0x5);
+			setBlock(new Vector3f(pos.x, pos.y + i, pos.z), 0x5, true);
 		}
 
 		// Generate the treetop
-		for (int y = height / 2; y < height+2; y++) {
+		for (int y = height / 2; y < height + 2; y++) {
 			for (int x = -3; x < 3; x++) {
 				for (int z = -3; z < 3; z++) {
 					if (rand.nextFloat() < 0.6 && x != 0 && z != 0) {
-						setBlock(new Vector3f(pos.x + x, pos.y + y, pos.z + z), 0x6);
+						setBlock(new Vector3f(pos.x + x, pos.y + y, pos.z + z), 0x6, true);
 					}
 				}
 			}
@@ -159,10 +206,11 @@ public class World extends RenderObject
 
 	/**
 	 * Sets the type of a block at a given position.
+	 *
 	 * @param pos
 	 * @param type
 	 */
-	public final void setBlock(Vector3f pos, int type) {
+	public final void setBlock(Vector3f pos, int type, boolean dirty) {
 		Vector3f chunkPos = calcChunkPos(pos);
 		Vector3f blockCoord = calcBlockPos(pos, chunkPos);
 
@@ -171,13 +219,13 @@ public class World extends RenderObject
 
 			// Create a new chunk if needed
 			if (c == null) {
-				//System.out.println("Generating chunk at X: " + chunkPos.x + ", Y: " + chunkPos.y + ", Z: " + chunkPos.z);
 				c = new Chunk(this, new Vector3f(chunkPos.x, chunkPos.y, chunkPos.z));
+				//LOGGER.log(Level.INFO, "Generating chunk at X: {0}, Y: {1}, Z: {2}", new Object[]{chunkPos.x, chunkPos.y, chunkPos.z});
 				chunks[(int) chunkPos.x][(int) chunkPos.y][(int) chunkPos.z] = c;
 			}
 
 			// Generate or update the corresponding chunk
-			c.setBlock(blockCoord, type);
+			c.setBlock(blockCoord, type, dirty);
 		} catch (Exception e) {
 			return;
 		}
@@ -233,7 +281,7 @@ public class World extends RenderObject
 	 */
 	private float calcTerrainElevation(float x, float z) {
 		float result = 0.0f;
-		result += pGen.noise(0.2f * x, 0.2f, 0.2f * z);
+		result += pGen.noise(0.009f * x, 0.009f, 0.009f * z) * 128.0f;
 		return result;
 	}
 
@@ -242,7 +290,7 @@ public class World extends RenderObject
 	 */
 	private float calcTerrainRoughness(float x, float z) {
 		float result = 0.0f;
-		result += pGen.noise(0.01f * x, 0.01f, 0.01f * z);
+		result += pGen.noise(0.09f * x, 0.09f, 0.09f * z);
 		return result;
 	}
 
@@ -251,7 +299,7 @@ public class World extends RenderObject
 	 */
 	private float calcTerrainDetail(float x, float z) {
 		float result = 0.0f;
-		result += pGen.noise(0.1f * x, 0.1f, 0.1f * z);
+		result += pGen.noise(0.2f * x, 0.2f, 0.2f * z);
 		return result;
 	}
 
@@ -260,7 +308,11 @@ public class World extends RenderObject
 	 */
 	private float getCaveDensityAt(float x, float y, float z) {
 		float result = 0.0f;
-		result += pGen.noise(0.005f * x, 0.005f * y, 0.005f * z);
+		result += pGen.noise(0.02f * x, 0.02f * y, 0.02f * z);
 		return result;
+	}
+
+	public float getDaylight() {
+		return daylight;
 	}
 }
