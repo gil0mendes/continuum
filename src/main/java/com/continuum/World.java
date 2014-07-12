@@ -10,21 +10,14 @@ import java.util.logging.Logger;
 
 /**
  * World class
- *
+ * <p/>
  * Created by gil0mendes on 12/07/14.
  */
-public class World extends RenderObject
-{
+public class World extends RenderObject {
 	// Daylight intensity
 	private float daylight = 0.75f;
 
 	private Random rand;
-
-	// Title of the world
-	private String title = "WORLD1";
-
-	// Seed
-	private String seed = "ABCDEF";
 
 	// Used for updating/generating the world
 	private Thread updateThread = null;
@@ -104,7 +97,7 @@ public class World extends RenderObject
 	}
 
 	/*
-     * Update the world.
+	 * Update the world.
      */
 	@Override
 	public void update(long delta) {
@@ -152,18 +145,20 @@ public class World extends RenderObject
 				float y = height;
 
 				while (y > 0) {
-					if (getCaveDensityAt(x, y, z) > 0) {
+					if (getCaveDensityAt(x, y, z) < 0.25) {
 						if (height == y) {
 							setBlock(new Vector3f(x, y, z), 0x1, false);
-
-							if (rand.nextFloat() < 0.001f) {
-								generateTree(new Vector3f(x, y, z));
-							}
 						} else {
 							setBlock(new Vector3f(x, y, z), 0x2, false);
 						}
 					}
+
 					y--;
+				}
+
+
+				if (rand.nextFloat() < 150f / 100000f && height > 32) {
+					generateTree(new Vector3f(x, height, z));
 				}
 
 				// Generate water
@@ -184,7 +179,7 @@ public class World extends RenderObject
 
 	private void generateTree(Vector3f pos) {
 
-		int height = rand.nextInt() % 5 + 6;
+		int height = rand.nextInt() % 5 + 3;
 
 		// Generate tree trunk
 		for (int i = 0; i < height; i++) {
@@ -192,10 +187,10 @@ public class World extends RenderObject
 		}
 
 		// Generate the treetop
-		for (int y = height / 2; y < height + 2; y++) {
-			for (int x = -3; x < 3; x++) {
-				for (int z = -3; z < 3; z++) {
-					if (rand.nextFloat() < 0.6 && x != 0 && z != 0) {
+		for (int y = height / 2; y < height + 6; y++) {
+			for (int x = -4; x < 4; x++) {
+				for (int z = -4; z < 4; z++) {
+					if (rand.nextFloat() < 0.75 && !(x == 0 && z == 0)) {
 						setBlock(new Vector3f(pos.x + x, pos.y + y, pos.z + z), 0x6, true);
 					}
 				}
@@ -206,7 +201,6 @@ public class World extends RenderObject
 
 	/**
 	 * Sets the type of a block at a given position.
-	 *
 	 * @param pos
 	 * @param type
 	 */
