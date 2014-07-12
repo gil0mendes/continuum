@@ -22,21 +22,23 @@ import org.lwjgl.opengl.DisplayMode;
  */
 public class Main
 {
-	// Time at last frame
-	private long lastFrame;
-
-	// Frames per second
-	private int fps;
-
-	// Last fps time
-	protected long lastFPS;
-
-	// Window settings
-	public static final float DISPLAY_WIDTH = 1152.0f;
-	public static final float DISPLAY_HEIGHT = 648.0f;
+	// Constant values
+	public static final String GAME_TITLE = "Continuum (Pre) Alpha";
+	private static long timerTicksPerSecond = Sys.getTimerResolution();
+	public static final float DISPLAY_WIDTH = 800.0f;
+	public static final float DISPLAY_HEIGHT = 600.0f;
 
 	// Logger
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
+	// Time at the start of the last render loop
+	private long lastLoopTime = getTime();
+
+	// Time at last fps measurement.
+	private long lastFpsTime;
+
+	// Measured frames per second.
+	private int fps;
 
 	// World
 	private World world;
@@ -80,32 +82,12 @@ public class Main
 	public Main() {}
 
 	/**
-	 * Get the time in milliseconds
+	 * Get the current time in milliseconds
 	 *
 	 * @return The system time in milliseconds
 	 */
 	public long getTime() {
-		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
-	}
-
-	public int getDelta() {
-		long time = getTime();
-		int delta = (int) (time - lastFrame);
-		lastFrame = time;
-
-		return delta;
-	}
-
-	/**
-	 * Calculate the FPS and set it in the title bar
-	 */
-	public void updateFPS() {
-		if (getTime() - lastFPS > 1000) {
-			Display.setTitle("FPS: " + fps);
-			fps = 0;
-			lastFPS += 1000;
-		}
-		fps++;
+		return (Sys.getTime() * 1000) / timerTicksPerSecond;
 	}
 
 	/**
@@ -145,23 +127,34 @@ public class Main
 	 * Start main loop
 	 */
 	public void start() {
-		//initGL();
-		getDelta();
-		lastFPS = getTime();
-
 		while (!Display.isCloseRequested()) {
-			int delta = getDelta();
+			// Sync. at 60 FPS
+			Display.sync(60);
 
-			updateFPS();
+			long delta = getTime() - lastLoopTime;
+			lastLoopTime = getTime();
+			lastFpsTime += delta;
+			fps++;
 
-			processKeyboard();
-			processMouse();
+			// Update the FPS display in the title bar (only) at every second passed
+			if (lastFpsTime >= 1000) {
+				Display.setTitle(GAME_TITLE + " (FPS: " + fps + ")");
+				lastFpsTime = 0;
+				fps = 0;
+			}
 
+			// Update the scene
 			update(delta);
+
+			// Render the scene
 			render();
 
+			// Update Display
 			Display.update();
-			Display.sync(60);
+
+			// Process the keyboard and mouse input
+			processKeyboard();
+			processMouse();
 		}
 
 		Display.destroy();
@@ -200,7 +193,7 @@ public class Main
 		glFogf(GL_FOG_END, 512.0f);
 
 		// Initialize world
-		this.world = new World();
+		this.world = new World("WORLD1", "WoW");
 
 		// Initialize player
 		this.player = new Player(this.world);
@@ -237,35 +230,16 @@ public class Main
 		// Render player
 		this.player.render();
 
-		// Render world
-		this.world.render();
-
-		// Draw coordinate axis
-		glBegin(GL_LINES);
-		glColor3f(255.0f, 0.0f, 0.0f);
-		glVertex3f(0.0f, 0.0f, 0.0f);
-		glVertex3f(1000.0f, 0.0f, 0.0f);
-		glEnd();
-
-		glBegin(GL_LINES);
-		glColor3f(0.0f, 255.0f, 0.0f);
-		glVertex3f(0.0f, 0.0f, 0.0f);
-		glVertex3f(0.0f, 1000.0f, 0.0f);
-		glEnd();
-
-		glBegin(GL_LINES);
-		glColor3f(0.0f, 0.0f, 255.0f);
-		glVertex3f(0.0f, 0.0f, 0.0f);
-		glVertex3f(0.0f, 0.0f, 1000.0f);
-		glEnd();
+		// Render all chunks
+		Chunk.renderAllChunks();
 
 		glPopMatrix();
 	}
 
 	/**
-	 * Update main char
+	 * Updates the player and the world
 	 */
-	public void update(int delta) {
+	public void update(long delta) {
 		world.update(delta);
 		player.update(delta);
 	}
@@ -280,27 +254,7 @@ public class Main
 	/**
 	 * Process Keyboard data
 	 */
-	private void processKeyboard() {
-		if (Keyboard.isKeyDown(Keyboard.KEY_W))//move forward
-		{
-			this.player.walkForward();
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_S))//move backwards
-		{
-			this.player.walkBackwards();
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_A))//strafe left
-		{
-			this.player.strafeLeft();
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_D))//strafe right
-		{
-			this.player.strafeRight();
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_SPACE)) {
-			this.player.jump();
-		}
-	}
+	private void processKeyboard() {}
 
 
 }
