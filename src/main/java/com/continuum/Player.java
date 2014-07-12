@@ -33,7 +33,7 @@ public class Player extends RenderObject {
 	 */
 	public Player(World parent) {
 		this.parent = parent;
-		this.position = new Vector3f(0f, 256f, 0f);
+		this.position = new Vector3f(0f, 128f, 0f);
 	}
 
 	/**

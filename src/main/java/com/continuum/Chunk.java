@@ -81,45 +81,6 @@ public class Chunk extends RenderObject {
 	}
 
 	public boolean updateDisplayList() {
-		// Draw the outline
-		//if (dirty) {
-		//	displayListDebugID = glGenLists(1);
-		//
-		//	glNewList(displayListDebugID, GL_COMPILE);
-		//	glColor3f(255.0f, 0.0f, 0.0f);
-		//	glBegin(GL_LINE_LOOP);
-		//	glVertex3f(0.0f, 0.0f, 0.0f);
-		//	glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
-		//	glVertex3f(0.0f, chunkDimensions.y, 0.0f);
-		//	glEnd();
-		//
-		//	glBegin(GL_LINE_LOOP);
-		//	glVertex3f(0.0f, 0.0f, 0.0f);
-		//	glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-		//	glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
-		//	glVertex3f(0.0f, chunkDimensions.y, 0.0f);
-		//	glVertex3f(0.0f, 0.0f, 0.0f);
-		//	glEnd();
-		//
-		//	glBegin(GL_LINE_LOOP);
-		//	glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-		//	glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
-		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
-		//	glVertex3f(0.0f, chunkDimensions.y, chunkDimensions.z);
-		//	glVertex3f(0.0f, 0.0f, chunkDimensions.z);
-		//	glEnd();
-		//
-		//	glBegin(GL_LINE_LOOP);
-		//	glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-		//	glVertex3f(chunkDimensions.x, 0.0f, chunkDimensions.z);
-		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, chunkDimensions.z);
-		//	glVertex3f(chunkDimensions.x, chunkDimensions.y, 0.0f);
-		//	glVertex3f(chunkDimensions.x, 0.0f, 0.0f);
-		//	glEnd();
-		//	glEndList();
-		//}
-
 		// If the chunk changed, recreate the display list
 		if (dirty) {
 			if (displayListID == -1) {
@@ -306,20 +267,16 @@ public class Chunk extends RenderObject {
 
 	@Override
 	public void render() {
+		glEnable(GL_TEXTURE_2D);
 
 		if (displayListID != -1) {
 			glPushMatrix();
 			glTranslatef(position.x * (int) chunkDimensions.x, position.y * (int) chunkDimensions.y, position.z * (int) chunkDimensions.z);
-
 			glCallList(displayListID);
-
-			//if (Configuration.displayDebug) {
-			//	glCallList(this.displayListDebugID);
-			//}
-
 			glPopMatrix();
-
 		}
+
+		glDisable(GL_TEXTURE_2D);
 	}
 
 	public static void init() {
@@ -379,7 +336,7 @@ public class Chunk extends RenderObject {
 
 		for (int i = y + 1; i < chunkDimensions.y; i++) {
 			try {
-				if (blocks[x][i][z] > 0) {
+				if (parent.getBlock(getBlockWorldPos(new Vector3f(x, i, z))) > 0) {
 					result = 0.5f;
 					break;
 				}
@@ -388,28 +345,28 @@ public class Chunk extends RenderObject {
 		}
 
 		try {
-			if (blocks[x + 1][y + 1][z] > 0) {
+			if (parent.getBlock(getBlockWorldPos(new Vector3f(x + 1, y + 1, z))) > 0) {
 				result -= 0.15f;
 			}
 		} catch (Exception e) {
 		}
 
 		try {
-			if (blocks[x - 1][y + 1][z] > 0) {
+			if (parent.getBlock(getBlockWorldPos(new Vector3f(x - 1, y + 1, z))) > 0) {
 				result -= 0.15f;
 			}
 		} catch (Exception e) {
 		}
 
 		try {
-			if (blocks[x][y + 1][z + 1] > 0) {
+			if (parent.getBlock(getBlockWorldPos(new Vector3f(x, y + 1, z + 1))) > 0) {
 				result -= 0.15f;
 			}
 		} catch (Exception e) {
 		}
 
 		try {
-			if (blocks[x][y + 1][z - 1] > 0) {
+			if (parent.getBlock(getBlockWorldPos(new Vector3f(x, y + 1, z - 1))) > 0) {
 				result -= 0.15f;
 			}
 		} catch (Exception e) {

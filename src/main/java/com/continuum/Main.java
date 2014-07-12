@@ -162,6 +162,8 @@ public class Main
 		while (!Display.isCloseRequested()) {
 			int delta = getDelta();
 
+			updateFPS();
+
 			processKeyboard();
 			processMouse();
 
@@ -182,15 +184,17 @@ public class Main
 		glClearColor(0.5f, 0.75f, 1.0f, 1.0f);
 		glLineWidth(2.0f);
 
+		// Set shade model
+		glShadeModel(GL_FLAT);
+
 		// Enable OpenGL features
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_FOG);
 
 		// Disable OpenGL features
+		glDisable(GL_NORMALIZE);
 		glDisable(GL_LIGHTING);
-		//glDisable(GL_COLOR_MATERIAL);
 
 		// --- Configure FOG
 		float[] fogColor = {0.75f, 0.75f, 0.75f, 1f};;
@@ -210,9 +214,6 @@ public class Main
 
 		// Initialize player
 		this.player = new Player(this.world);
-
-		// Set player in the world
-		this.world.setPlayer(this.player);
 
 		// Initialize Chunks
 		Chunk.init();
