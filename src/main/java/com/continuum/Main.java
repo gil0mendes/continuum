@@ -4,9 +4,12 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.*;
 
 import java.io.IOException;
+import java.nio.FloatBuffer;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
@@ -183,18 +186,24 @@ public class Main
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_TEXTURE_2D);
-		//glEnable(GL_FOG);
+		glEnable(GL_FOG);
 
 		// Disable OpenGL features
 		glDisable(GL_LIGHTING);
-		glDisable(GL_COLOR_MATERIAL);
+		//glDisable(GL_COLOR_MATERIAL);
 
-		// Configure some features
-		//glFogi(GL_FOG_MODE, GL_LINEAR);
-		//glFogf(GL_FOG_DENSITY, 1.0f);
-		//glHint(GL_FOG_HINT, GL_DONT_CARE);
-		//glFogf(GL_FOG_START, 512.0f);
-		//glFogf(GL_FOG_END, 1024.0f);
+		// --- Configure FOG
+		float[] fogColor = {0.75f, 0.75f, 0.75f, 1f};;
+		FloatBuffer fogColorBuffer = BufferUtils.createFloatBuffer(4);
+		fogColorBuffer.put(fogColor);
+		fogColorBuffer.rewind();
+
+		glFog(GL_FOG_COLOR, fogColorBuffer);
+		glFogi(GL_FOG_MODE, GL_LINEAR);
+		glFogf(GL_FOG_DENSITY, 1.0f);
+		glHint(GL_FOG_HINT, GL_DONT_CARE);
+		glFogf(GL_FOG_START, 256.0f);
+		glFogf(GL_FOG_END, 512.0f);
 
 		// Initialize world
 		this.world = new World();
@@ -217,7 +226,7 @@ public class Main
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(64.0f, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.1f, 1024f);
+		gluPerspective(64.0f, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.1f, 1000f);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
