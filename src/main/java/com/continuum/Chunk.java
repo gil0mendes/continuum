@@ -95,7 +95,8 @@ public class Chunk extends RenderObject {
 		}
 	}
 
-	private void generate() {
+	public void generate() {
+		clear();
 
 		int xOffset = (int) position.x * (int) chunkDimensions.x;
 		int yOffset = (int) position.y * (int) chunkDimensions.y;
@@ -141,7 +142,7 @@ public class Chunk extends RenderObject {
 
 	@Override
 	public String toString() {
-		return String.format("Chunk (%d) cotaining %d Blocks.", chunkID, blockCount());
+		return String.format("Chunk (%d) containing %d Blocks.", chunkID, blockCount());
 	}
 
 	@Override
@@ -221,7 +222,7 @@ public class Chunk extends RenderObject {
 						luminance += parent.getLight(getBlockWorldPosX(x + 1), getBlockWorldPosY(y), getBlockWorldPosZ(z - 1)) * LUMINANCE_INTENS;
 						luminance += parent.getLight(getBlockWorldPosX(x - 1), getBlockWorldPosY(y), getBlockWorldPosZ(z + 1)) * LUMINANCE_INTENS;
 
-						setLight(x, y, z, (float) Math.min(luminance, MAX_LUMINANCE));
+						setLight(x, y, z, (float) Math.min(luminance, MAX_LUMINANCE) + MIN_LIGHT);
 					} else {
 						covered = true;
 					}
@@ -620,8 +621,8 @@ public class Chunk extends RenderObject {
 	 */
 	private float calcTerrainElevation(float x, float z) {
 		float result = 0.0f;
-		result += pGen1.noise(0.002f * x, 0.002f, 0.002f * z) * 90.0f;
-		return Math.abs(result);
+		result += pGen1.noise(0.001f * x + 0.5f, 0.001f + 0.5f, 0.001f * z + 0.5f) * 128.0f;
+		return result;
 	}
 
 	/**
@@ -629,8 +630,8 @@ public class Chunk extends RenderObject {
 	 */
 	private float calcTerrainRoughness(float x, float z) {
 		float result = 0.0f;
-		result += pGen1.noise(0.009f * x, 0.009f, 0.009f * z);
-		return Math.abs(result);
+		result += pGen1.noise(0.009f * x + 0.5f, 0.009f + 0.5f, 0.009f * z + 0.5f);
+		return result;
 	}
 
 	/**
@@ -684,5 +685,14 @@ public class Chunk extends RenderObject {
 			}
 		}
 		return counter;
+	}
+
+	/**
+	 *
+	 */
+	public void destroy() {
+		chunkID = -1;
+		glDeleteLists(displayList, -1);
+		displayList = -1;
 	}
 }

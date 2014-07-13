@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -94,7 +93,7 @@ public class Main {
 		Display.setDisplayMode(new DisplayMode((int) DISPLAY_WIDTH, (int) DISPLAY_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle("Continuum");
-		Display.create(new PixelFormat().withDepthBits(24).withSamples(4));
+		Display.create(new PixelFormat().withDepthBits(24));
 
 		// Keyboard
 		Keyboard.create();
