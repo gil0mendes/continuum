@@ -5,7 +5,7 @@ import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,10 +35,10 @@ public class World extends RenderObject {
 	private Chunk[][][] chunks;
 
 	// Update queue for generating the light and vertex arrays
-	private final Queue<Chunk> chunkUpdateQueue = new LinkedBlockingQueue<Chunk>();
+	private final LinkedBlockingDeque<Chunk> chunkUpdateQueue = new LinkedBlockingDeque<Chunk>();
 
 	// Update queue for generating the display lists
-	private final Queue<Chunk> chunkUpdateQueueDL = new LinkedBlockingQueue<Chunk>();
+	private final LinkedBlockingDeque<Chunk> chunkUpdateQueueDL = new LinkedBlockingDeque<Chunk>();
 
 	// Logger
 	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -68,7 +68,7 @@ public class World extends RenderObject {
 
 				long timeStart = System.currentTimeMillis();
 
-				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Generating chunks. Please wait...");
+				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Generating chunks. Please wait.");
 
 				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
@@ -82,7 +82,7 @@ public class World extends RenderObject {
 				setWorldGenerated(true);
 				player.resetPlayer();
 
-				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Calculating sunlight. Please wait...");
+				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Calculating sunlight. Please wait.");
 
 				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
@@ -93,29 +93,41 @@ public class World extends RenderObject {
 					}
 				}
 
-				LOGGER.log(Level.INFO, "World updated ({0}s).", (System.currentTimeMillis() - timeStart) / 1000d);
+				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "World updated ({0}s).", (System.currentTimeMillis() - timeStart) / 1000d);
 
 				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
 							Chunk c = chunks[x][y][z];
 							c.generateVertexArray();
-							chunkUpdateQueueDL.add(c);
-							;
+
+							if (!chunkUpdateQueueDL.contains(c)) {
+								chunkUpdateQueueDL.add(c);
+							}
 						}
 					}
 				}
 
 				while (true) {
 					while (chunkUpdateQueue.size() > 0 && !disableChunkUpdates) {
-						Chunk c = chunkUpdateQueue.remove();
+
+						Chunk c = null;
+
+						synchronized (chunkUpdateQueue) {
+							c = chunkUpdateQueue.getLast();
+						}
+
 						c.calcSunlight();
 						c.generateVertexArray();
 
-						if (!chunkUpdateQueueDL.contains(c)) {
-							chunkUpdateQueueDL.add(c);
+						synchronized (chunkUpdateQueueDL) {
+							if (!chunkUpdateQueueDL.contains(c)) {
+								chunkUpdateQueueDL.add(c);
+								chunkUpdateQueue.remove(c);
+							}
 						}
 					}
+
 
 					if (Helper.getInstance().getTime() - daytime > 20000) {
 
@@ -130,7 +142,12 @@ public class World extends RenderObject {
 								for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 									for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
 										Chunk c = chunks[x][y][z];
-										chunkUpdateQueue.add(c);
+
+										synchronized (chunkUpdateQueue) {
+											if (!chunkUpdateQueue.contains(c)) {
+												chunkUpdateQueue.add(c);
+											}
+										}
 									}
 								}
 							}
@@ -145,18 +162,25 @@ public class World extends RenderObject {
 	public void init() {
 		updateThread.start();
 
-		// Generates the display list used for displaying the sun.
+		/**
+		 * Generates the display list used for displaying the sun.
+		 */
 		Sphere s = new Sphere();
 		displayListSun = glGenLists(1);
 		glNewList(displayListSun, GL_COMPILE);
 		glColor4f(1.0f, 0.8f, 0.0f, 1.0f);
 		s.draw(256.0f, 16, 32);
 		glEndList();
+
+
 	}
 
 	@Override
 	public void render() {
-		// Draw the sun
+
+		/**
+		 * Draws the sun.
+		 */
 		glPushMatrix();
 		glDisable(GL_FOG);
 		glTranslatef(Configuration.viewingDistanceInChunks.x * Chunk.chunkDimensions.x * 1.5f, Configuration.viewingDistanceInChunks.y * Chunk.chunkDimensions.y, Configuration.viewingDistanceInChunks.z * Chunk.chunkDimensions.z * 1.5f);
@@ -164,7 +188,9 @@ public class World extends RenderObject {
 		glEnable(GL_FOG);
 		glPopMatrix();
 
-		// Render all active chunks.
+		/**
+		 * Render all active chunks.
+		 */
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
@@ -178,23 +204,30 @@ public class World extends RenderObject {
 		}
 	}
 
-	/**
+	/*
 	 * Update everything within the world (e.q. the chunks).
-	 *
-	 * @param delta
 	 */
 	@Override
-	public synchronized void update(long delta) {
+	public void update(long delta) {
+
+		System.out.printf("1:%d 2:%d\n", chunkUpdateQueue.size(), chunkUpdateQueueDL.size());
+
 		int chunkUpdates = 0;
 
 		while (chunkUpdateQueueDL.size() > 0) {
 			if (chunkUpdates < 4) {
-				Chunk c = chunkUpdateQueueDL.remove();
+				Chunk c = null;
+
+				synchronized (chunkUpdateQueueDL) {
+					c = chunkUpdateQueueDL.getLast();
+				}
+
 				c.generateDisplayList();
-				chunkUpdates++;
 
+				synchronized (chunkUpdateQueueDL) {
+					chunkUpdateQueueDL.remove(c);
+				}
 				chunkUpdates++;
-
 			} else {
 				break;
 			}
@@ -202,8 +235,10 @@ public class World extends RenderObject {
 	}
 
 	public void generateForest() {
-		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Generating a forest. Please stand by...");
 
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Generating a forest. Please stand by.");
+
+		disableChunkUpdates = true;
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x * Chunk.chunkDimensions.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y * Chunk.chunkDimensions.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z * Chunk.chunkDimensions.z; z++) {
@@ -215,7 +250,6 @@ public class World extends RenderObject {
 				}
 			}
 		}
-
 		disableChunkUpdates = false;
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Finished generating forest.");
@@ -335,8 +369,10 @@ public class World extends RenderObject {
 			// Generate or update the corresponding chunk
 			c.setBlock(blockPosX, blockPosY, blockPosZ, type);
 
-			if (!chunkUpdateQueue.contains(c)) {
-				chunkUpdateQueue.add(c);
+			synchronized (chunkUpdateQueue) {
+				if (!chunkUpdateQueue.contains(c)) {
+					chunkUpdateQueue.add(c);
+				}
 			}
 		} catch (Exception e) {
 			return;
