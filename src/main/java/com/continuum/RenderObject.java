@@ -25,7 +25,7 @@ public  abstract class RenderObject
 	/**
 	 * Update method
 	 *
-	 * @param long
+	 * @param delta
 	 */
 	public void update(long delta) {}
 
