@@ -36,10 +36,10 @@ public class World extends RenderObject {
 	private Chunk[][][] chunks;
 
 	// Update queue for generating the light and vertex arrays
-	private final PriorityBlockingQueue<Chunk> chunkUpdateQueue = new PriorityBlockingQueue<Chunk>();
+	private final PriorityBlockingQueue<Chunk> chunkUpdateQueue = new PriorityBlockingQueue<Chunk>(2048);
 
 	// Update queue for generating the display lists
-	private final PriorityBlockingQueue<Chunk> chunkUpdateQueueDL = new PriorityBlockingQueue<Chunk>();
+	private final PriorityBlockingQueue<Chunk> chunkUpdateQueueDL = new PriorityBlockingQueue<Chunk>(2048);
 
 	// Logger
 	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -85,7 +85,12 @@ public class World extends RenderObject {
 							chunks[x][y][z] = c;
 							c.generate();
 							c.populate();
-							c.calcSunlight();
+
+							synchronized (chunkUpdateQueue) {
+								if (!chunkUpdateQueue.contains(c)) {
+									chunkUpdateQueue.add(c);
+								}
+							}
 						}
 					}
 				}
@@ -95,35 +100,22 @@ public class World extends RenderObject {
 
 				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "World updated ({0}s).", (System.currentTimeMillis() - timeStart) / 1000d);
 
-				for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
-					for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
-						for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
-							Chunk c = chunks[x][y][z];
-							c.generateVertexArray();
-
-							if (!chunkUpdateQueueDL.contains(c)) {
-								chunkUpdateQueueDL.add(c);
-							}
-						}
-					}
-				}
-
 				while (true) {
-					while (chunkUpdateQueue.size() > 0 && !disableChunkUpdates) {
+					if (!disableChunkUpdates) {
 
 						Chunk c = null;
 
 						synchronized (chunkUpdateQueue) {
-							c = chunkUpdateQueue.remove();
+							c = chunkUpdateQueue.poll();
 						}
 
-						c.calcSunlight();
-						c.generateVertexArray();
-
-						synchronized (chunkUpdateQueueDL) {
-							if (!chunkUpdateQueueDL.contains(c)) {
-								chunkUpdateQueueDL.add(c);
-								chunkUpdateQueue.remove(c);
+						if (c != null) {
+							c.calcSunlight();
+							c.generateVertexArray();
+							synchronized (chunkUpdateQueueDL) {
+								if (!chunkUpdateQueueDL.contains(c)) {
+									chunkUpdateQueueDL.add(c);
+								}
 							}
 						}
 					}
@@ -193,20 +185,15 @@ public class World extends RenderObject {
 	 */
 	@Override
 	public void update(long delta) {
-		int chunkUpdates = 0;
+		Chunk c = null;
 
-		while (chunkUpdateQueueDL.size() > 0) {
-			if (chunkUpdates < 128) {
-				Chunk c = null;
+		for (int i = 0; i < 4; i++) {
+			synchronized (chunkUpdateQueueDL) {
+				c = chunkUpdateQueueDL.poll();
+			}
 
-				synchronized (chunkUpdateQueueDL) {
-					c = chunkUpdateQueueDL.remove();
-				}
-
+			if (c != null) {
 				c.generateDisplayList();
-				chunkUpdates++;
-			} else {
-				break;
 			}
 		}
 	}
@@ -379,10 +366,13 @@ public class World extends RenderObject {
 
 		try {
 			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
-			return c.getBlock(blockPosX, blockPosY, blockPosZ);
+			if (c.getPosition().x == calcChunkPosX(x) && c.getPosition().y == calcChunkPosY(y) && c.getPosition().z == calcChunkPosZ(z)) {
+				return c.getBlock(blockPosX, blockPosY, blockPosZ);
+			}
 		} catch (Exception e) {
-			return 0;
 		}
+
+		return 0;
 	}
 
 	/**
@@ -399,10 +389,13 @@ public class World extends RenderObject {
 
 		try {
 			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
-			return c.getLight(blockPosX, blockPosY, blockPosZ);
+			if (c.getPosition().x == calcChunkPosX(x) && c.getPosition().y == calcChunkPosY(y) && c.getPosition().z == calcChunkPosZ(z)) {
+				return c.getLight(blockPosX, blockPosY, blockPosZ);
+			}
 		} catch (Exception e) {
-			return 0.0f;
 		}
+
+		return 0.0f;
 	}
 
 	private int calcPlayerChunkOffsetX() {
@@ -447,7 +440,6 @@ public class World extends RenderObject {
 							c.setPosition(pos);
 							c.generate();
 							c.populate();
-							System.out.println(c.calcDistanceToOrigin());
 
 							synchronized (chunkUpdateQueue) {
 								if (!chunkUpdateQueue.contains(c)) {
@@ -499,7 +491,7 @@ public class World extends RenderObject {
 		return pGen3;
 	}
 
-	public int getCurrentChunkUpdates() {
-		return chunkUpdateQueue.size() + chunkUpdateQueueDL.size();
+	public String chunkUpdateStatus() {
+		return String.format("U: %d UDL: %d", chunkUpdateQueue.size(), chunkUpdateQueueDL.size());
 	}
 }

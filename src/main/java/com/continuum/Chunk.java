@@ -30,9 +30,9 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	private static final float DIM_BLOCK_SIDES = 0.15f;
 
 	// TODO
-	private List<Float> quads 	= new ArrayList<Float>();
-	private List<Float> tex 	= new ArrayList<Float>();
-	private List<Float> color 	= new ArrayList<Float>();
+	private List<Float> quads = new ArrayList<Float>();
+	private List<Float> tex = new ArrayList<Float>();
+	private List<Float> color = new ArrayList<Float>();
 
 	// TODO
 	Random rand = new Random();
@@ -58,7 +58,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 
 	@Override
 	public int compareTo(Chunk o) {
-		return new Double(calcDistanceToOrigin()).compareTo(o.calcDistanceToOrigin())*-1;
+		return new Double(calcDistanceToPlayer()).compareTo(o.calcDistanceToPlayer());
 	}
 
 	/**
@@ -78,7 +78,8 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	public void setLight(int x, int y, int z, float intens) {
 		try {
 			light[x][y][z] = intens;
-		} catch (Exception e) {}
+		} catch (Exception e) {
+		}
 	}
 
 	public Chunk(World p, Vector3f position) {
@@ -120,7 +121,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 				while (y > 0) {
 					setBlock(x, (int) y, z, 0x2);
 
-					if (height-y < height * 0.75f) {
+					if (height - y < height * 0.75f) {
 						setBlock(x, (int) y, z, 0x3);
 					}
 					y--;
@@ -185,16 +186,28 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		blocks[x][y][z] = type;
 	}
 
+	public int getChunkWorldPosX() {
+		return (int) position.x * (int) chunkDimensions.x;
+	}
+
+	public int getChunkWorldPosY() {
+		return (int) position.y * (int) chunkDimensions.y;
+	}
+
+	public int getChunkWorldPosZ() {
+		return (int) position.z * (int) chunkDimensions.z;
+	}
+
 	public int getBlockWorldPosX(int x) {
-		return x + (int) position.x * (int) chunkDimensions.x;
+		return x + getChunkWorldPosX();
 	}
 
 	public int getBlockWorldPosY(int y) {
-		return y + (int) position.y * (int) chunkDimensions.y;
+		return y + getChunkWorldPosY();
 	}
 
 	public int getBlockWorldPosZ(int z) {
-		return z + (int) position.z * (int) chunkDimensions.z;
+		return z + getChunkWorldPosZ();
 	}
 
 	public void calcSunlight() {
@@ -685,14 +698,8 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		return counter;
 	}
 
-	public void destroy() {
-		chunkID = -1;
-		glDeleteLists(displayList, -1);
-		displayList = -1;
-	}
-
-	public double calcDistanceToOrigin() {
-		Vector3f pcv = Vector3f.sub(position, parent.getPlayer().getPosition(), null);
-		return Math.sqrt(Math.pow(pcv.x, 2) + Math.pow(pcv.z, 2));
+	public double calcDistanceToPlayer() {
+		double distance = Math.sqrt(Math.pow(parent.getPlayer().getPosition().x - getChunkWorldPosX(), 2) + Math.pow(parent.getPlayer().getPosition().z - getChunkWorldPosZ(), 2));
+		return distance;
 	}
 }
