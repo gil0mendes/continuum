@@ -4,14 +4,18 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+
 import static org.lwjgl.opengl.GL11.*;
 
 /**
  * The Player class encapsulates all functionality regarding the player.
- *
+ * <p/>
  * E.g. moving, gravity, placing blocks and so on.
  */
 public class Player extends RenderObject {
+	private boolean demoAutoFlyMode = false;
+	private boolean godMode = false;
+
 	// How high the player can jump
 	private static int JUMP_INTENSITY = 10;
 
@@ -32,8 +36,8 @@ public class Player extends RenderObject {
 	private double yaw = 135d;
 	private double pitch;
 
-	private double accX;
-	private double accZ;
+	// Acceleration
+	private double accX, accY, accZ;
 
 	// Gravity (aka acceleration y)
 	private float gravity;
@@ -44,7 +48,8 @@ public class Player extends RenderObject {
 	/**
 	 * Init. the player
 	 */
-	public Player() {}
+	public Player() {
+	}
 
 	/**
 	 * Positions the player within the world
@@ -95,6 +100,9 @@ public class Player extends RenderObject {
 	 */
 	public void walkForward() {
 		accX += (double) wSpeed * Math.sin(Math.toRadians(yaw));
+		if (godMode) {
+			accY -= (double) wSpeed * Math.sin(Math.toRadians(pitch));
+		}
 		accZ -= wSpeed * Math.cos(Math.toRadians(yaw));
 	}
 
@@ -103,6 +111,9 @@ public class Player extends RenderObject {
 	 */
 	public void walkBackwards() {
 		accX -= (double) wSpeed * Math.sin(Math.toRadians(yaw));
+		if (godMode) {
+			accY += (double) wSpeed * Math.sin(Math.toRadians(pitch));
+		}
 		accZ += (double) wSpeed * Math.cos(Math.toRadians(yaw));
 	}
 
@@ -131,13 +142,12 @@ public class Player extends RenderObject {
 	}
 
 	private boolean checkForCollision(Vector3f position) {
-
 		if (getParent() != null) {
 			return getParent().isHitting((int) (position.x + 0.5f), (int) position.y, (int) (position.z + 0.5f));
 
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	/**
@@ -204,6 +214,10 @@ public class Player extends RenderObject {
 			parent.generateTree((int) calcViewBlockPosition().x, (int) calcViewBlockPosition().y, (int) calcViewBlockPosition().z);
 		} else if (Keyboard.isKeyDown(Keyboard.KEY_U)) {
 			parent.updateAllChunks();
+		} else if (Keyboard.isKeyDown(Keyboard.KEY_G)) {
+			this.godMode = !godMode;
+		} else if (Keyboard.isKeyDown(Keyboard.KEY_H)) {
+			this.demoAutoFlyMode = !demoAutoFlyMode;
 		}
 	}
 
@@ -233,38 +247,47 @@ public class Player extends RenderObject {
 
 			boolean hitting = parent.isHitting((int) (getPosition().x + 0.5f), (int) (getPosition().y - PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
 
-            /*
-             * Apply gravity.
-             */
-			if (!hitting) {
-				if (gravity > -MAX_GRAVITY) {
-					gravity -= 0.5f;
+			if (!godMode) {
+				/*
+                 * Apply gravity.
+                 */
+				if (!hitting) {
+					if (gravity > -MAX_GRAVITY) {
+						gravity -= 0.5f;
+					}
+					getPosition().y += (gravity / 1000.0f) * delta;
+				} else if (gravity > 0.0f) {
+					getPosition().y += (gravity / 1000.0f) * delta;
+				} else {
+					gravity = 0.0f;
 				}
-				getPosition().y += (gravity / 1000.0f) * delta;
-			} else if (gravity > 0.0f) {
-				getPosition().y += (gravity / 1000.0f) * delta;
-			} else {
-				gravity = 0.0f;
+
+				Vector2f dir = new Vector2f((float) accX, (float) accZ);
+				try {
+					dir.normalise();
+				} catch (Exception e) {}
+
+				/**
+				 * Collision detection with objects along the x/z-plane.
+				 */
+				if (checkForCollision(new Vector3f(getPosition().x + dir.x * 0.1f, getPosition().y - PLAYER_HEIGHT + 1, getPosition().z + dir.y * 0.1f))) {
+					accX = 0;
+					accZ = 0;
+				}
+
 			}
 
-			Vector2f dir = new Vector2f((float) accX, (float) accZ);
-			try {
-				dir.normalise();
-			} catch (Exception e) {
-			}
-
-			/**
-			 * Collision detection with objects along the x/z-plane.
-			 */
-			if (checkForCollision(new Vector3f(getPosition().x + dir.x * 0.1f, getPosition().y - PLAYER_HEIGHT + 1, getPosition().z + dir.y * 0.1f))) {
-				accX = 0;
-				accZ = 0;
+			if (demoAutoFlyMode) {
+				accX = 8.f;
+				accZ = 8.f;
 			}
 
 			getPosition().x += (accX / 1000.0f) * delta;
+			getPosition().y += (accY / 1000.0f) * delta;
 			getPosition().z += (accZ / 1000.0f) * delta;
 
 			accX = 0;
+			accY = 0;
 			accZ = 0;
 
 		}
@@ -279,6 +302,7 @@ public class Player extends RenderObject {
 
 	/**
 	 * Returns the parent world.
+	 *
 	 * @return the parent world
 	 */
 	public World getParent() {
@@ -287,6 +311,7 @@ public class Player extends RenderObject {
 
 	/**
 	 * Sets the parent world an resets the player.
+	 *
 	 * @param parent the parent world
 	 */
 	public void setParent(World parent) {

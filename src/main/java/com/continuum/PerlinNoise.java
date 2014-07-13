@@ -39,8 +39,8 @@ public class PerlinNoise
 			138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
 	};
 
-	public PerlinNoise(String seed) {
-		rand = new Random(seed.hashCode());
+	public PerlinNoise(int seed) {
+		rand = new Random(seed);
 
 		for (int i = 0; i < noisePerm.length; i++) {
 			noisePerm[i] = Math.abs(rand.nextInt()) % (noisePerm.length / 2);
@@ -82,7 +82,7 @@ public class PerlinNoise
 	}
 
 	float grad(int x, int y, int z, float dx, float dy, float dz) {
-		int h = noisePerm[noisePerm[noisePerm[x] + y] + z];
+		int h = noisePerm[(noisePerm[(noisePerm[x % noisePerm.length] + y) % noisePerm.length] + z) % noisePerm.length];
 		h &= 15;
 		float u = h < 8 || h == 12 || h == 13 ? dx : dy;
 		float v = h < 4 || h == 12 || h == 13 ? dy : dz;
