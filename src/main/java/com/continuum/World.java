@@ -17,8 +17,7 @@ import org.lwjgl.util.glu.*;
  * Created by gil0mendes on 12/07/14.
  */
 public class World extends RenderObject {
-	private long daytime = Helper.getInstance().getTime();
-	private boolean disableChunkUpdates = false;
+	private long daylightTimer = Helper.getInstance().getTime();
 
 	// Has world generated
 	private boolean worldGenerated;
@@ -86,11 +85,7 @@ public class World extends RenderObject {
 							c.generate();
 							c.populate();
 
-							synchronized (chunkUpdateQueue) {
-								if (!chunkUpdateQueue.contains(c)) {
-									chunkUpdateQueue.add(c);
-								}
-							}
+							queueChunkForUpdate(c);
 						}
 					}
 				}
@@ -101,22 +96,23 @@ public class World extends RenderObject {
 				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "World updated ({0}s).", (System.currentTimeMillis() - timeStart) / 1000d);
 
 				while (true) {
-					if (!disableChunkUpdates) {
-
-						Chunk c = null;
-
-						synchronized (chunkUpdateQueue) {
-							c = chunkUpdateQueue.poll();
+					Chunk c = null;
+					synchronized (chunkUpdateQueueDL) {
+						c = chunkUpdateQueue.peek();
+						// Do not add a chunk which is beeing generated at the moment
+						if (chunkUpdateQueueDL.contains(c)) {
+							c = null;
+						} else {
+							chunkUpdateQueue.poll();
 						}
 
-						if (c != null) {
-							c.calcSunlight();
-							c.generateVertexArray();
-							synchronized (chunkUpdateQueueDL) {
-								if (!chunkUpdateQueueDL.contains(c)) {
-									chunkUpdateQueueDL.add(c);
-								}
-							}
+					}
+
+					if (c != null) {
+						c.calcSunlight();
+						c.generateVertexArray();
+						synchronized (chunkUpdateQueueDL) {
+							chunkUpdateQueueDL.add(c);
 						}
 					}
 				}
@@ -129,6 +125,18 @@ public class World extends RenderObject {
 			public void run() {
 				while (true) {
 					updateInfWorld();
+
+					// Update day/night
+					if (Helper.getInstance().getTime() - daylightTimer > 20000) {
+						daylight -= 0.2;
+
+						if (daylight <= 0.1f) {
+							daylight = 0.9f;
+						}
+
+						daylightTimer = Helper.getInstance().getTime();
+						updateAllChunks();
+					}
 				}
 			}
 		});
@@ -147,8 +155,6 @@ public class World extends RenderObject {
 		glColor4f(1.0f, 0.8f, 0.0f, 1.0f);
 		s.draw(256.0f, 16, 32);
 		glEndList();
-
-
 	}
 
 	@Override
@@ -189,11 +195,15 @@ public class World extends RenderObject {
 
 		for (int i = 0; i < 4; i++) {
 			synchronized (chunkUpdateQueueDL) {
-				c = chunkUpdateQueueDL.poll();
+				c = chunkUpdateQueueDL.peek();
 			}
 
 			if (c != null) {
 				c.generateDisplayList();
+
+				synchronized (chunkUpdateQueueDL) {
+					chunkUpdateQueueDL.remove(c);
+				}
 			}
 		}
 	}
@@ -202,26 +212,28 @@ public class World extends RenderObject {
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Generating a forest. Please stand by.");
 
-		disableChunkUpdates = true;
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x * Chunk.chunkDimensions.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y * Chunk.chunkDimensions.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z * Chunk.chunkDimensions.z; z++) {
 					if (getBlock(x, y, z) == 0x1) {
 						if (rand.nextFloat() > 0.9984f) {
-							generateTree(x, y + 1, z);
+							if (rand.nextBoolean()) {
+								generateTree(x, y + 1, z);
+							} else {
+								generatePineTree(x, y + 1, z);
+							}
 						}
 					}
 				}
 			}
 		}
-		disableChunkUpdates = false;
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Finished generating forest.");
 	}
 
 	public void generateTree(int posX, int posY, int posZ) {
 
-		int height = rand.nextInt() % 6 + 12;
+		int height = rand.nextInt() % 2 + 6;
 
 		// Generate tree trunk
 		for (int i = 0; i < height; i++) {
@@ -229,12 +241,28 @@ public class World extends RenderObject {
 		}
 
 		// Generate the treetop
-		for (int y = height / 4; y
-				< height + 2; y += 2) {
-			for (int x = -(height / 2 - y / 2); x
-					<= (height / 2 - y / 2); x++) {
-				for (int z = -(height / 2 - y / 2); z
-						<= (height / 2 - y / 2); z++) {
+		for (int y = height - 2; y < height + 2; y += 1) {
+			for (int x = -2; x < 3; x++) {
+				for (int z = -2; z < 3; z++) {
+					setBlock(posX + x, posY + y, posZ + z, 0x6);
+				}
+			}
+		}
+	}
+
+	public void generatePineTree(int posX, int posY, int posZ) {
+
+		int height = rand.nextInt() % 2 + 12;
+
+		// Generate tree trunk
+		for (int i = 0; i < height; i++) {
+			setBlock(posX, posY + i, posZ, 0x5);
+		}
+
+		// Generate the treetop
+		for (int y = height / 4; y < height; y += 2) {
+			for (int x = -(height / 2 - y / 2); x <= (height / 2 - y / 2); x++) {
+				for (int z = -(height / 2 - y / 2); z <= (height / 2 - y / 2); z++) {
 					if (rand.nextFloat() < 0.95 && !(x == 0 && z == 0)) {
 						setBlock(posX + x, posY + y, posZ + z, 0x6);
 					}
@@ -342,11 +370,7 @@ public class World extends RenderObject {
 			// Generate or update the corresponding chunk
 			c.setBlock(blockPosX, blockPosY, blockPosZ, type);
 
-			synchronized (chunkUpdateQueue) {
-				if (!chunkUpdateQueue.contains(c)) {
-					chunkUpdateQueue.add(c);
-				}
-			}
+			queueChunkForUpdate(c);
 		} catch (Exception e) {
 			return;
 		}
@@ -366,13 +390,14 @@ public class World extends RenderObject {
 
 		try {
 			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
+
 			if (c.getPosition().x == calcChunkPosX(x) && c.getPosition().y == calcChunkPosY(y) && c.getPosition().z == calcChunkPosZ(z)) {
 				return c.getBlock(blockPosX, blockPosY, blockPosZ);
 			}
 		} catch (Exception e) {
 		}
 
-		return 0;
+		return -1;
 	}
 
 	/**
@@ -395,7 +420,7 @@ public class World extends RenderObject {
 		} catch (Exception e) {
 		}
 
-		return 0.0f;
+		return -1f;
 	}
 
 	private int calcPlayerChunkOffsetX() {
@@ -441,11 +466,7 @@ public class World extends RenderObject {
 							c.generate();
 							c.populate();
 
-							synchronized (chunkUpdateQueue) {
-								if (!chunkUpdateQueue.contains(c)) {
-									chunkUpdateQueue.add(c);
-								}
-							}
+							queueChunkForUpdate(c);
 						}
 
 					}
@@ -460,11 +481,7 @@ public class World extends RenderObject {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
 					Chunk c = chunks[x][y][z];
 
-					synchronized (chunkUpdateQueue) {
-						if (!chunkUpdateQueue.contains(c)) {
-							chunkUpdateQueue.add(c);
-						}
-					}
+					queueChunkForUpdate(c);
 				}
 			}
 		}
@@ -493,5 +510,13 @@ public class World extends RenderObject {
 
 	public String chunkUpdateStatus() {
 		return String.format("U: %d UDL: %d", chunkUpdateQueue.size(), chunkUpdateQueueDL.size());
+	}
+
+	private void queueChunkForUpdate(Chunk c) {
+		synchronized (chunkUpdateQueueDL) {
+			if (!chunkUpdateQueue.contains(c)) {
+				chunkUpdateQueue.add(c);
+			}
+		}
 	}
 }

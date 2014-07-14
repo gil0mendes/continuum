@@ -25,8 +25,8 @@ import org.lwjgl.opengl.PixelFormat;
 public class Main {
 	// Constant values
 	public static final String GAME_TITLE = "Continuum (Pre) Alpha";
-	public static final float DISPLAY_WIDTH = 1024.0f;
-	public static final float DISPLAY_HEIGHT = 768.0f;
+	public static final float DISPLAY_WIDTH = 1280.0f;
+	public static final float DISPLAY_HEIGHT = 800.0f;
 
 	// Logger
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -176,7 +176,7 @@ public class Main {
 		this.player = new Player();
 
 		// Initialize world
-		this.world = new World("WORLD1", "123892", this.player);
+		this.world = new World("WORLD1", "0+hz9r59ßhtwpnfgsnoppoßß", this.player);
 
 		// Set parent for player
 		this.player.setParent(this.world);
@@ -196,7 +196,7 @@ public class Main {
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(64.0f, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.01f, 1000f);
+		gluPerspective(64.0f, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0.01f, 2000f);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
