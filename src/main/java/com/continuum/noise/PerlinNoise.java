@@ -1,4 +1,4 @@
-package com.continuum;
+package com.continuum.noise;
 
 import java.util.Random;
 
