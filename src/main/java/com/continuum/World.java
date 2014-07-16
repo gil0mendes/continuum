@@ -23,7 +23,7 @@ public class World extends RenderObject {
 	private boolean worldGenerated;
 
 	// Daylight intensity
-	private float daylight = 0.8f;
+	private float daylight = 1f;
 
 	private Random rand;
 
@@ -130,8 +130,8 @@ public class World extends RenderObject {
 					if (Helper.getInstance().getTime() - daylightTimer > 20000) {
 						daylight -= 0.2;
 
-						if (daylight <= 0.1f) {
-							daylight = 0.9f;
+						if (daylight <= 0.4f) {
+							daylight = 1f;
 						}
 
 						daylightTimer = Helper.getInstance().getTime();
@@ -513,9 +513,36 @@ public class World extends RenderObject {
 	}
 
 	private void queueChunkForUpdate(Chunk c) {
-		synchronized (chunkUpdateQueueDL) {
-			if (!chunkUpdateQueue.contains(c)) {
-				chunkUpdateQueue.add(c);
+		if (c != null) {
+			ArrayList<Chunk> cs = new ArrayList<Chunk>();
+			cs.add(c);
+
+			try {
+				cs.add(chunks[(int) c.getPosition().x + 1][(int) c.getPosition().y][(int) c.getPosition().z]);
+			} catch (Exception e) {
+			}
+
+			try {
+				cs.add(chunks[(int) c.getPosition().x - 1][(int) c.getPosition().y][(int) c.getPosition().z]);
+			} catch (Exception e) {
+			}
+
+			try {
+				cs.add(chunks[(int) c.getPosition().x][(int) c.getPosition().y][(int) c.getPosition().z + 1]);
+			} catch (Exception e) {
+			}
+
+			try {
+				cs.add(chunks[(int) c.getPosition().x][(int) c.getPosition().y][(int) c.getPosition().z - 1]);
+			} catch (Exception e) {
+			}
+
+			synchronized (chunkUpdateQueueDL) {
+				for (Chunk cc : cs) {
+					if (!chunkUpdateQueue.contains(cc) && cc != null) {
+						chunkUpdateQueue.add(cc);
+					}
+				}
 			}
 		}
 	}
