@@ -109,7 +109,6 @@ public class World extends RenderObject {
 					}
 
 					if (c != null) {
-						c.calcSunlight();
 						c.calcLight();
 						c.generateVertexArray();
 						synchronized (chunkUpdateQueueDL) {
@@ -127,7 +126,7 @@ public class World extends RenderObject {
 				while (true) {
 					updateInfWorld();
 
-					if (Helper.getInstance().getTime() - daylightTimer > 20000) {
+					if (Helper.getInstance().getTime() - daylightTimer > 120000) {
 						daylight -= 0.2;
 
 						if (daylight <= 0.4f) {
@@ -178,7 +177,7 @@ public class World extends RenderObject {
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
-					Chunk c = chunks[x][y][z];
+					Chunk c = getChunk(x, y, z);
 
 					if (c != null) {
 						c.render();
@@ -286,7 +285,7 @@ public class World extends RenderObject {
 		int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
 		try {
-			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
+			Chunk c = getChunk(chunkPosX, chunkPosY, chunkPosZ);
 			return (c.getBlock(blockPosX, blockPosY, blockPosZ) > 0);
 		} catch (Exception e) {
 			return false;
@@ -362,7 +361,7 @@ public class World extends RenderObject {
 		int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
 		try {
-			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
+			Chunk c = getChunk(chunkPosX, chunkPosY, chunkPosZ);
 
 			// Check if the chunk is valid
 			if (c.getPosition().x != calcChunkPosX(x) || c.getPosition().y != calcChunkPosY(y) || c.getPosition().z != calcChunkPosZ(z)) {
@@ -379,6 +378,24 @@ public class World extends RenderObject {
 	}
 
 	/**
+	 * Get a chunk
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	public final Chunk getChunk(int x, int y, int z) {
+		Chunk c = null;
+
+		try {
+			c = chunks[x % (int) Configuration.viewingDistanceInChunks.x][y % (int) Configuration.viewingDistanceInChunks.y][z % (int) Configuration.viewingDistanceInChunks.z];
+		} catch (Exception e) {}
+
+		return c;
+	}
+
+	/**
 	 * Returns a block at a position by looking up the containing chunk.
 	 */
 	public final int getBlock(int x, int y, int z) {
@@ -391,7 +408,7 @@ public class World extends RenderObject {
 		int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
 		try {
-			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
+			Chunk c = getChunk(chunkPosX, chunkPosY, chunkPosZ);
 
 			if (c.getPosition().x == calcChunkPosX(x) && c.getPosition().y == calcChunkPosY(y) && c.getPosition().z == calcChunkPosZ(z)) {
 				return c.getBlock(blockPosX, blockPosY, blockPosZ);
@@ -415,7 +432,7 @@ public class World extends RenderObject {
 		int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
 		try {
-			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
+			Chunk c = getChunk(chunkPosX, chunkPosY, chunkPosZ);
 			if (c.getPosition().x == calcChunkPosX(x) && c.getPosition().y == calcChunkPosY(y) && c.getPosition().z == calcChunkPosZ(z)) {
 				return c.getLight(blockPosX, blockPosY, blockPosZ);
 			}
@@ -435,7 +452,7 @@ public class World extends RenderObject {
 		int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
 		try {
-			Chunk c = chunks[chunkPosX][chunkPosY][chunkPosZ];
+			Chunk c = getChunk(chunkPosX, chunkPosY, chunkPosZ);
 			if (c.getPosition().x == calcChunkPosX(x) && c.getPosition().y == calcChunkPosY(y) && c.getPosition().z == calcChunkPosZ(z)) {
 				return c.getSunlight(blockPosX, blockPosY, blockPosZ);
 			}
@@ -458,11 +475,12 @@ public class World extends RenderObject {
 	}
 
 	private void updateInfWorld() {
+		ArrayList<Chunk> chunksToUpdate = new ArrayList<Chunk>();
 
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
-					Chunk c = chunks[x][y][z];
+					Chunk c = getChunk(x, y, z);
 
 					if (c != null) {
 						Vector3f pos = new Vector3f(x, y, z);
@@ -488,12 +506,15 @@ public class World extends RenderObject {
 							c.generate();
 							c.populate();
 
-							queueChunkForUpdate(c);
+							chunksToUpdate.add(c);
 						}
-
 					}
 				}
 			}
+		}
+
+		for (Chunk c: chunksToUpdate) {
+			queueChunkForUpdate(c);
 		}
 	}
 
@@ -501,7 +522,7 @@ public class World extends RenderObject {
 		for (int x = 0; x < Configuration.viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < Configuration.viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < Configuration.viewingDistanceInChunks.z; z++) {
-					Chunk c = chunks[x][y][z];
+					Chunk c = getChunk(x, y, z);
 					queueChunkForUpdate(c);
 				}
 			}
@@ -540,22 +561,22 @@ public class World extends RenderObject {
 			cs.add(c);
 
 			try {
-				cs.add(chunks[(int) c.getPosition().x + 1][(int) c.getPosition().y][(int) c.getPosition().z]);
+				cs.add(getChunk((int) c.getPosition().x + 1, (int) c.getPosition().y, (int) c.getPosition().z));
 			} catch (Exception e) {
 			}
 
 			try {
-				cs.add(chunks[(int) c.getPosition().x - 1][(int) c.getPosition().y][(int) c.getPosition().z]);
+				cs.add(getChunk((int) c.getPosition().x - 1, (int) c.getPosition().y, (int) c.getPosition().z));
 			} catch (Exception e) {
 			}
 
 			try {
-				cs.add(chunks[(int) c.getPosition().x][(int) c.getPosition().y][(int) c.getPosition().z + 1]);
+				cs.add(getChunk((int) c.getPosition().x, (int) c.getPosition().y, (int) c.getPosition().z + 1));
 			} catch (Exception e) {
 			}
 
 			try {
-				cs.add(chunks[(int) c.getPosition().x][(int) c.getPosition().y][(int) c.getPosition().z - 1]);
+				cs.add(getChunk((int) c.getPosition().x, (int) c.getPosition().y, (int) c.getPosition().z - 1));
 			} catch (Exception e) {
 			}
 
