@@ -93,7 +93,7 @@ public class Main {
 		Display.setDisplayMode(new DisplayMode((int) DISPLAY_WIDTH, (int) DISPLAY_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle("Continuum");
-		Display.create(new PixelFormat().withDepthBits(24));
+		Display.create(new PixelFormat().withDepthBits(24).withSamples(4));
 
 		// Keyboard
 		Keyboard.create();
@@ -177,7 +177,7 @@ public class Main {
 		this.player = new Player();
 
 		// Initialize world
-		this.world = new World("WORLD1", "0+hz9r59ßhtwpnfgsnoppoßß", this.player);
+		this.world = new World("WORLD1", "-8340038022168219400", this.player);
 
 		// Set parent for player
 		this.player.setParent(this.world);

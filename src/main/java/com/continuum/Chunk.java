@@ -55,6 +55,9 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	// The parent world
 	static World parent = null;
 
+	// Was the chunk changed?
+	private boolean changed = false;
+
 	/**
 	 * @return the light
 	 */
@@ -155,6 +158,8 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 				}
 			}
 		}
+
+		changed = true;
 	}
 
 	public void populate() {
@@ -172,6 +177,17 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 				}
 			}
 		}
+
+		changed = true;
+	}
+
+	public void updateLighting() {
+		if (changed) {
+			calcSunlight();
+			changed = false;
+		}
+
+		 calcLight();
 	}
 
 	@Override
@@ -208,35 +224,36 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	public void setBlock(int x, int y, int z, int type) {
 		try {
 			blocks[x][y][z] = type;
+			changed = true;
 		} catch (Exception e) {
 		}
 	}
 
-	public int getChunkWorldPosX() {
+	private int getChunkWorldPosX() {
 		return (int) position.x * (int) chunkDimensions.x;
 	}
 
-	public int getChunkWorldPosY() {
+	private int getChunkWorldPosY() {
 		return (int) position.y * (int) chunkDimensions.y;
 	}
 
-	public int getChunkWorldPosZ() {
+	private int getChunkWorldPosZ() {
 		return (int) position.z * (int) chunkDimensions.z;
 	}
 
-	public int getBlockWorldPosX(int x) {
+	private int getBlockWorldPosX(int x) {
 		return x + getChunkWorldPosX();
 	}
 
-	public int getBlockWorldPosY(int y) {
+	private int getBlockWorldPosY(int y) {
 		return y + getChunkWorldPosY();
 	}
 
-	public int getBlockWorldPosZ(int z) {
+	private int getBlockWorldPosZ(int z) {
 		return z + getChunkWorldPosZ();
 	}
 
-	public void calcSunlight() {
+	private void calcSunlight() {
 		sunlight = new float[(int) chunkDimensions.x][(int) chunkDimensions.y][(int) chunkDimensions.z];
 		for (int x = 0; x < (int) chunkDimensions.x; x++) {
 			for (int z = 0; z < (int) chunkDimensions.z; z++) {
@@ -251,7 +268,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		}
 	}
 
-	public void calcLight() {
+	private void calcLight() {
 		light = new float[(int) chunkDimensions.x][(int) chunkDimensions.y][(int) chunkDimensions.z];
 		for (int x = 0; x < (int) chunkDimensions.x; x++) {
 			for (int z = 0; z < (int) chunkDimensions.z; z++) {
