@@ -189,7 +189,7 @@ public class Player extends RenderObject {
 		if (getParent() != null) {
 			Vector3f blockPosition = calcViewBlockPosition();
 
-			getParent().setBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z, 0x2);
+			getParent().setBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z, 0x2, true);
 		}
 	}
 
@@ -201,7 +201,7 @@ public class Player extends RenderObject {
 		if (getParent() != null) {
 			Vector3f blockPosition = calcViewBlockPosition();
 
-			getParent().setBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z, 0x0);
+			getParent().setBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z, 0x0, true);
 		}
 	}
 
@@ -225,6 +225,8 @@ public class Player extends RenderObject {
 				this.demoAutoFlyMode = !demoAutoFlyMode;
 			} else if (Keyboard.isKeyDown(Keyboard.KEY_P)) {
 				Configuration._showPlacingBox = !Configuration._showPlacingBox;
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_I)) {
+				Configuration._showChunkOutlines = !Configuration._showChunkOutlines;
 			}
 
 			lastAction = Helper.getInstance().getTime();

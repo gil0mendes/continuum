@@ -18,10 +18,11 @@ import static org.lwjgl.opengl.GL11.*;
  * Class for chunk.
  */
 public class Chunk extends RenderObject implements Comparable<Chunk> {
+
 	/*
-     * Parameters for the world illumination.
-     */
-	private static final float MAX_LIGHT = 1f;
+	 * Paramters for the world illumination.
+	 */
+	private static final float MAX_LIGHT = 1.0f;
 	private static final float MIN_LIGHT = 0.1f;
 	private static final float DIMMING_INTENS = 0.075f;
 	private static final float BLOCK_SIDE_DIMMING = 0.075f;
@@ -110,8 +111,11 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	 */
 	@Override
 	public void render() {
-		if (Configuration._showPlacingBox) {
-			// Draws the outline of each chunk.
+
+        /*
+         * Draws the outline of each chunk.
+         */
+		if (Configuration._showChunkOutlines) {
 			glPushMatrix();
 			glTranslatef(_position.x * (int) CHUNK_DIMENSIONS.x, _position.y * (int) CHUNK_DIMENSIONS.y, _position.z * (int) CHUNK_DIMENSIONS.z);
 			glColor3f(255.0f, 0.0f, 0.0f);
@@ -233,7 +237,6 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		_changed = true;
 	}
 
-
 	/**
 	 * Generates the vertex-, texture- and color-arrays.
 	 */
@@ -260,8 +263,8 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 
 						if (drawTop) {
 							Vector3f colorOffset = Helper.getInstance().getColorOffsetFor(block, Helper.SIDE.TOP);
+							;
 							float shadowIntens = Math.max(_parent.getLight(getBlockWorldPosX(x), getBlockWorldPosY(y + 1), getBlockWorldPosZ(z)) - (dimBlockAtLocalPos(x, y + 1, z) ? DIMMING_INTENS : 0.0f), MIN_LIGHT);
-
 
 							float texOffsetX = Helper.getInstance().getTextureOffsetFor(block, Helper.SIDE.TOP).x;
 							float texOffsetY = Helper.getInstance().getTextureOffsetFor(block, Helper.SIDE.TOP).y;
@@ -309,6 +312,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 						if (drawFront) {
 							Vector3f colorOffset = Helper.getInstance().getColorOffsetFor(block, Helper.SIDE.FRONT);
 							float shadowIntens = Math.max(_parent.getLight(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z - 1)) - BLOCK_SIDE_DIMMING - (dimBlockAtLocalPos(x, y, z - 1) ? DIMMING_INTENS : 0.0f), MIN_LIGHT);
+
 
 							float texOffsetX = Helper.getInstance().getTextureOffsetFor(block, Helper.SIDE.FRONT).x;
 							float texOffsetY = Helper.getInstance().getTextureOffsetFor(block, Helper.SIDE.FRONT).y;
@@ -628,6 +632,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	}
 
 	private void floodLightAtWorldPos(int x, int y, int z) {
+
         /*
          * Check which neighbors have a lower light value than the current light value minus one light step.
          */
@@ -637,11 +642,11 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		float val_n4 = _parent.getLight(x, y, z - 1);
 		float val_n5 = _parent.getLight(x, y + 1, z);
 		float val_n6 = _parent.getLight(x, y - 1, z);
-
-		// Get light value for the current block
+        /*
+         * Get light value for the current block.
+         */
 		float val_light = Math.max(0f, _parent.getLight(x, y, z));
 		float val_light_next = Math.max(val_light - 0.0625f, 0f);
-
         /*
          * Check the neighbors and recursively flood those.
          */
@@ -764,16 +769,22 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	 * Calculates the sunlight.
 	 */
 	public void calcSunlight() {
-		_light = new float[(int) CHUNK_DIMENSIONS.x][(int) CHUNK_DIMENSIONS.y][(int) CHUNK_DIMENSIONS.z];
 		for (int x = 0; x < (int) CHUNK_DIMENSIONS.x; x++) {
 			for (int z = 0; z < (int) CHUNK_DIMENSIONS.z; z++) {
-				for (int y = (int) CHUNK_DIMENSIONS.y - 1; y > 0; y--) {
-					if (_blocks[x][y][z] == 0) {
-						_light[x][y][z] = MAX_LIGHT;
-					} else {
-						break;
-					}
-				}
+				calcSunlightAtLocalPos(x, z);
+			}
+		}
+	}
+
+	public void calcSunlightAtLocalPos(int x, int z) {
+		boolean covered = false;
+		for (int y = (int) CHUNK_DIMENSIONS.y - 1; y > 0; y--) {
+			if (_blocks[x][y][z] == 0 && !covered) {
+				_light[x][y][z] = MAX_LIGHT;
+			} else if (_blocks[x][y][z] == 0 && covered) {
+				_light[x][y][z] = 0.0f;
+			} else {
+				covered = true;
 			}
 		}
 	}
@@ -786,7 +797,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 			for (int x = 0; x < (int) CHUNK_DIMENSIONS.x; x++) {
 				for (int z = 0; z < (int) CHUNK_DIMENSIONS.z; z++) {
 					for (int y = (int) CHUNK_DIMENSIONS.y - 1; y > 0; y--) {
-						if (_blocks[x][y][z] == 0 && _light[x][y][z] == MAX_LIGHT) {
+						if (_blocks[x][y][z] == 0 && _light[x][y][z] == MAX_LIGHT - ite * 0.0625f) {
 							floodLightAtWorldPos(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z));
 						}
 					}
@@ -872,7 +883,6 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		if (_parent.getBlock(getBlockWorldPosX(x + 1), getBlockWorldPosY(y), getBlockWorldPosZ(z)) > 0 || _parent.getBlock(getBlockWorldPosX(x - 1), getBlockWorldPosY(y), getBlockWorldPosZ(z)) > 0 || _parent.getBlock(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z + 1)) > 0 || _parent.getBlock(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z - 1)) > 0) {
 			return true;
 		}
-
 		return false;
 	}
 }
