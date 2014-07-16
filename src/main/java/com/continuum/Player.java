@@ -45,6 +45,9 @@ public class Player extends RenderObject {
 	// The parent world
 	private World parent = null;
 
+	// Limit the actions a player can in one second
+	private long lastAction = Helper.getInstance().getTime();
+
 	/**
 	 * Init. the player
 	 */
@@ -144,7 +147,6 @@ public class Player extends RenderObject {
 	private boolean checkForCollision(Vector3f position) {
 		if (getParent() != null) {
 			return getParent().isHitting((int) (position.x + 0.5f), (int) position.y, (int) (position.z + 0.5f));
-
 		}
 
 		return false;
@@ -166,15 +168,17 @@ public class Player extends RenderObject {
 		vD.normalise();
 
 		// Maximum distance the player can reach
-		for (int z = 0; z < 16; z++) {
+		for (int z = 0; z < 8; z++) {
 			blockPosition.x += vD.x;
 			blockPosition.y += vD.y;
 			blockPosition.z += vD.z;
 
-			return blockPosition;
+			if (parent.getBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z) > 0) {
+				return blockPosition;
+			}
 		}
 
-		return null;
+		return blockPosition;
 	}
 
 	/**
@@ -202,22 +206,26 @@ public class Player extends RenderObject {
 	}
 
 	private void processPlayerInteraction() {
-		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			placeBlock();
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-			removeBlock();
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_R)) {
-			resetPlayer();
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_T)) {
-			parent.generateForest();
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
-			parent.generateTree((int) calcViewBlockPosition().x, (int) calcViewBlockPosition().y, (int) calcViewBlockPosition().z);
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_U)) {
-			parent.updateAllChunks();
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_G)) {
-			this.godMode = !godMode;
-		} else if (Keyboard.isKeyDown(Keyboard.KEY_H)) {
-			this.demoAutoFlyMode = !demoAutoFlyMode;
+		if (Helper.getInstance().getTime() - lastAction > 50) {
+			if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+				placeBlock();
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+				removeBlock();
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_R)) {
+				resetPlayer();
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_T)) {
+				parent.generateForest();
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
+				parent.generateTree((int) calcViewBlockPosition().x, (int) calcViewBlockPosition().y, (int) calcViewBlockPosition().z);
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_U)) {
+				parent.updateAllChunks();
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_G)) {
+				this.godMode = !godMode;
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_H)) {
+				this.demoAutoFlyMode = !demoAutoFlyMode;
+			}
+
+			lastAction = Helper.getInstance().getTime();
 		}
 	}
 

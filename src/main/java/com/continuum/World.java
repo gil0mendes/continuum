@@ -191,9 +191,9 @@ public class World extends RenderObject {
 	 */
 	@Override
 	public void update(long delta) {
-		Chunk c = null;
+		Chunk c;
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 32; i++) {
 			synchronized (chunkUpdateQueueDL) {
 				c = chunkUpdateQueueDL.peek();
 			}
@@ -514,6 +514,7 @@ public class World extends RenderObject {
 
 	private void queueChunkForUpdate(Chunk c) {
 		if (c != null) {
+			// Add all neighbors
 			ArrayList<Chunk> cs = new ArrayList<Chunk>();
 			cs.add(c);
 
