@@ -8,10 +8,10 @@ import org.lwjgl.util.vector.Vector3f;
  */
 public class Configuration {
 	// View distance in chunks
-	public static Vector3f _viewingDistanceInChunks = new Vector3f(32.0f, 1.0f, 32.0f);
+	public static Vector3f _viewingDistanceInChunks = new Vector3f(16.0f, 1.0f, 16.0f);
 
 	// Show placing box
-	public static boolean _showPlacingBox = false;
+	public static boolean _showPlacingBox = true;
 
 	// Show chunk outline
 	public static boolean _showChunkOutlines = false;

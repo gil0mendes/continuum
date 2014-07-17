@@ -2,10 +2,12 @@ package com.continuum;
 
 import java.util.ArrayList;
 import java.util.Collections;
+
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector3f;
+
 import static org.lwjgl.opengl.GL11.*;
 
 /**
@@ -50,90 +52,85 @@ public class Player extends RenderObject {
 	private boolean _keyPressed = false;
 
 	/**
-	 * Init. the player
+	 * Init. the player.
 	 */
 	public Player() {
 	}
 
-	/**
+	/*
 	 * Positions the player within the world
 	 * and adjusts the player's view accordingly.
+	 *
 	 */
 	@Override
 	public void render() {
-		// Rotate
 		glRotatef((float) _pitch, 1f, 0f, 0f);
 		glRotatef((float) _yaw, 0f, 1f, 0f);
 		glTranslatef(-_position.x, -_position.y, -_position.z);
 
-		glPointSize(15f);
-		glColor3f(255.0f, 0.0f, 0.0f);
 		RayFaceIntersection is = calcSelectedBlock();
-		glBegin(GL_POINTS);
-		if (is != null) {
-			glVertex3f(is.getIntersectPoint().x, is.getIntersectPoint().y, is.getIntersectPoint().z);
-		}
-		glEnd();
 
-//          if (Configuration._showPlacingBox) {
-//                // Display the currently looked at block
-//                Vector3f blockPosition = player.calcViewBlockPosition();
-//
-//                if (blockPosition != null) {
-//
-//                    int bpX = (int) blockPosition.x;
-//                    int bpY = (int) blockPosition.y;
-//                    int bpZ = (int) blockPosition.z;
-//
-//                    glColor3f(1.0f, 0.0f, 0.0f);
-//
-//                    glBegin(GL_LINES);
-//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
-//
-//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
-//
-//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
-//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
-//
-//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
-//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
-//
-//                    glEnd();
-//
-//                }
-//            }
+		if (Configuration._showPlacingBox) {
+			// Display the currently looked at block
+
+			if (is != null) {
+
+//            glPointSize(5f);
+//            glBegin(GL_POINTS);
+//            glVertex3f(is.getIntersectPoint().x, is.getIntersectPoint().y, is.getIntersectPoint().z);
+//            glEnd();
+
+				int bpX = (int) is.getBlockPos().x;
+				int bpY = (int) is.getBlockPos().y;
+				int bpZ = (int) is.getBlockPos().z;
+
+				glColor3f(1.0f, 1.0f, 1.0f);
+
+				glBegin(GL_LINES);
+				glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
+				glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
+				glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
+
+				glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
+				glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
+
+				glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
+				glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
+
+				glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
+				glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
+
+				glEnd();
+
+			}
+		}
 	}
 
 	/**
-	 * Update the player position
-	 *
-	 * @param delta
+	 * Updates the player's position etc.
 	 */
 	@Override
 	public void update(long delta) {
@@ -146,7 +143,6 @@ public class Player extends RenderObject {
 
 	/**
 	 * Yaws the player's point of view.
-	 *
 	 * @param diff Amount of yawing to be applied.
 	 */
 	public void yaw(float diff) {
@@ -161,7 +157,6 @@ public class Player extends RenderObject {
 
 	/**
 	 * Pitches the player's point of view.
-	 *
 	 * @param diff Amount of pitching to be applied.
 	 */
 	public void pitch(float diff) {
@@ -186,6 +181,7 @@ public class Player extends RenderObject {
 		if (godMode) {
 			_accY -= (double) _wSpeed * Math.sin(Math.toRadians(_pitch));
 		}
+
 		_accZ -= _wSpeed * Math.cos(Math.toRadians(_yaw)) * Math.cos(Math.toRadians(_pitch));
 	}
 
@@ -248,7 +244,8 @@ public class Player extends RenderObject {
 
 	@Override
 	public String toString() {
-		return String.format("Player: %s (%s)", _position, viewDirection());
+		Vector3f vD = viewDirection();
+		return String.format("player (x: %.2f, y: %.2f, z: %.2f | x: %.2f, y: %.2f, z: %.2f)", _position.x, _position.y, _position.z, vD.x, vD.y, vD.z);
 	}
 
 	public Vector3f viewDirection() {
@@ -292,7 +289,7 @@ public class Player extends RenderObject {
 			RayFaceIntersection is = calcSelectedBlock();
 			if (is != null) {
 				Vector3f blockPos = is.calcAdjacentBlockPos();
-				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, 0x2);
+				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, 0x2, true);
 			}
 		}
 	}
@@ -305,14 +302,13 @@ public class Player extends RenderObject {
 			RayFaceIntersection is = calcSelectedBlock();
 			if (is != null) {
 				Vector3f blockPos = is.getBlockPos();
-				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, 0x0);
+				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, 0x0, true);
 			}
 		}
 	}
 
 	private void processPlayerInteraction() {
 		while (Keyboard.next()) {
-
 			if (!_keyPressed) {
 				if (Keyboard.getEventKey() == Keyboard.KEY_E) {
 					placeBlock();
@@ -323,13 +319,19 @@ public class Player extends RenderObject {
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_T) {
 					_parent.generateForest();
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_Z) {
-					//_parent.generateTree((int) calcViewBlockPosition().x, (int) calcViewBlockPosition().y, (int) calcViewBlockPosition().z);
+					RayFaceIntersection is = calcSelectedBlock();
+					if (is != null) {
+						Vector3f blockPos = is.getBlockPos();
+						_parent.generateTree((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, true);
+					}
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_U) {
 					_parent.updateAllChunks();
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_G) {
 					this.godMode = !godMode;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_H) {
 					this.demoAutoFlyMode = !demoAutoFlyMode;
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
+					Configuration._showPlacingBox = !Configuration._showPlacingBox;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_I) {
 					Configuration._showChunkOutlines = !Configuration._showChunkOutlines;
 				}
@@ -370,9 +372,7 @@ public class Player extends RenderObject {
 			boolean hitting = _parent.isHitting((int) (getPosition().x + 0.5f), (int) (getPosition().y - PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
 
 			if (!godMode) {
-                /*
-                 * Apply gravity.
-                 */
+
 				if (!hitting) {
 					if (_gravity > -MAX_GRAVITY) {
 						_gravity -= 0.5f;

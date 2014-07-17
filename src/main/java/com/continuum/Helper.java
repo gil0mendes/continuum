@@ -94,7 +94,7 @@ public class Helper {
 				break;
 			// Lead block
 			case 0x6:
-				return new Vector3f(80f / 255f, 176f / 255f, 7f / 255f);
+				return new Vector3f(159f / 255f, 235f / 255f, 89f / 255f);
 		}
 		return new Vector3f(1.0f, 1.0f, 1.0f);
 	}
