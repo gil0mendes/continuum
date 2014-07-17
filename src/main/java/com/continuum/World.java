@@ -1,7 +1,5 @@
 package com.continuum;
 
-import java.util.ArrayList;
-
 import static org.lwjgl.opengl.GL11.*;
 
 import java.util.Random;
@@ -29,8 +27,6 @@ public class World extends RenderObject {
 	private Thread _worldThread;
 	// The chunks to display
 	private Chunk[][][] _chunks;
-	// Update queue for generating the light and vertex arrays
-	private final PriorityBlockingQueue<Chunk> _chunkUpdateQueue = new PriorityBlockingQueue<Chunk>();
 	// Update queue for generating the display lists
 	private final PriorityBlockingQueue<Chunk> _chunkUpdateQueueDL = new PriorityBlockingQueue<Chunk>();
 	private PerlinNoise _pGen1;
@@ -73,9 +69,11 @@ public class World extends RenderObject {
 
 				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "World updated ({0}s).", (System.currentTimeMillis() - timeStart) / 1000d);
 
-				while (true) {
+				// Update queue for generating the light and vertex arrays
+				PriorityBlockingQueue<Chunk> _chunkUpdateQueue = null;
 
-					_chunkUpdateQueue.clear();
+				while (true) {
+					_chunkUpdateQueue = new PriorityBlockingQueue<Chunk>();
 
 					for (int x = 0; x < Configuration._viewingDistanceInChunks.x; x++) {
 						for (int y = 0; y < Configuration._viewingDistanceInChunks.y; y++) {
@@ -103,7 +101,10 @@ public class World extends RenderObject {
 						c.calcLight();
 						c.generateVertexArray();
 						updateCounter++;
-						_chunkUpdateQueueDL.add(c);
+
+						synchronized (_chunkUpdateQueue) {
+							_chunkUpdateQueueDL.add(c);
+						}
 					}
 				}
 			}
@@ -184,7 +185,7 @@ public class World extends RenderObject {
 	public void update(long delta) {
 		Chunk c = null;
 
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 32; i++) {
 			synchronized (_chunkUpdateQueueDL) {
 				c = _chunkUpdateQueueDL.peek();
 			}
@@ -354,7 +355,7 @@ public class World extends RenderObject {
 			// Generate or update the corresponding chunk
 			c.setBlock(blockPosX, blockPosY, blockPosZ, type);
 			c.calcSunlightAtLocalPos(blockPosX, blockPosZ);
-			markChunksAsDirty(chunkPosX, chunkPosY, chunkPosZ);
+			markChunksAsDirty(c);
 		} catch (Exception e) {}
 	}
 
@@ -388,7 +389,7 @@ public class World extends RenderObject {
 		} catch (Exception e) {
 		}
 
-		return -1;
+		return 0;
 	}
 
 	/**
@@ -409,7 +410,7 @@ public class World extends RenderObject {
 		} catch (Exception e) {
 		}
 
-		return -1f;
+		return 0f;
 	}
 
 	/**
@@ -444,9 +445,6 @@ public class World extends RenderObject {
 	}
 
 	private void updateInfWorld() {
-
-		ArrayList<Chunk> chunksToUpdate = new ArrayList<Chunk>();
-
 		for (int x = 0; x < Configuration._viewingDistanceInChunks.x; x++) {
 			for (int y = 0; y < Configuration._viewingDistanceInChunks.y; y++) {
 				for (int z = 0; z < Configuration._viewingDistanceInChunks.z; z++) {
@@ -477,7 +475,7 @@ public class World extends RenderObject {
 							c.populate();
 							c.calcSunlight();
 
-							chunksToUpdate.add(c);
+							markChunksAsDirty(c);
 						}
 
 					}
@@ -519,10 +517,14 @@ public class World extends RenderObject {
 	}
 
 	public String chunkUpdateStatus() {
-		return String.format("U: %d UDL: %d", _chunkUpdateQueue.size(), _chunkUpdateQueueDL.size());
+		return String.format("Chunkupdates: %d", _chunkUpdateQueueDL.size());
 	}
 
-	public void markChunksAsDirty(int x, int y, int z) {
+	public void markChunksAsDirty(Chunk c) {
+		int x = (int) c.getPosition().x % (int) Configuration._viewingDistanceInChunks.x;
+		int y = (int) c.getPosition().y % (int) Configuration._viewingDistanceInChunks.y;
+		int z = (int) c.getPosition().z % (int) Configuration._viewingDistanceInChunks.z;
+
 		try {
 			_chunks[x][y][z].markDirty();
 		} catch (Exception e) {
