@@ -1,10 +1,11 @@
 package com.continuum;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector3f;
-
 import static org.lwjgl.opengl.GL11.*;
 
 /**
@@ -30,23 +31,23 @@ public class Player extends RenderObject {
 
 	// Height of the player in "blocks"
 	private int PLAYER_HEIGHT = 1;
-	private int wSpeed = WALKING_SPEED;
+
+	// Player walking speed
+	private int _wSpeed = WALKING_SPEED;
 
 	// Viewing direction of the player
-	private double yaw = 135d;
-	private double pitch;
+	private double _yaw = 135d;
+	private double _pitch;
 
 	// Acceleration
-	private double accX, accY, accZ;
+	private double _accX, _accY, _accZ;
 
 	// Gravity (aka acceleration y)
-	private float gravity;
+	private float _gravity;
 
 	// The parent world
-	private World parent = null;
-
-	// Limit the actions a player can in one second
-	private long lastAction = Helper.getInstance().getTime();
+	private World _parent = null;
+	private boolean _keyPressed = false;
 
 	/**
 	 * Init. the player
@@ -61,9 +62,72 @@ public class Player extends RenderObject {
 	@Override
 	public void render() {
 		// Rotate
-		glRotatef((float) pitch, 1f, 0f, 0f);
-		glRotatef((float) yaw, 0f, 1f, 0f);
+		glRotatef((float) _pitch, 1f, 0f, 0f);
+		glRotatef((float) _yaw, 0f, 1f, 0f);
 		glTranslatef(-_position.x, -_position.y, -_position.z);
+
+		glPointSize(15f);
+		glColor3f(255.0f, 0.0f, 0.0f);
+		RayFaceIntersection is = calcSelectedBlock();
+		glBegin(GL_POINTS);
+		if (is != null) {
+			glVertex3f(is.getIntersectPoint().x, is.getIntersectPoint().y, is.getIntersectPoint().z);
+		}
+		glEnd();
+
+//          if (Configuration._showPlacingBox) {
+//                // Display the currently looked at block
+//                Vector3f blockPosition = player.calcViewBlockPosition();
+//
+//                if (blockPosition != null) {
+//
+//                    int bpX = (int) blockPosition.x;
+//                    int bpY = (int) blockPosition.y;
+//                    int bpZ = (int) blockPosition.z;
+//
+//                    glColor3f(1.0f, 0.0f, 0.0f);
+//
+//                    glBegin(GL_LINES);
+//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ - 0.5f);
+//
+//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ - 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ - 0.5f);
+//
+//                    glVertex3f(bpX - 0.5f, bpY - 0.5f, bpZ + 0.5f);
+//                    glVertex3f(bpX - 0.5f, bpY + 0.5f, bpZ + 0.5f);
+//
+//                    glVertex3f(bpX + 0.5f, bpY - 0.5f, bpZ + 0.5f);
+//                    glVertex3f(bpX + 0.5f, bpY + 0.5f, bpZ + 0.5f);
+//
+//                    glEnd();
+//
+//                }
+//            }
 	}
 
 	/**
@@ -86,7 +150,13 @@ public class Player extends RenderObject {
 	 * @param diff Amount of yawing to be applied.
 	 */
 	public void yaw(float diff) {
-		yaw += diff;
+		double nYaw = (_yaw + diff) % 360;
+
+		if (nYaw < 0) {
+			nYaw += 360;
+		}
+
+		_yaw = nYaw;
 	}
 
 	/**
@@ -95,45 +165,57 @@ public class Player extends RenderObject {
 	 * @param diff Amount of pitching to be applied.
 	 */
 	public void pitch(float diff) {
-		pitch -= diff;
+		double nPitch = (_pitch - diff) % 360;
+
+		if (nPitch < 0) {
+			nPitch += 360;
+		}
+
+		// TODO: Problematic if the mouse movement is very fast
+		if ((nPitch > 0 && nPitch < 90) || (nPitch < 360 && nPitch > 270)) {
+			_pitch = nPitch;
+		}
 	}
 
 	/**
 	 * Moves the player forward.
 	 */
 	public void walkForward() {
-		accX += (double) wSpeed * Math.sin(Math.toRadians(yaw));
+		_accX += (double) _wSpeed * Math.sin(Math.toRadians(_yaw)) * Math.cos(Math.toRadians(_pitch));
+
 		if (godMode) {
-			accY -= (double) wSpeed * Math.sin(Math.toRadians(pitch));
+			_accY -= (double) _wSpeed * Math.sin(Math.toRadians(_pitch));
 		}
-		accZ -= wSpeed * Math.cos(Math.toRadians(yaw));
+		_accZ -= _wSpeed * Math.cos(Math.toRadians(_yaw)) * Math.cos(Math.toRadians(_pitch));
 	}
 
 	/*
 	 * Moves the player backward.
 	 */
 	public void walkBackwards() {
-		accX -= (double) wSpeed * Math.sin(Math.toRadians(yaw));
+		_accX -= (double) _wSpeed * Math.sin(Math.toRadians(_yaw)) * Math.cos(Math.toRadians(_pitch));
+
 		if (godMode) {
-			accY += (double) wSpeed * Math.sin(Math.toRadians(pitch));
+			_accY += (double) _wSpeed * Math.sin(Math.toRadians(_pitch));
 		}
-		accZ += (double) wSpeed * Math.cos(Math.toRadians(yaw));
+
+		_accZ += (double) _wSpeed * Math.cos(Math.toRadians(_yaw)) * Math.cos(Math.toRadians(_pitch));
 	}
 
 	/*
 	 * Lets the player strafe left.
 	 */
 	public void strafeLeft() {
-		accX += (double) wSpeed * Math.sin(Math.toRadians(yaw - 90));
-		accZ -= (double) wSpeed * Math.cos(Math.toRadians(yaw - 90));
+		_accX += (double) _wSpeed * Math.sin(Math.toRadians(_yaw - 90));
+		_accZ -= (double) _wSpeed * Math.cos(Math.toRadians(_yaw - 90));
 	}
 
 	/*
 	 * Lets the player strafe right.
 	 */
 	public void strafeRight() {
-		accX += (double) wSpeed * Math.sin(Math.toRadians(yaw + 90));
-		accZ -= (double) wSpeed * Math.cos(Math.toRadians(yaw + 90));
+		_accX += (double) _wSpeed * Math.sin(Math.toRadians(_yaw + 90));
+		_accZ -= (double) _wSpeed * Math.cos(Math.toRadians(_yaw + 90));
 	}
 
 	private boolean isPlayerStandingOnGround() {
@@ -145,8 +227,10 @@ public class Player extends RenderObject {
 	}
 
 	private boolean checkForCollision(Vector3f position) {
+
 		if (getParent() != null) {
 			return getParent().isHitting((int) (position.x + 0.5f), (int) position.y, (int) (position.z + 0.5f));
+
 		}
 
 		return false;
@@ -158,78 +242,104 @@ public class Player extends RenderObject {
 	public void jump() {
 		// Jumps are only possible, if the player is hitting the ground.
 		if (isPlayerStandingOnGround()) {
-			gravity = JUMP_INTENSITY;
+			_gravity = JUMP_INTENSITY;
 		}
 	}
 
-	public Vector3f calcViewBlockPosition() {
-		Vector3f blockPosition = new Vector3f((int) _position.x + 0.5f, (int) _position.y + 0.5f, (int) _position.z + 0.5f);
-		Vector3f vD = new Vector3f((float) Math.sin(Math.toRadians(yaw)), -1f * (float) Math.sin(Math.toRadians(pitch)), -1f * (float) Math.cos(Math.toRadians(yaw)));
+	@Override
+	public String toString() {
+		return String.format("Player: %s (%s)", _position, viewDirection());
+	}
+
+	public Vector3f viewDirection() {
+		Vector3f vD = new Vector3f((float) Math.sin(Math.toRadians(_yaw)) * (float) Math.cos(Math.toRadians(_pitch)), -1f * (float) Math.sin(Math.toRadians(_pitch)), -1 * (float) Math.cos(Math.toRadians(_pitch)) * (float) Math.cos(Math.toRadians(_yaw)));
 		vD.normalise();
 
-		// Maximum distance the player can reach
-		for (int z = 0; z < 8; z++) {
-			blockPosition.x += vD.x;
-			blockPosition.y += vD.y;
-			blockPosition.z += vD.z;
+		return vD;
+	}
 
-			if (parent.getBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z) > 0) {
-				return blockPosition;
+	public RayFaceIntersection calcSelectedBlock() {
+		ArrayList<RayFaceIntersection> inters = new ArrayList<RayFaceIntersection>();
+
+		Vector3f vD = viewDirection();
+		for (int x = -4; x < 4; x++) {
+			for (int y = -4; y < 4; y++) {
+				for (int z = -4; z < 4; z++) {
+					ArrayList<RayFaceIntersection> iss = _parent.rayBlockIntersection((int) _position.x + x, (int) _position.y + y, (int) _position.z + z, _position, vD);
+					if (iss != null) {
+						inters.addAll(iss);
+					}
+				}
 			}
 		}
 
-		return blockPosition;
+		/**
+		 * Calculated the closest intersection.
+		 */
+		if (inters.size() > 0) {
+			Collections.sort(inters);
+			return inters.get(0);
+		}
+
+		return null;
 	}
 
 	/**
 	 * Places a block.
-	 * TODO: Yeah... Should do more than that. :-)
 	 */
 	public void placeBlock() {
 		if (getParent() != null) {
-			Vector3f blockPosition = calcViewBlockPosition();
-
-			getParent().setBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z, 0x2);
+			RayFaceIntersection is = calcSelectedBlock();
+			if (is != null) {
+				Vector3f blockPos = is.calcAdjacentBlockPos();
+				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, 0x2);
+			}
 		}
 	}
 
 	/**
 	 * Removes a block.
-	 * TODO: Yeah... Should do more than that. :-)
 	 */
 	public void removeBlock() {
 		if (getParent() != null) {
-			Vector3f blockPosition = calcViewBlockPosition();
-
-			getParent().setBlock((int) blockPosition.x, (int) blockPosition.y, (int) blockPosition.z, 0x0);
+			RayFaceIntersection is = calcSelectedBlock();
+			if (is != null) {
+				Vector3f blockPos = is.getBlockPos();
+				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, 0x0);
+			}
 		}
 	}
 
 	private void processPlayerInteraction() {
-		if (Helper.getInstance().getTime() - lastAction > 50) {
-			if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-				placeBlock();
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-				removeBlock();
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_R)) {
-				resetPlayer();
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_T)) {
-				parent.generateForest();
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
-				parent.generateTree((int) calcViewBlockPosition().x, (int) calcViewBlockPosition().y, (int) calcViewBlockPosition().z);
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_U)) {
-				parent.updateAllChunks();
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_G)) {
-				this.godMode = !godMode;
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_H)) {
-				this.demoAutoFlyMode = !demoAutoFlyMode;
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_P)) {
-				Configuration._showPlacingBox = !Configuration._showPlacingBox;
-			} else if (Keyboard.isKeyDown(Keyboard.KEY_I)) {
-				Configuration._showChunkOutlines = !Configuration._showChunkOutlines;
+		while (Keyboard.next()) {
+
+			if (!_keyPressed) {
+				if (Keyboard.getEventKey() == Keyboard.KEY_E) {
+					placeBlock();
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_Q) {
+					removeBlock();
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
+					resetPlayer();
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_T) {
+					_parent.generateForest();
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_Z) {
+					//_parent.generateTree((int) calcViewBlockPosition().x, (int) calcViewBlockPosition().y, (int) calcViewBlockPosition().z);
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_U) {
+					_parent.updateAllChunks();
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_G) {
+					this.godMode = !godMode;
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_H) {
+					this.demoAutoFlyMode = !demoAutoFlyMode;
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_I) {
+					Configuration._showChunkOutlines = !Configuration._showChunkOutlines;
+				}
 			}
 
-			lastAction = Helper.getInstance().getTime();
+			if (Keyboard.getEventKeyState()) {
+				_keyPressed = true;
+			} else {
+				_keyPressed = false;
+			}
 		}
 	}
 
@@ -252,55 +362,60 @@ public class Player extends RenderObject {
 				jump();
 			}
 			if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-				wSpeed = RUNNING_SPEED;
+				_wSpeed = RUNNING_SPEED;
 			} else {
-				wSpeed = WALKING_SPEED;
+				_wSpeed = WALKING_SPEED;
 			}
 
-			boolean hitting = parent.isHitting((int) (getPosition().x + 0.5f), (int) (getPosition().y - PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
+			boolean hitting = _parent.isHitting((int) (getPosition().x + 0.5f), (int) (getPosition().y - PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
 
 			if (!godMode) {
-				/*
+                /*
                  * Apply gravity.
                  */
 				if (!hitting) {
-					if (gravity > -MAX_GRAVITY) {
-						gravity -= 0.5f;
+					if (_gravity > -MAX_GRAVITY) {
+						_gravity -= 0.5f;
 					}
-					getPosition().y += (gravity / 1000.0f) * delta;
-				} else if (gravity > 0.0f) {
-					getPosition().y += (gravity / 1000.0f) * delta;
+					getPosition().y += (_gravity / 1000.0f) * delta;
+				} else if (_gravity > 0.0f) {
+					getPosition().y += (_gravity / 1000.0f) * delta;
 				} else {
-					gravity = 0.0f;
+					_gravity = 0.0f;
 				}
 
-				Vector2f dir = new Vector2f((float) accX, (float) accZ);
+				Vector2f dir = new Vector2f(_accX >= 0 ? 1 : -1, _accZ >= 0 ? 1 : -1);
+
 				try {
 					dir.normalise();
-				} catch (Exception e) {}
+				} catch (Exception e) {
+				}
 
 				/**
 				 * Collision detection with objects along the x/z-plane.
 				 */
-				if (checkForCollision(new Vector3f(getPosition().x + dir.x * 0.1f, getPosition().y - PLAYER_HEIGHT + 1, getPosition().z + dir.y * 0.1f))) {
-					accX = 0;
-					accZ = 0;
+				if (checkForCollision(new Vector3f(getPosition().x + dir.x * 0.5f, getPosition().y - PLAYER_HEIGHT + 1, getPosition().z + dir.y * 0.5f))) {
+					_accX = 0;
+					_accZ = 0;
+				} else if (checkForCollision(new Vector3f(getPosition().x + dir.x * 0.5f, getPosition().y + 1, getPosition().z + dir.y * 0.5f))) {
+					_accX = 0;
+					_accZ = 0;
 				}
 
 			}
 
 			if (demoAutoFlyMode) {
-				accX = 32.f;
-				accZ = 32.f;
+				_accX = 32.f;
+				_accZ = 32.f;
 			}
 
-			getPosition().x += (accX / 1000.0f) * delta;
-			getPosition().y += (accY / 1000.0f) * delta;
-			getPosition().z += (accZ / 1000.0f) * delta;
+			getPosition().x += (_accX / 1000.0f) * delta;
+			getPosition().y += (_accY / 1000.0f) * delta;
+			getPosition().z += (_accZ / 1000.0f) * delta;
 
-			accX = 0;
-			accY = 0;
-			accZ = 0;
+			_accX = 0;
+			_accY = 0;
+			_accZ = 0;
 
 		}
 	}
@@ -314,20 +429,18 @@ public class Player extends RenderObject {
 
 	/**
 	 * Returns the parent world.
-	 *
 	 * @return the parent world
 	 */
 	public World getParent() {
-		return parent;
+		return _parent;
 	}
 
 	/**
 	 * Sets the parent world an resets the player.
-	 *
 	 * @param parent the parent world
 	 */
 	public void setParent(World parent) {
-		this.parent = parent;
+		this._parent = parent;
 		resetPlayer();
 	}
 }
