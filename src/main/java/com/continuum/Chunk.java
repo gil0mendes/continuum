@@ -20,12 +20,17 @@ import static org.lwjgl.opengl.GL11.*;
 public class Chunk extends RenderObject implements Comparable<Chunk> {
 
 	/*
-	 * Paramters for the world illumination.
+	 * Parameters for the world illumination.
 	 */
 	private static final float MAX_LIGHT = 1.0f;
 	private static final float MIN_LIGHT = 0.1f;
 	private static final float DIMMING_INTENS = 0.075f;
 	private static final float BLOCK_SIDE_DIMMING = 0.075f;
+
+	/*
+	 * TODO
+	 */
+	private boolean _dirty;
 
 	/*
 	 * Global parameters for the chunks.
@@ -73,11 +78,6 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	 * The display list used for displaying the chunk.
 	 */
 	private int _displayList = -1;
-
-	/*
-	 * This is set if the chunk has changed (e.g. just generated, a block was removed or placed etc.).
-	 */
-	private boolean _changed = false;
 
 	enum SIDE {
 
@@ -212,7 +212,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 			}
 		}
 
-		_changed = true;
+		_dirty = true;
 	}
 
 	/**
@@ -234,7 +234,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 			}
 		}
 
-		_changed = true;
+		_dirty = true;
 	}
 
 	/**
@@ -874,7 +874,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	public void setBlock(int x, int y, int z, int type) {
 		try {
 			_blocks[x][y][z] = type;
-			_changed = true;
+			_dirty = true;
 		} catch (Exception e) {
 		}
 	}
@@ -884,5 +884,13 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 			return true;
 		}
 		return false;
+	}
+
+	public void markDirty() {
+		_dirty = true;
+	}
+
+	public boolean isDirty() {
+		return _dirty;
 	}
 }
