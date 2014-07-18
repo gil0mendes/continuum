@@ -1,6 +1,7 @@
 package com.continuum;
 
 import java.awt.Font;
+
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.*;
 
@@ -9,6 +10,7 @@ import java.nio.FloatBuffer;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -26,9 +28,6 @@ import org.newdawn.slick.TrueTypeFont;
 public class Main {
 
 	private static TrueTypeFont _font1;
-
-	// Game title
-	private static final String GAME_TITLE = "Continuum Alpha v0.02";
 
 	// Logger
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -49,6 +48,8 @@ public class Main {
 	// Player
 	private Player player;
 
+	FastRandom rand = new FastRandom();
+
 	/**
 	 * Init the logger.
 	 */
@@ -66,6 +67,8 @@ public class Main {
 	 * @param args Arguments
 	 */
 	public static void main(String[] args) {
+		LOGGER.log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
+
 		Main main = null;
 
 		// Try create the main window
@@ -92,10 +95,12 @@ public class Main {
 	 * @throws LWJGLException
 	 */
 	private void create() throws LWJGLException {
+		LOGGER.log(Level.INFO, "Initializing display, input devices and OpenGL.");
+
 		// Display
 		Display.setDisplayMode(new DisplayMode(Configuration.DISPLAY_WIDTH, Configuration.DISPLAY_HEIGHT));
 		Display.setFullscreen(Configuration.FULLSCREEN);
-		Display.setTitle(GAME_TITLE);
+		Display.setTitle(Configuration.GAME_TITLE);
 		Display.create(Configuration.PIXEL_FORMAT);
 
 		// Keyboard
@@ -145,15 +150,27 @@ public class Main {
 		glFogf(GL_FOG_START, viewingDistance - 64f);
 		glFogf(GL_FOG_END, viewingDistance);
 
-		// Init. textures and more
-		Chunk.init();
-		world.init();
+		try {
+			// Init. textures and more
+			Class.forName("com.continuum.Chunk");
+			Chunk.init();
+		} catch (ClassNotFoundException ex) {
+			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+		}
+		try {
+			Class.forName("com.continuum.World");
+			World.init();
+		} catch (ClassNotFoundException ex) {
+			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+		}
 
 		// Init. the player and a world
 		player = new Player();
 
 		// Generate a world with a "random" seed value
-		world = new World("WORLD1", String.valueOf(Math.random()), player);
+		String worldSeed = rand.randomCharacterString(16);
+		LOGGER.log(Level.INFO, "Creating new World with random seed \"{0}\"", worldSeed);
+		world = new World("WORLD1", worldSeed, player);
 
 		// Link the player to the world
 		player.setParent(world);
@@ -189,7 +206,7 @@ public class Main {
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(84.0f, (float) Configuration.DISPLAY_WIDTH / (float) Configuration.DISPLAY_HEIGHT, 0.01f, 2000f);
+		gluPerspective(84.0f, (float) Configuration.DISPLAY_WIDTH / (float) Configuration.DISPLAY_HEIGHT, 0.0001f, Integer.MAX_VALUE);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -202,6 +219,8 @@ public class Main {
 	 * the ESCAPE key.
 	 */
 	public void start() {
+		LOGGER.log(Level.INFO, "Starting the game...");
+
 		while (!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
 			// Sync. at 120 FPS
 			Display.sync(120);
@@ -262,7 +281,7 @@ public class Main {
 		glEnable(GL_TEXTURE_2D);
 
 		// Draw debugging information
-		_font1.drawString(4, 4, String.format("%s (fps: %.2f, free heap space: %d MB)", GAME_TITLE, _meanFps, Runtime.getRuntime().freeMemory() / 1048576), Color.white);
+		_font1.drawString(4, 4, String.format("%s (fps: %.2f, free heap space: %d MB)", Configuration.GAME_TITLE, _meanFps, Runtime.getRuntime().freeMemory() / 1048576), Color.white);
 		_font1.drawString(4, 22, String.format("%s", player, Color.white));
 		_font1.drawString(4, 38, String.format("%s", world, Color.white));
 

@@ -140,6 +140,7 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Yaws the player's point of view.
+	 *
 	 * @param diff Amount of yawing to be applied.
 	 */
 	public void yaw(float diff) {
@@ -154,6 +155,7 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Pitches the player's point of view.
+	 *
 	 * @param diff Amount of pitching to be applied.
 	 */
 	public void pitch(float diff) {
@@ -267,7 +269,15 @@ public class Player extends RenderableObject {
 			RayFaceIntersection is = calcSelectedBlock();
 			if (is != null) {
 				Vector3f blockPos = is.calcAdjacentBlockPos();
-				getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, _selectedBlockType, true);
+				// Players should not place blocks inside themselves! That would be silly!
+				Vector3f playerBlockPos = new Vector3f(_position);
+				playerBlockPos.x = (int) (playerBlockPos.x + 0.5f);
+				playerBlockPos.y = (int) (playerBlockPos.y - Configuration.PLAYER_HEIGHT);
+				playerBlockPos.z = (int) (playerBlockPos.z + 0.5f);
+
+				if (blockPos.x != playerBlockPos.x || (blockPos.y != playerBlockPos.y && blockPos.y != playerBlockPos.y + 1f) || blockPos.z != playerBlockPos.z) {
+					getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, _selectedBlockType, true);
+				}
 			}
 		}
 	}
@@ -353,10 +363,17 @@ public class Player extends RenderableObject {
 		}
 	}
 
+	/**
+	 * TODO: Check for blocks above the player!
+	 *
+	 * @param oldPosition
+	 * @param delta
+	 * @return
+	 */
 	private boolean verticalHitTest(Vector3f oldPosition, float delta) {
-		int blockType = _parent.getBlock((int) (getPosition().x + 0.5f), (int) (getPosition().y + 0.5f - Configuration.PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
+		int blockType1 = _parent.getBlock((int) (getPosition().x + 0.5f), (int) (getPosition().y - Configuration.PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
 
-		if (blockType > 0) {
+		if (blockType1 > 0) {
 			_gravity = 0.0f;
 
 			if (!_godMode) {
@@ -370,13 +387,20 @@ public class Player extends RenderableObject {
 	}
 
 	private boolean horizontalHitTest(Vector3f oldPosition, float delta) {
-		Vector3f dir = _moveVector.normalise(null);
-		Vector3f blockPos = new Vector3f((int) (getPosition().x + 0.5f + dir.x * 0.1f), (int) (getPosition().y + 0.5f - Configuration.PLAYER_HEIGHT), (int) (getPosition().z + 0.5f + dir.z * 0.1f));
-		int blockType = _parent.getBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z);
+		Vector3f dir = _accVector.normalise(null);
+		Vector3f blockPos = new Vector3f((int) (getPosition().x + 0.5f + dir.x * 0.1f), (int) (getPosition().y - Configuration.PLAYER_HEIGHT), (int) (getPosition().z + 0.5f + dir.z * 0.1f));
 
-		if (blockType > 0) {
-			_position.x = oldPosition.x;
-			_position.z = oldPosition.z;
+		int blockType1 = _parent.getBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z);
+		int blockType2 = _parent.getBlock((int) blockPos.x, (int) blockPos.y + 1, (int) blockPos.z);
+
+		if (blockType1 > 0 || blockType2 > 0) {
+			if (!_godMode) {
+				_position.x = oldPosition.x;
+				_position.z = oldPosition.z;
+				_accVector.x = 0f;
+				_accVector.z = 0f;
+			}
+
 			return true;
 		}
 
@@ -388,6 +412,7 @@ public class Player extends RenderableObject {
 
 		if (_godMode) {
 			getPosition().y += (_accVector.y / 1000.0f) * delta;
+			_gravity = 0.0f;
 		} else {
 			getPosition().y += (_gravity / 1000.0f) * delta;
 		}
@@ -398,10 +423,6 @@ public class Player extends RenderableObject {
 		_accVector.x += _moveVector.x;
 		_accVector.y += _moveVector.y;
 		_accVector.z += _moveVector.z;
-
-		if (_gravity > -Configuration.MAX_GRAVITY) {
-			_gravity -= 0.05f * delta;
-		}
 
 
 		if (Math.abs(_accVector.y) > 0f) {
@@ -425,18 +446,16 @@ public class Player extends RenderableObject {
 			_accVector.y /= div;
 		}
 
-		if (!_godMode) {
-			boolean vHit = verticalHitTest(oldPosition, delta);
+		boolean vHit = verticalHitTest(oldPosition, delta);
+		horizontalHitTest(oldPosition, delta);
 
-			if (vHit && _jump) {
-				_jump = false;
-				_gravity = Configuration.JUMP_INTENSITY;
-			}
+		if (vHit && _jump) {
+			_jump = false;
+			_gravity = Configuration.JUMP_INTENSITY;
+		}
 
-			horizontalHitTest(oldPosition, delta);
-		} else {
-			_gravity = 0f;
-
+		if (_gravity > -Configuration.MAX_GRAVITY) {
+			_gravity -= 0.05f * delta;
 		}
 
 
@@ -455,6 +474,7 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Returns the parent world.
+	 *
 	 * @return the parent world
 	 */
 	public World getParent() {
@@ -463,6 +483,7 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Sets the parent world an resets the player.
+	 *
 	 * @param parent the parent world
 	 */
 	public void setParent(World parent) {
