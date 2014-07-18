@@ -18,7 +18,6 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
-import org.newdawn.slick.opengl.Texture;
 
 /**
  * Entry point class
@@ -98,7 +97,7 @@ public class Main {
 		Display.setDisplayMode(new DisplayMode((int) DISPLAY_WIDTH, (int) DISPLAY_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle(GAME_TITLE);
-		Display.create(new PixelFormat().withDepthBits(24));
+		Display.create(new PixelFormat());
 
 		// Keyboard
 		Keyboard.create();
@@ -124,65 +123,17 @@ public class Main {
 	}
 
 	/**
-	 * Start main loop
-	 */
-	public void start() {
-		while (!Display.isCloseRequested()) {
-			// Process the keyboard and mouse input
-			processKeyboard();
-			processMouse();
-
-			// Sync. at 60 FPS
-			Display.sync(60);
-
-			long delta = Helper.getInstance().getTime() - lastLoopTime;
-			lastLoopTime = Helper.getInstance().getTime();
-			lastFpsTime += delta;
-			fps++;
-
-			// Update the FPS display in the title bar each second passed
-			if (lastFpsTime >= 1000) {
-				lastFpsTime = 0;
-
-				meanFps += fps;
-				meanFps /= 2;
-
-				fps = 0;
-			}
-
-			// Update the scene
-			update(delta);
-
-			// Render the scene
-			render();
-
-			// Update Display
-			Display.update();
-
-			processKeyboard();
-			processMouse();
-		}
-
-		Display.destroy();
-	}
-
-	/**
 	 * Initialize OpenGL
 	 */
 	private void initGL() {
 		// Enable OpenGL features
-		glShadeModel(GL_SMOOTH);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_FOG);
 		glDepthFunc(GL_LEQUAL);
-		glLineWidth(4.0f);
-		//glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		// Configure FOG/Perspective
-		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+		// Configure FOG
 		glHint(GL_FOG_HINT, GL_NICEST);
 		glFogi(GL_FOG_MODE, GL_LINEAR);
 		glFogf(GL_FOG_DENSITY, 1.0f);
@@ -226,28 +177,61 @@ public class Main {
 	 * Render the scene
 	 */
 	public void render() {
-		if (world.isWorldGenerated()) {
-			glClearColor(world.getDaylightColor().x, world.getDaylightColor().y, world.getDaylightColor().z, 1.0f);
+		glClearColor(world.getDaylightColor().x, world.getDaylightColor().y, world.getDaylightColor().z, 1.0f);
 
-			// Color the fog like the sky
-			float[] fogColor = {world.getDaylightColor().x, world.getDaylightColor().y, world.getDaylightColor().z, 1.0f};
-			FloatBuffer fogColorBuffer = BufferUtils.createFloatBuffer(4);
-			fogColorBuffer.put(fogColor);
-			fogColorBuffer.rewind();
-			glFog(GL_FOG_COLOR, fogColorBuffer);
+		// Color the fog like the sky
+		float[] fogColor = {world.getDaylightColor().x, world.getDaylightColor().y, world.getDaylightColor().z, 1.0f};
+		FloatBuffer fogColorBuffer = BufferUtils.createFloatBuffer(4);
+		fogColorBuffer.put(fogColor);
+		fogColorBuffer.rewind();
+		glFog(GL_FOG_COLOR, fogColorBuffer);
 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glLoadIdentity();
+		glLoadIdentity();
+		player.render();
+		world.render();
+		renderHUD();
+	}
 
-			player.render();
-			world.render();
+	/**
+	 * Start main loop
+	 */
+	public void start() {
+		while (!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+			// Process the keyboard and mouse input
+			processKeyboard();
+			processMouse();
 
-			renderHUD();
-		} else {
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			// Sync. at 60 FPS
+			Display.sync(60);
+
+			long delta = Helper.getInstance().getTime() - lastLoopTime;
+			lastLoopTime = Helper.getInstance().getTime();
+			lastFpsTime += delta;
+			fps++;
+
+			// Update the FPS display in the title bar each second passed
+			if (lastFpsTime >= 1000) {
+				lastFpsTime = 0;
+
+				meanFps += fps;
+				meanFps /= 2;
+
+				fps = 0;
+			}
+
+			// Update the scene
+			update(delta);
+
+			// Render the scene
+			render();
+
+			// Update Display
+			Display.update();
 		}
+
+		Display.destroy();
 	}
 
 	/**
@@ -259,8 +243,6 @@ public class Main {
 			player.update(delta);
 		}
 	}
-
-	// --- PROCESS
 
 	/**
 	 * Process Mouse data

@@ -19,7 +19,8 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class Chunk extends RenderObject implements Comparable<Chunk> {
 
-	public ReentrantLock _lock = new ReentrantLock();
+	public boolean _dirty = true;
+	public boolean _fresh = true;
 
 	/*
      * Paramters for the world illumination.
@@ -28,7 +29,6 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	private static final float MIN_LIGHT = 0.2f;
 	private static final float DIMMING_INTENS = 0.075f;
 	private static final float BLOCK_SIDE_DIMMING = 0.025f;
-	private boolean _fresh = true;
 
 	public static enum UPDATE_TYPE {
 
@@ -88,22 +88,6 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	public static void init() {
 		try {
 			_textureMap = TextureLoader.getTexture("PNG", new FileInputStream(Chunk.class.getResource("images/Terrain.png").getPath()), GL_NEAREST);
-
-//            int width = (int) _textureMap.getImageWidth();
-//            int height = (int) _textureMap.getImageHeight();
-//
-//            byte[] texbytes = _textureMap.getTextureData();
-//            int components = texbytes.length / (width * height);
-//
-//            ByteBuffer texdata = ByteBuffer.allocateDirect(texbytes.length);
-//            texdata.put(texbytes);
-//            texdata.rewind();
-//
-//            MipMap.gluBuild2DMipmaps(GL11.GL_TEXTURE_2D, components, width, height, components == 3 ? GL11.GL_RGB : GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, texdata);
-//
-//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_NEAREST);
-//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-
 		} catch (IOException ex) {
 			Logger.getLogger(Chunk.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -117,6 +101,9 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		_parent = p;
 		_blocks = new int[(int) CHUNK_DIMENSIONS.x][(int) CHUNK_DIMENSIONS.y][(int) CHUNK_DIMENSIONS.z];
 		_light = new float[(int) CHUNK_DIMENSIONS.x][(int) CHUNK_DIMENSIONS.y][(int) CHUNK_DIMENSIONS.z];
+
+		_chunkID = maxChunkID + 1;
+		maxChunkID++;
 	}
 
 	/**
@@ -129,9 +116,11 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
          * Draws the outline of each chunk.
          */
 		if (Configuration._showChunkOutlines) {
+			glLineWidth(2.0f);
+			glColor3f(255.0f, 255.0f, 255.0f);
+
 			glPushMatrix();
 			glTranslatef(_position.x * (int) CHUNK_DIMENSIONS.x, _position.y * (int) CHUNK_DIMENSIONS.y, _position.z * (int) CHUNK_DIMENSIONS.z);
-			glColor3f(255.0f, 0.0f, 0.0f);
 
 			glBegin(GL_LINE_LOOP);
 			glVertex3f(0.0f, 0.0f, 0.0f);
@@ -188,13 +177,17 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		return String.format("Chunk (%d) cotaining %d Blocks at %s.", _chunkID, blockCount(), _position);
 	}
 
-	public void generate() {
+	public boolean generate() {
 		if (_fresh) {
 			generateTerrain();
 			populate();
 			calcSunlight();
+			calcLight();
 			_fresh = false;
+			return true;
 		}
+
+		return false;
 	}
 
 	/**
@@ -261,10 +254,10 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 			for (int x = 0; x < Chunk.CHUNK_DIMENSIONS.x; x++) {
 				for (int z = 0; z < Chunk.CHUNK_DIMENSIONS.z; z++) {
 					float dens = calcForestDensity(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z));
-					if (dens > 0.55 && dens < 0.7f && _parent.getBlock(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z)) == 0x1 && y > 32) {
+					if (dens > 0.55 && dens < 0.7f && getBlock(x, y, z) == 0x1 && y > 32) {
 						_parent.generateTree(getBlockWorldPosX(x), getBlockWorldPosY((int) y) + 1, getBlockWorldPosZ(z), false);
 						return;
-					} else if (dens >= 0.7f && _parent.getBlock(getBlockWorldPosX(x), getBlockWorldPosY(y), getBlockWorldPosZ(z)) == 0x1 && y > 32) {
+					} else if (dens >= 0.7f && getBlock(x, y, z) == 0x1 && y > 32) {
 						_parent.generatePineTree(getBlockWorldPosX(x), getBlockWorldPosY((int) y) + 1, getBlockWorldPosZ(z), false);
 						return;
 					}
@@ -591,12 +584,15 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	 * Generates the display list from the precalculated arrays.
 	 */
 	public synchronized void generateDisplayList() {
-
-		if (_chunkID == -1) {
-			_chunkID = maxChunkID + 1;
-			maxChunkID++;
-			_displayList = glGenLists(1);
+		if (_color.isEmpty() && _tex.isEmpty() && _quads.isEmpty()) {
+			return;
 		}
+
+		if (glIsList(_displayList)) {
+			glDeleteLists(_displayList, 1);
+		}
+
+		_displayList = glGenLists(1);
 
 		FloatBuffer cb = null;
 		FloatBuffer tb = null;
@@ -636,10 +632,6 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glEndList();
-
-		vb = null;
-		tb = null;
-		cb = null;
 
 		_quads.clear();
 		_tex.clear();
@@ -699,7 +691,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	 */
 	private float calcTerrainElevation(float x, float z) {
 		float result = 0.0f;
-		result += _parent.getpGen1().noise(0.007f * x, 0.007f, 0.007f * z) * 128f;
+		result += _parent.getpGen1().noise(0.003f * x, 0.003f, 0.003f * z) * 256f;
 		return Math.abs(result);
 	}
 
@@ -822,7 +814,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	}
 
 	/**
-	 * Returns the amount of blocks with a value greater as zero.
+	 * Returns the amount of blocks with a value greater than zero.
 	 */
 	public int blockCount() {
 		int counter = 0;
@@ -842,7 +834,7 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	/**
 	 * Calculates the distance of the chunk to the player.
 	 */
-	private double calcDistanceToPlayer() {
+	public double calcDistanceToPlayer() {
 		double distance = Math.sqrt(Math.pow(_parent.getPlayer().getPosition().x - getChunkWorldPosX(), 2) + Math.pow(_parent.getPlayer().getPosition().z - getChunkWorldPosZ(), 2));
 		return distance;
 	}
@@ -867,6 +859,10 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	public void setLight(int x, int y, int z, float intens) {
 		try {
 			_light[x][y][z] = intens;
+			_dirty = true;
+
+			// Make the neighbors as dirty
+			markNeighborsDirty(x, z);
 		} catch (Exception e) {
 		}
 	}
@@ -888,6 +884,10 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 	public void setBlock(int x, int y, int z, int type) {
 		try {
 			_blocks[x][y][z] = type;
+			_dirty = true;
+
+			// Make the neighbors as dirty
+			markNeighborsDirty(x, z);
 		} catch (Exception e) {
 		}
 	}
@@ -916,5 +916,25 @@ public class Chunk extends RenderObject implements Comparable<Chunk> {
 		chunks[2] = _parent.getChunk((int) _position.x, (int) _position.y, (int) _position.z + 1);
 		chunks[3] = _parent.getChunk((int) _position.x, (int) _position.y, (int) _position.z - 1);
 		return chunks;
+	}
+
+	public void markNeighborsDirty(int x, int z) {
+		Chunk[] neighbors = getNeighbors();
+
+		if (x == 0) {
+			neighbors[1]._dirty = true;
+		}
+
+		if (x == CHUNK_DIMENSIONS.x -1 ) {
+			neighbors[0]._dirty = true;
+		}
+
+		if (z == 0) {
+			neighbors[3]._dirty = true;
+		}
+
+		if (z == CHUNK_DIMENSIONS.z - 1) {
+			neighbors[2]._dirty = true;
+		}
 	}
 }
