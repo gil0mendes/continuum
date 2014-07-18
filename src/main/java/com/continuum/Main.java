@@ -206,7 +206,7 @@ public class Main {
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(84.0f, (float) Configuration.DISPLAY_WIDTH / (float) Configuration.DISPLAY_HEIGHT, 0.0001f, Integer.MAX_VALUE);
+		gluPerspective(84.0f, (float) Configuration.DISPLAY_WIDTH / (float) Configuration.DISPLAY_HEIGHT, 0.001f, 1000f);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
