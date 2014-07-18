@@ -100,6 +100,7 @@ public class Main {
 
 		// Keyboard
 		Keyboard.create();
+		Keyboard.enableRepeatEvents(true);
 
 		// Mouse
 		Mouse.setGrabbed(true);
@@ -128,10 +129,13 @@ public class Main {
 
 		// Init. OpenGL
 		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_FOG);
 		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, 0.1f);
 
 		// Enable FOG
 		glHint(GL_FOG_HINT, GL_NICEST);
@@ -199,8 +203,8 @@ public class Main {
 	 */
 	public void start() {
 		while (!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-			// Sync. at 60 FPS
-			Display.sync(60);
+			// Sync. at 120 FPS
+			Display.sync(120);
 
 			// Measure a delta value and the frames per second
 			long delta = Helper.getInstance().getTime() - _lastLoopTime;
@@ -255,7 +259,6 @@ public class Main {
 
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_TEXTURE_2D);
 
 		// Draw debugging information
@@ -264,7 +267,6 @@ public class Main {
 		_font1.drawString(4, 38, String.format("%s", world, Color.white));
 
 		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_BLEND);
 
 		glColor3f(1f, 1f, 1f);
 		glLineWidth(2f);

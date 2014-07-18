@@ -142,7 +142,7 @@ public class World extends RenderableObject {
 					}
 
 					if (nc._dirty) {
-						nc.generateVertexArray();
+						nc.generateVertexArrays();
 						nc._dirty = false;
 						_chunkUpdateQueueDL.add(nc);
 					}
@@ -150,7 +150,7 @@ public class World extends RenderableObject {
 			}
 
 			if (c._dirty) {
-				c.generateVertexArray();
+				c.generateVertexArrays();
 				c._dirty = false;
 				_chunkUpdateQueueDL.add(c);
 			}
@@ -232,16 +232,15 @@ public class World extends RenderableObject {
 		// Position the sun relatively to the player
 		glTranslatef(_player.getPosition().x, Configuration.VIEWING_DISTANCE_IN_CHUNKS.y * Configuration.CHUNK_DIMENSIONS.y * 1.25f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.z * Configuration.CHUNK_DIMENSIONS.z + _player.getPosition().z);
 
-		// Disable fog and enable blending
+		// Disable fog
 		glDisable(GL_FOG);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_TEXTURE_2D);
-		_textureSun.bind();
+
 		glColor4f(1f, 1f, 1f, 1.0f);
 		// Rotate the sun slightly
 		glRotatef(-15f, 1f, 0f, 0f);
 
+		glEnable(GL_TEXTURE_2D);
+		_textureSun.bind();
 		glBegin(GL_QUADS);
 		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(-Configuration.SUN_SIZE, Configuration.SUN_SIZE, -Configuration.SUN_SIZE);
@@ -254,7 +253,6 @@ public class World extends RenderableObject {
 		glEnd();
 
 		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_BLEND);
 
 		glEnable(GL_FOG);
 		glPopMatrix();
@@ -267,7 +265,17 @@ public class World extends RenderableObject {
 				Chunk c = getChunk(x, 0, z);
 
 				if (c != null) {
-					c.render();
+					c.render(false);
+				}
+			}
+		}
+
+		for (int x = 0; x < Configuration.VIEWING_DISTANCE_IN_CHUNKS.x; x++) {
+			for (int z = 0; z < Configuration.VIEWING_DISTANCE_IN_CHUNKS.z; z++) {
+				Chunk c = getChunk(x, 0, z);
+
+				if (c != null) {
+					c.render(true);
 				}
 			}
 		}
@@ -348,28 +356,6 @@ public class World extends RenderableObject {
 	}
 
 	/**
-	 * Returns true if the given position is filled with a block.
-	 *
-	 * TODO: Replace with a "real“ collision detection
-	 */
-	public boolean isHitting(int x, int y, int z) {
-		int chunkPosX = calcChunkPosX(x) % (int) Configuration.VIEWING_DISTANCE_IN_CHUNKS.x;
-		int chunkPosY = calcChunkPosY(y) % (int) Configuration.VIEWING_DISTANCE_IN_CHUNKS.y;
-		int chunkPosZ = calcChunkPosZ(z) % (int) Configuration.VIEWING_DISTANCE_IN_CHUNKS.z;
-
-		int blockPosX = calcBlockPosX(x, chunkPosX);
-		int blockPosY = calcBlockPosY(y, chunkPosY);
-		int blockPosZ = calcBlockPosZ(z, chunkPosZ);
-
-		try {
-			Chunk c = getChunk(chunkPosX, chunkPosY, chunkPosZ);
-			return (c.getBlock(blockPosX, blockPosY, blockPosZ) > 0);
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	/**
 	 * Returns the chunk position of a given coordinate.
 	 *
 	 * @param x The X-coordinate of the block
@@ -414,8 +400,8 @@ public class World extends RenderableObject {
 	/**
 	 * Returns the internal position of a block within a chunk.
 	 *
-	 * @param x1 The Y-coordinate of the block within the world
-	 * @param x2 The Y-coordinate of the chunk within the world
+	 * @param y1 The Y-coordinate of the block within the world
+	 * @param y2 The Y-coordinate of the chunk within the world
 	 * @return The Y-coordinate of the block within the chunk
 	 */
 	private int calcBlockPosY(int y1, int y2) {
@@ -426,8 +412,8 @@ public class World extends RenderableObject {
 	/**
 	 * Returns the internal position of a block within a chunk.
 	 *
-	 * @param x1 The Z-coordinate of the block within the world
-	 * @param x2 The Z-coordinate of the chunk within the world
+	 * @param z1 The Z-coordinate of the block within the world
+	 * @param z2 The Z-coordinate of the chunk within the world
 	 * @return The Z-coordinate of the block within the chunk
 	 */
 	private int calcBlockPosZ(int z1, int z2) {
@@ -664,7 +650,7 @@ public class World extends RenderableObject {
 	 * Calculates the intersection of a given ray originating from a specified point with
 	 * a block. Returns a list of intersections ordered by the distance to the player.
 	 *
-	 * @return Distance-ordered list of ray-face-intersections intersections
+	 * @return Distance-ordered list of ray-face-intersections
 	 */
 	public ArrayList<RayFaceIntersection> rayBlockIntersection(int x, int y, int z, Vector3f origin, Vector3f ray) {
         /*
