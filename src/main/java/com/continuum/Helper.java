@@ -131,9 +131,6 @@ public class Helper {
 		switch (type) {
 			case 0x0:
 				return true;
-			// Grass block
-			case 0x6:
-				return true;
 			// Water block
 			case 0x4:
 				return true;
