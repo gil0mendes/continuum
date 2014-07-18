@@ -4,6 +4,8 @@ import java.util.Random;
 
 /**
  * 3D perlin noise function as shown in the book "Physically Based Rendering".
+ *
+ * @author Gil Mendes <gil00mendes@gmail.com>
  */
 public class PerlinNoise
 {

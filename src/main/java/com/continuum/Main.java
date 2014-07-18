@@ -15,7 +15,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.PixelFormat;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
 
@@ -29,7 +28,7 @@ public class Main {
 	private static TrueTypeFont _font1;
 
 	// Game title
-	private static final String GAME_TITLE = "Continuum v0.01a";
+	private static final String GAME_TITLE = "Continuum Alpha v0.02";
 
 	// Logger
 	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -97,7 +96,7 @@ public class Main {
 		Display.setDisplayMode(new DisplayMode(Configuration.DISPLAY_WIDTH, Configuration.DISPLAY_HEIGHT));
 		Display.setFullscreen(Configuration.FULLSCREEN);
 		Display.setTitle(GAME_TITLE);
-		Display.create(new PixelFormat().withDepthBits(24));
+		Display.create(Configuration.PIXEL_FORMAT);
 
 		// Keyboard
 		Keyboard.create();
@@ -157,7 +156,7 @@ public class Main {
 	}
 
 	/**
-	 * Render the scene, place and HUD
+	 * Render the scene, player and HUD
 	 */
 	public void render() {
 		// Use the color of the sky for clearing
