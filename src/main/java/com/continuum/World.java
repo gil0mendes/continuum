@@ -68,6 +68,7 @@ public class World extends RenderObject {
 					for (int z = 0; z < Configuration._viewingDistanceInChunks.z; z++) {
 						Chunk c = loadOrCreateChunk(x, z);
 						_chunks[x][0][z] = c;
+						c.generate();
 						queueChunkForUpdate(c, 0);
 					}
 				}
@@ -92,41 +93,32 @@ public class World extends RenderObject {
 						sortedUpdates.add(c);
 					}
 
-					for (int i = 0; i < 4; i++) {
-						Chunk c = null;
+					Chunk c = null;
 
-						if (_chunkUpdateImportant.size() > 0) {
-							c = _chunkUpdateImportant.poll();
-						} else {
-							c = sortedUpdates.poll();
-							_chunkUpdateNormal.remove(c);
+					if (_chunkUpdateImportant.size() > 0) {
+						c = _chunkUpdateImportant.poll();
+					} else {
+						c = sortedUpdates.poll();
+						_chunkUpdateNormal.remove(c);
+					}
+
+					if (c != null) {
+
+
+						c.calcLight();
+
+						Chunk[] neighbors = c.getNeighbors();
+						for (Chunk nc : neighbors) {
+							if (nc != null) {
+								nc.generateVertexArray();
+								_chunkUpdateQueueDL.add(nc);
+							}
 						}
 
-						if (c != null) {
+						c.generateVertexArray();
+						_chunkUpdateQueueDL.add(c);
 
-							c.generate();
-							c.calcLight();
 
-							// Update the light of the neighbors
-							Chunk[] neighbors = c.getNeighbors();
-
-							for (Chunk nc : neighbors) {
-								if (nc != null) {
-									nc.generate();
-									nc.calcLight();
-								}
-							}
-
-							for (Chunk nc : neighbors) {
-								if (nc != null) {
-									nc.generateVertexArray();
-									_chunkUpdateQueueDL.add(nc);
-								}
-							}
-
-							c.generateVertexArray();
-							_chunkUpdateQueueDL.add(c);
-						}
 					}
 				}
 			}
@@ -208,10 +200,12 @@ public class World extends RenderObject {
 	 */
 	@Override
 	public void update(long delta) {
-		Chunk c = _chunkUpdateQueueDL.poll();
+		for (int i = 0; i < 8 && !_chunkUpdateQueueDL.isEmpty(); i++) {
+			Chunk c = _chunkUpdateQueueDL.poll();
 
-		if (c != null) {
-			c.generateDisplayList();
+			if (c != null) {
+				c.generateDisplayList();
+			}
 		}
 	}
 
@@ -512,11 +506,18 @@ public class World extends RenderObject {
 						c = loadOrCreateChunk((int) pos.x, (int) pos.z);
 						// Replace the old chunk
 						_chunks[x][0][z] = c;
+						c.generate();
 						queueChunkForUpdate(c, 0);
 					}
 
 				}
 			}
+		}
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(World.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}
 
