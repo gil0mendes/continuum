@@ -487,6 +487,9 @@ public class Player extends RenderableObject {
 				_position.z = oldPosition.z;
 				_position.x = oldPosition.x;
 			}
+		} else {
+			// Disable gravity while GOD mode is active
+			_gravity = 0f;
 		}
 	}
 
