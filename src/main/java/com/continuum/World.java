@@ -27,7 +27,7 @@ import org.newdawn.slick.util.ResourceLoader;
 public class World extends RenderableObject {
 
 	/* ------ */
-	private short _daytime = 17;
+	private short _daytime = 8;
 	private long lastDaytimeMeasurement = Helper.getInstance().getTime();
 	/* ------ */
 	private final FastRandom _rand;
@@ -56,8 +56,8 @@ public class World extends RenderableObject {
 	 * Initializes a new world for the single player mode.
 	 *
 	 * @param title The title/description of the world
-	 * @param seed The seed string used to genrate the terrain
-	 * @param p The player
+	 * @param seed  The seed string used to genrate the terrain
+	 * @param p     The player
 	 */
 	public World(String title, String seed, Player p) {
 		this._player = p;
@@ -299,7 +299,7 @@ public class World extends RenderableObject {
 		 */
 		glPushMatrix();
 		// Position the sun relatively to the player
-		glTranslatef(Configuration.VIEWING_DISTANCE_IN_CHUNKS.x * Configuration.CHUNK_DIMENSIONS.x + _player.getPosition().x / 2f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.y * Configuration.CHUNK_DIMENSIONS.y * 0.75f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.z * Configuration.CHUNK_DIMENSIONS.z + _player.getPosition().z *2f);
+		glTranslatef(Configuration.VIEWING_DISTANCE_IN_CHUNKS.x * Configuration.CHUNK_DIMENSIONS.x + _player.getPosition().x / 2f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.y * Configuration.CHUNK_DIMENSIONS.y * 0.75f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.z * Configuration.CHUNK_DIMENSIONS.z + _player.getPosition().z * 2f);
 
 		// Disable fog
 		glDisable(GL_FOG);
@@ -366,9 +366,9 @@ public class World extends RenderableObject {
 	/**
 	 * Genrates a simple tree at a given position.
 	 *
-	 * @param posX X-coordinate
-	 * @param posY Y-coordinate
-	 * @param posZ Z-coordinate
+	 * @param posX   X-coordinate
+	 * @param posY   Y-coordinate
+	 * @param posZ   Z-coordinate
 	 * @param update If set the affected chunks are queued for updating
 	 */
 	public void generateTree(int posX, int posY, int posZ, boolean update) {
@@ -397,9 +397,9 @@ public class World extends RenderableObject {
 	/**
 	 * Genrates a simple pine tree at a given position.
 	 *
-	 * @param posX X-coordinate
-	 * @param posY Y-coordinate
-	 * @param posZ Z-coordinate
+	 * @param posX   X-coordinate
+	 * @param posY   Y-coordinate
+	 * @param posZ   Z-coordinate
 	 * @param update If set the affected chunks are queued for updating
 	 */
 	public void generatePineTree(int posX, int posY, int posZ, boolean update) {
@@ -492,10 +492,10 @@ public class World extends RenderableObject {
 	/**
 	 * Places a block of specific type at a given position.
 	 *
-	 * @param x The X-coordinate
-	 * @param y The Y-coordinate
-	 * @param z The Z-coordinate
-	 * @param type The type of the block to set
+	 * @param x      The X-coordinate
+	 * @param y      The Y-coordinate
+	 * @param z      The Z-coordinate
+	 * @param type   The type of the block to set
 	 * @param update If set the affected chunk is queued for updating
 	 */
 	public final void setBlock(int x, int y, int z, int type, boolean update) {
@@ -591,9 +591,9 @@ public class World extends RenderableObject {
 	/**
 	 * Sets the light value at the given position.
 	 *
-	 * @param x The X-coordinate
-	 * @param y The Y-coordinate
-	 * @param z The Z-coordinate
+	 * @param x      The X-coordinate
+	 * @param y      The Y-coordinate
+	 * @param z      The Z-coordinate
 	 * @param intens The light intensity value
 	 */
 	public void setLight(int x, int y, int z, float intens) {
@@ -696,6 +696,10 @@ public class World extends RenderableObject {
 		return _pGen3;
 	}
 
+	public FastRandom getRand() {
+		return _rand;
+	}
+
 	/*
 	 * Returns the vertices of a block at the given position.
 	 */
@@ -722,7 +726,7 @@ public class World extends RenderableObject {
 	 * @return Distance-ordered list of ray-face-intersections
 	 */
 	public ArrayList<RayFaceIntersection> rayBlockIntersection(int x, int y, int z, Vector3f origin, Vector3f ray) {
-        /*
+		/*
          * If the block is made out of air... panic and get out of here. Fast.
          */
 		if (getBlock(x, y, z) == 0) {
@@ -788,11 +792,11 @@ public class World extends RenderableObject {
 	 * Calculates a intersection with the face of a block defined by 3 points.
 	 *
 	 * @param blockPos The position of the block to intersect with
-	 * @param v0 Point 1
-	 * @param v1 Point 2
-	 * @param v2 Point 3
-	 * @param origin Origin of the intersection ray
-	 * @param ray Direction of the intersection ray
+	 * @param v0       Point 1
+	 * @param v1       Point 2
+	 * @param v2       Point 3
+	 * @param origin   Origin of the intersection ray
+	 * @param ray      Direction of the intersection ray
 	 * @return Ray-face-intersection
 	 */
 	private RayFaceIntersection rayFaceIntersection(Vector3f blockPos, Vector3f v0, Vector3f v1, Vector3f v2, Vector3f origin, Vector3f ray) {
@@ -810,6 +814,10 @@ public class World extends RenderableObject {
 		 */
 		float t = -(norm.x * origin.x + norm.y * origin.y + norm.z * origin.z + d) / (Vector3f.dot(ray, norm));
 
+		if (t < 0) {
+			return null;
+		}
+
 		/**
 		 * Calc. the point of intersection.
 		 */
@@ -826,10 +834,10 @@ public class World extends RenderableObject {
 	/**
 	 * Loads a specified chunk from the cache or queues a new chunk for
 	 * generation.
-	 *
+	 * <p/>
 	 * NOTE: This method ALWAYS returns a valid chunk since new chunks
 	 * are generated if none of the present chunks fit.
-	 *
+	 * <p/>
 	 * TODO: Chunks should be saved to and loaded from the hard disk!
 	 *
 	 * @param x X-coordinate of the chunk
