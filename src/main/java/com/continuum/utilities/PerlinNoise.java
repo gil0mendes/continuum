@@ -1,8 +1,4 @@
-package com.continuum.noise;
-
-import com.continuum.FastRandom;
-
-import java.util.Random;
+package com.continuum.utilities;
 
 /**
  * 3D perlin noise function as shown in the book "Physically Based Rendering".

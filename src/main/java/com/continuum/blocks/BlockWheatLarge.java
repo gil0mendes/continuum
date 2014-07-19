@@ -7,7 +7,7 @@ import org.lwjgl.util.vector.Vector4f;
 /**
  * A flower billboard block.
  */
-public class BlockRedFlower extends Block {
+public class BlockWheatLarge extends Block {
 
 	@Override
 	public boolean isBlockTypeTranslucent() {
@@ -16,12 +16,12 @@ public class BlockRedFlower extends Block {
 
 	@Override
 	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return new Vector4f(1f, 1f, 1f, 1.0f);
+		return new Vector4f(40f / 255f, 220f / 255f, 40f / 255f, 1.0f);
 	}
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.getInstance().calcOffsetForTextureAt(12, 0);
+		return Helper.getInstance().calcOffsetForTextureAt(14, 6);
 	}
 
 	@Override

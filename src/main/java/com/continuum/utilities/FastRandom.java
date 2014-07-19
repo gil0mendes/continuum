@@ -1,4 +1,4 @@
-package com.continuum;
+package com.continuum.utilities;
 
 /**
  * Random number generator based on the Xorshift generator by George Marsaglia.
@@ -52,6 +52,15 @@ public class FastRandom {
 	 */
 	public double randomDouble() {
 		return randomLong() / ((double) Long.MAX_VALUE - 1d);
+	}
+
+	/**
+	 * Returns a random value as boolean.
+	 *
+	 * @return Random value
+	 */
+	public boolean randomBoolean() {
+		return randomLong() > 0;
 	}
 
 	/**

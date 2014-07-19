@@ -11,7 +11,13 @@ import java.util.Collections;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import com.continuum.noise.PerlinNoise;
+import com.continuum.generators.Generator;
+import com.continuum.generators.GeneratorForest;
+import com.continuum.generators.GeneratorTerrain;
+import com.continuum.utilities.FastRandom;
+import com.continuum.utilities.PerlinNoise;
+import com.continuum.utilities.Helper;
+import com.continuum.utilities.RayFaceIntersection;
 import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
@@ -31,6 +37,7 @@ public class World extends RenderableObject {
 	private long lastDaytimeMeasurement = Helper.getInstance().getTime();
 	/* ------ */
 	private final FastRandom _rand;
+
 	/* ------ */
 	private static Texture _textureSun;
 	/* ------ */
@@ -48,25 +55,24 @@ public class World extends RenderableObject {
 	private final ArrayBlockingQueue<Chunk> _chunkUpdateNormal = new ArrayBlockingQueue<Chunk>(2056);
 	private final TreeMap<Integer, Chunk> _chunkCache = new TreeMap<Integer, Chunk>();
 	/* ------ */
-	private PerlinNoise _pGen1;
-	private PerlinNoise _pGen2;
-	private PerlinNoise _pGen3;
+	private final GeneratorTerrain _generatorTerrain;
+	private final GeneratorForest _generatorForest;
 
 	/**
 	 * Initializes a new world for the single player mode.
 	 *
 	 * @param title The title/description of the world
-	 * @param seed  The seed string used to genrate the terrain
-	 * @param p     The player
+	 * @param seed The seed string used to genrate the terrain
+	 * @param p The player
 	 */
 	public World(String title, String seed, Player p) {
 		this._player = p;
 		_rand = new FastRandom(seed.hashCode());
-		_pGen1 = new PerlinNoise(_rand.randomInt());
-		_pGen2 = new PerlinNoise(_rand.randomInt());
-		_pGen3 = new PerlinNoise(_rand.randomInt());
-
 		_chunks = new Chunk[(int) Configuration.VIEWING_DISTANCE_IN_CHUNKS.x][(int) Configuration.VIEWING_DISTANCE_IN_CHUNKS.y][(int) Configuration.VIEWING_DISTANCE_IN_CHUNKS.z];
+
+		// Init. generators
+		_generatorTerrain = new GeneratorTerrain(seed);
+		_generatorForest = new GeneratorForest(seed);
 
 		_updateThread = new Thread(new Runnable() {
 
@@ -209,6 +215,7 @@ public class World extends RenderableObject {
 					// Mark all chunks in the cache dirty
 					for (int key : _chunkCache.keySet()) {
 						_chunkCache.get(key)._dirty = true;
+
 					}
 				}
 
@@ -350,9 +357,9 @@ public class World extends RenderableObject {
 	}
 
 	/*
-     * Updates the world. This method checks the queue for the display
-     * list updates and recreates the display lists accordingly.
-     */
+	 * Updates the world. This method checks the queue for the display
+	 * list updates and recreates the display lists accordingly.
+	 */
 	@Override
 	public void update(long delta) {
 		for (int i = 0; i < 32 && !_chunkUpdateQueueDL.isEmpty(); i++) {
@@ -677,31 +684,6 @@ public class World extends RenderableObject {
 		return (int) ((_player.getPosition().z - Helper.getInstance().calcPlayerOrigin().z) / Configuration.CHUNK_DIMENSIONS.z);
 	}
 
-	/**
-	 * @return The first perlin noise generator
-	 */
-	public PerlinNoise getpGen1() {
-		return _pGen1;
-	}
-
-	/**
-	 * @return The second perlin noise generator
-	 */
-	public PerlinNoise getpGen2() {
-		return _pGen2;
-	}
-
-	/**
-	 * @return The third perlin noise generator
-	 */
-	public PerlinNoise getpGen3() {
-		return _pGen3;
-	}
-
-	public FastRandom getRand() {
-		return _rand;
-	}
-
 	/*
 	 * Returns the vertices of a block at the given position.
 	 */
@@ -892,8 +874,12 @@ public class World extends RenderableObject {
 			}
 		}
 
+		ArrayList<Generator> gs = new ArrayList<Generator>();
+		gs.add(_generatorTerrain);
+		gs.add(_generatorForest);
+
 		// Generate a new chunk, cache it and return it
-		c = new Chunk(this, new Vector3f(x, 0, z));
+		c = new Chunk(this, new Vector3f(x, 0, z), gs);
 		synchronized (_chunkCache) {
 			_chunkCache.put(Helper.getInstance().cantorize(x, z), c);
 		}

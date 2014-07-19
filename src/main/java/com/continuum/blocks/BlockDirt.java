@@ -1,6 +1,6 @@
 package com.continuum.blocks;
 
-import com.continuum.Helper;
+import com.continuum.utilities.Helper;
 import org.lwjgl.util.vector.Vector2f;
 
 /**

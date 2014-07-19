@@ -13,6 +13,7 @@ public class Configuration {
 	// World
 	public static final Vector3f VIEWING_DISTANCE_IN_CHUNKS = new Vector3f(23.0f, 1.0f, 23.0f);
 	public static final float SUN_SIZE = 64f;
+	public static final String DEFAULT_SEED = "yMfLzKzZvHzQiWhA";
 	// Chunk
 	public static final Vector3f CHUNK_DIMENSIONS = new Vector3f(16, 128, 16);
 	// Debug
@@ -24,15 +25,15 @@ public class Configuration {
 	public static final boolean FULLSCREEN = false;
 	// Illumination
 	public static final float MAX_LIGHT = 1.0f;
-	public static final float MIN_LIGHT = 0.1f;
-	public static final float DIMMING_INTENS = 0.6f;
+	public static final float MIN_LIGHT = 0.2f;
+	public static final float OCCLUSION_INTENS = 0.0625f;
 	public static final float BLOCK_SIDE_DIMMING = 0.075f;
-	public static final float LIGHT_ABSORPTION = 0.1f;
+	public static final float LIGHT_ABSORPTION = 0.0625f;
 	// Player
 	public static final int JUMP_INTENSITY = 8;
 	public static final int MAX_GRAVITY = 32;
-	public static final int WALKING_SPEED = 3;
-	public static final int RUNNING_SPEED = 6;
+	public static final float WALKING_SPEED = 1.5f;
+	public static final float RUNNING_SPEED = 2.5f;
 	public static final boolean ENABLE_BOBBING = true;
 	public static final float PLAYER_HEIGHT = 1.25f;
 	public static final float G_FORCE = 0.025f;

@@ -1,11 +1,9 @@
-package com.continuum;
+package com.continuum.utilities;
 
 import org.lwjgl.util.vector.Vector3f;
 
 /**
  * Represents a intersection of a ray with the face of a block.
- *
- * @author Gil Mendes <gil00mendes@gmail.com>
  */
 public class RayFaceIntersection implements Comparable<RayFaceIntersection> {
 

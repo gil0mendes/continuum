@@ -11,6 +11,8 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.continuum.utilities.FastRandom;
+import com.continuum.utilities.Helper;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -27,31 +29,22 @@ import org.newdawn.slick.TrueTypeFont;
  */
 public class Main {
 
+	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+	/* ------- */
 	private static TrueTypeFont _font1;
-
-	// Logger
-	public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-
-	// Time at the start of the last render loop
 	private long _lastLoopTime = Helper.getInstance().getTime();
-
-	// Time at last _fps measurement.
 	private long _lastFpsTime;
-
-	// Measured frames per second.
 	private int _fps;
+	/* ------- */
 	private float _meanFps;
-
-	// World
-	private World world;
-
-	// Player
-	private Player player;
-
+	/* ------- */
+	Player player;
+	World world;
+	/* ------- */
 	FastRandom rand = new FastRandom();
 
 	/**
-	 * Init the logger.
+	 * Init. the logger.
 	 */
 	static {
 		try {
@@ -135,6 +128,10 @@ public class Main {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_FOG);
 		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_LINE_SMOOTH);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+		glPolygonOffset(2f, 2f);
+		glEnable(GL_POLYGON_OFFSET_FILL);
 
 		// Enable fog
 		glHint(GL_FOG_HINT, GL_NICEST);
@@ -162,8 +159,11 @@ public class Main {
 		// Init. the player and a world
 		player = new Player();
 		// Generate a world with a "random" seed value
-		String worldSeed = rand.randomCharacterString(16);
-		LOGGER.log(Level.INFO, "Creating new World with random seed \"{0}\"", worldSeed);
+		String worldSeed = Configuration.DEFAULT_SEED;
+		if (worldSeed.length() == 0) {
+			worldSeed = rand.randomCharacterString(16);
+		}
+		LOGGER.log(Level.INFO, "Creating new World with seed \"{0}\"", worldSeed);
 		world = new World("WORLD1", worldSeed, player);
 		// Link the player to the world
 		player.setParent(world);
