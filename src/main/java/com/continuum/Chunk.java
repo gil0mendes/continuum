@@ -3,7 +3,9 @@ package com.continuum;
 import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.ArrayList;
+
 import org.lwjgl.util.vector.Vector3f;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,10 +22,10 @@ import static org.lwjgl.opengl.GL11.*;
  * Chunks are the basic components of the world. Each chunk contains a fixed amount of blocks
  * determined by their dimensions. Chunks a used to manage the world efficiently and
  * reduce the batch count within the render loop.
- *
+ * <p/>
  * Chunks are tessellated on creation and saved to vertex arrays. From those a display list is generated
  * which is then used for the actual rendering process.
- *
+ * <p/>
  * The default size of chunk is 16x128x16 (32768) blocks.
  */
 public class Chunk extends RenderableObject implements Comparable<Chunk> {
@@ -54,7 +56,9 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	enum SIDE {
 
 		LEFT, RIGHT, TOP, BOTTOM, FRONT, BACK;
-	};
+	}
+
+	;
 
 	/**
 	 * Init. the textures used within chunks.
@@ -88,7 +92,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	public void render(boolean translucent) {
 
         /*
-         * Draws the outline of each chunk.
+		 * Draws the outline of each chunk.
          */
 		if (Configuration.SHOW_CHUNK_OUTLINES) {
 			glLineWidth(2.0f);
@@ -170,7 +174,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 
 	/**
 	 * Generates the terrain within this chunk.
-	 *
+	 * <p/>
 	 * TODO: Much to simple and boring
 	 */
 	public void generateTerrain() {
@@ -238,7 +242,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 
 	/**
 	 * Populates the chunk (e.g. placement of trees etc.).
-	 *
+	 * <p/>
 	 * TODO: Much to simple and boring
 	 */
 	public void populate() {
@@ -745,7 +749,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	/**
 	 * Returns true, if the block side is ajdacent to a translucent block or an air
 	 * block.
-	 *
+	 * <p/>
 	 * NOTE: Air has to be handled separatly. Otherwise the water surface would be ignored in the tessellation progress!
 	 */
 	private boolean isSideVisibleForBlockTypes(int blockToCheck, int currentBlock) {
@@ -765,7 +769,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 		float val_n6 = Helper.getInstance().isBlockTypeTranslucent(_parent.getBlock(x, y - 1, z)) ? _parent.getLight(x, y - 1, z) : -1f;
 
 		float val_light = _parent.getLight(x, y, z);
-		float val_light_next = Math.max(val_light - 0.0624f, 0f);
+		float val_light_next = Math.max(val_light - 0.0625f, 0f);
 
 		if (val_n1 < val_light_next && val_n1 != -1) {
 			_parent.setLight(x + 1, y, z, val_light_next);
@@ -894,13 +898,23 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	public void calcSunlight() {
 		for (int x = 0; x < (int) Configuration.CHUNK_DIMENSIONS.x; x++) {
 			for (int z = 0; z < (int) Configuration.CHUNK_DIMENSIONS.z; z++) {
-				for (int y = (int) Configuration.CHUNK_DIMENSIONS.y - 1; y >= 0; y--) {
-					if (Helper.getInstance().isBlockTypeTranslucent(_blocks[x][y][z])) {
-						_light[x][y][z] = Configuration.MAX_LIGHT;
-					} else {
-						break;
-					}
-				}
+				calcSunlightAtLocalPos(x, z);
+			}
+		}
+	}
+
+	/**
+	 * Calculates the sunlight at a give position.
+	 *
+	 * @param x
+	 * @param z
+	 */
+	public void calcSunlightAtLocalPos(int x, int z) {
+		for (int y = (int) Configuration.CHUNK_DIMENSIONS.y - 1; y >= 0; y--) {
+			if (Helper.getInstance().isBlockTypeTranslucent(_blocks[x][y][z])) {
+				_light[x][y][z] = Configuration.MAX_LIGHT;
+			} else {
+				break;
 			}
 		}
 	}
@@ -910,7 +924,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 			for (int x = 0; x < (int) Configuration.CHUNK_DIMENSIONS.x; x++) {
 				for (int z = 0; z < (int) Configuration.CHUNK_DIMENSIONS.z; z++) {
 					for (int y = (int) Configuration.CHUNK_DIMENSIONS.y - 1; y > 0; y--) {
-						if (getLight(x, y, z) == Configuration.MAX_LIGHT - ite * 0.0624f && Helper.getInstance().isBlockTypeTranslucent(getBlock(x, y, z))) {
+						if (getLight(x, y, z) == Configuration.MAX_LIGHT - ite * 0.0625f && Helper.getInstance().isBlockTypeTranslucent(getBlock(x, y, z))) {
 							floodLight(x, y, z);
 						}
 					}
