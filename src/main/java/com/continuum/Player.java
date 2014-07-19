@@ -469,6 +469,14 @@ public class Player extends RenderableObject {
 				} else {
 					// Nullify the gravity if no jump was triggered
 					_gravity = 0f;
+
+					if (_demoAutoFlyMode) {
+						Vector3f mov = viewDirection();
+						mov.x *= 16f;
+						mov.z *= 16f;
+						getPosition().x += mov.x / 1000f * delta;
+						getPosition().z += mov.z / 1000f * delta;
+					}
 				}
 			}
 

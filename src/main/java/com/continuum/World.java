@@ -46,7 +46,7 @@ public class World extends RenderableObject {
 	private final ArrayBlockingQueue<Chunk> _chunkUpdateQueueDL = new ArrayBlockingQueue<Chunk>(128);
 	private final ArrayBlockingQueue<Chunk> _chunkUpdateImportant = new ArrayBlockingQueue<Chunk>(256);
 	private final ArrayBlockingQueue<Chunk> _chunkUpdateNormal = new ArrayBlockingQueue<Chunk>(2056);
-	private TreeMap<Integer, Chunk> _chunkCache = new TreeMap<Integer, Chunk>();
+	private final TreeMap<Integer, Chunk> _chunkCache = new TreeMap<Integer, Chunk>();
 	/* ------ */
 	private PerlinNoise _pGen1;
 	private PerlinNoise _pGen2;
@@ -205,9 +205,11 @@ public class World extends RenderableObject {
 
 			// Only update the chunks if the daylight value has changed
 			if (_daylight != oldDaylight) {
-				// Mark all chunks in the cache dirty
-				for (int key : _chunkCache.keySet()) {
-					_chunkCache.get(key)._dirty = true;
+				synchronized (_chunkCache) {
+					// Mark all chunks in the cache dirty
+					for (int key : _chunkCache.keySet()) {
+						_chunkCache.get(key)._dirty = true;
+					}
 				}
 
 				// But update only those chunks, which are displayed at the moment
@@ -348,12 +350,12 @@ public class World extends RenderableObject {
 	}
 
 	/*
-	 * Updates the world. This method checks the queue for the display
-	 * list updates and recreates the display lists accordingly.
-	 */
+     * Updates the world. This method checks the queue for the display
+     * list updates and recreates the display lists accordingly.
+     */
 	@Override
 	public void update(long delta) {
-		for (int i = 0; i < 8 && !_chunkUpdateQueueDL.isEmpty(); i++) {
+		for (int i = 0; i < 32 && !_chunkUpdateQueueDL.isEmpty(); i++) {
 			Chunk c = _chunkUpdateQueueDL.poll();
 
 			if (c != null) {
@@ -366,9 +368,9 @@ public class World extends RenderableObject {
 	/**
 	 * Genrates a simple tree at a given position.
 	 *
-	 * @param posX   X-coordinate
-	 * @param posY   Y-coordinate
-	 * @param posZ   Z-coordinate
+	 * @param posX X-coordinate
+	 * @param posY Y-coordinate
+	 * @param posZ Z-coordinate
 	 * @param update If set the affected chunks are queued for updating
 	 */
 	public void generateTree(int posX, int posY, int posZ, boolean update) {
@@ -397,9 +399,9 @@ public class World extends RenderableObject {
 	/**
 	 * Genrates a simple pine tree at a given position.
 	 *
-	 * @param posX   X-coordinate
-	 * @param posY   Y-coordinate
-	 * @param posZ   Z-coordinate
+	 * @param posX X-coordinate
+	 * @param posY Y-coordinate
+	 * @param posZ Z-coordinate
 	 * @param update If set the affected chunks are queued for updating
 	 */
 	public void generatePineTree(int posX, int posY, int posZ, boolean update) {
@@ -492,10 +494,10 @@ public class World extends RenderableObject {
 	/**
 	 * Places a block of specific type at a given position.
 	 *
-	 * @param x      The X-coordinate
-	 * @param y      The Y-coordinate
-	 * @param z      The Z-coordinate
-	 * @param type   The type of the block to set
+	 * @param x The X-coordinate
+	 * @param y The Y-coordinate
+	 * @param z The Z-coordinate
+	 * @param type The type of the block to set
 	 * @param update If set the affected chunk is queued for updating
 	 */
 	public final void setBlock(int x, int y, int z, int type, boolean update) {
@@ -591,9 +593,9 @@ public class World extends RenderableObject {
 	/**
 	 * Sets the light value at the given position.
 	 *
-	 * @param x      The X-coordinate
-	 * @param y      The Y-coordinate
-	 * @param z      The Z-coordinate
+	 * @param x The X-coordinate
+	 * @param y The Y-coordinate
+	 * @param z The Z-coordinate
 	 * @param intens The light intensity value
 	 */
 	public void setLight(int x, int y, int z, float intens) {
@@ -726,7 +728,7 @@ public class World extends RenderableObject {
 	 * @return Distance-ordered list of ray-face-intersections
 	 */
 	public ArrayList<RayFaceIntersection> rayBlockIntersection(int x, int y, int z, Vector3f origin, Vector3f ray) {
-		/*
+        /*
          * If the block is made out of air... panic and get out of here. Fast.
          */
 		if (getBlock(x, y, z) == 0) {
@@ -792,11 +794,11 @@ public class World extends RenderableObject {
 	 * Calculates a intersection with the face of a block defined by 3 points.
 	 *
 	 * @param blockPos The position of the block to intersect with
-	 * @param v0       Point 1
-	 * @param v1       Point 2
-	 * @param v2       Point 3
-	 * @param origin   Origin of the intersection ray
-	 * @param ray      Direction of the intersection ray
+	 * @param v0 Point 1
+	 * @param v1 Point 2
+	 * @param v2 Point 3
+	 * @param origin Origin of the intersection ray
+	 * @param ray Direction of the intersection ray
 	 * @return Ray-face-intersection
 	 */
 	private RayFaceIntersection rayFaceIntersection(Vector3f blockPos, Vector3f v0, Vector3f v1, Vector3f v2, Vector3f origin, Vector3f ray) {
@@ -834,10 +836,10 @@ public class World extends RenderableObject {
 	/**
 	 * Loads a specified chunk from the cache or queues a new chunk for
 	 * generation.
-	 * <p/>
+	 *
 	 * NOTE: This method ALWAYS returns a valid chunk since new chunks
 	 * are generated if none of the present chunks fit.
-	 * <p/>
+	 *
 	 * TODO: Chunks should be saved to and loaded from the hard disk!
 	 *
 	 * @param x X-coordinate of the chunk
@@ -853,7 +855,9 @@ public class World extends RenderableObject {
 			// Check if the chunk fits the position
 			if (c.getPosition().x != x || c.getPosition().y != 0 || c.getPosition().z != z) {
 				// If not, try to load the chunk from cache
-				c = _chunkCache.get(Helper.getInstance().cantorize(x, z));
+				synchronized (_chunkCache) {
+					c = _chunkCache.get(Helper.getInstance().cantorize(x, z));
+				}
 			}
 		}
 
@@ -864,31 +868,35 @@ public class World extends RenderableObject {
 			// Looks a like a new chunk has to be created from scratch
 		}
 
-		// Okay we have a full cache here. Alert!
-		if (_chunkCache.size() >= 1024) {
-			// Fetch all chunks within the cache
-			ArrayList<Chunk> sortedChunks = new ArrayList<Chunk>(_chunkCache.values());
-			// Sort them according to their distance to the player
-			Collections.sort(sortedChunks);
+		synchronized (_chunkCache) {
+			// Okay we have a full cache here. Alert!
+			if (_chunkCache.size() >= 1024) {
+				// Fetch all chunks within the cache
+				ArrayList<Chunk> sortedChunks = new ArrayList<Chunk>(_chunkCache.values());
+				// Sort them according to their distance to the player
+				Collections.sort(sortedChunks);
 
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Cache full. Removing some chunks from the chunk cache...");
+				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Cache full. Removing some chunks from the chunk cache...");
 
-			// Delete as many elements as needed
-			for (int i = 0; i < 256; i++) {
-				int indexToDelete = sortedChunks.size() - i;
+				// Delete as many elements as needed
+				for (int i = 0; i < 256; i++) {
+					int indexToDelete = sortedChunks.size() - i;
 
-				if (indexToDelete >= 0 && indexToDelete < sortedChunks.size()) {
-					Chunk cc = sortedChunks.get(indexToDelete);
-					_chunkCache.remove(Helper.getInstance().cantorize((int) cc.getPosition().x, (int) cc.getPosition().z));
+					if (indexToDelete >= 0 && indexToDelete < sortedChunks.size()) {
+						Chunk cc = sortedChunks.get(indexToDelete);
+						_chunkCache.remove(Helper.getInstance().cantorize((int) cc.getPosition().x, (int) cc.getPosition().z));
+					}
 				}
-			}
 
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Finished removing chunks from chunk cache.");
+				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Finished removing chunks from chunk cache.");
+			}
 		}
 
 		// Generate a new chunk, cache it and return it
 		c = new Chunk(this, new Vector3f(x, 0, z));
-		_chunkCache.put(Helper.getInstance().cantorize(x, z), c);
+		synchronized (_chunkCache) {
+			_chunkCache.put(Helper.getInstance().cantorize(x, z), c);
+		}
 
 		return c;
 	}
@@ -902,7 +910,10 @@ public class World extends RenderableObject {
 	 * @return The loaded chunk
 	 */
 	private Chunk loadChunk(int x, int z) {
-		return _chunkCache.get(Helper.getInstance().cantorize(x, z));
+		synchronized (_chunkCache) {
+			Chunk c = _chunkCache.get(Helper.getInstance().cantorize(x, z));
+			return c;
+		}
 	}
 
 	private void queueChunkForUpdate(Chunk c, int prio) {
