@@ -67,20 +67,18 @@ public class Main {
 	 * @param args Arguments
 	 */
 	public static void main(String[] args) {
+
 		LOGGER.log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
 
 		Main main = null;
 
-		// Try create the main window
 		try {
 			main = new Main();
-
 			main.create();
 			main.start();
 		} catch (Exception ex) {
 			LOGGER.log(Level.SEVERE, ex.toString(), ex);
 		} finally {
-			// After crash or end render loop should destroy the main window
 			if (main != null) {
 				main.destroy();
 			}
@@ -112,8 +110,8 @@ public class Main {
 		Mouse.create();
 
 		// OpenGL
-		this.initGL();
-		this.resizeGL();
+		initGL();
+		resizeGL();
 	}
 
 	/**
@@ -137,12 +135,8 @@ public class Main {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_FOG);
 		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0.1f);
 
-		// Enable FOG
+		// Enable fog
 		glHint(GL_FOG_HINT, GL_NICEST);
 		glFogi(GL_FOG_MODE, GL_LINEAR);
 		glFogf(GL_FOG_DENSITY, 1.0f);
@@ -164,22 +158,21 @@ public class Main {
 			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
+
 		// Init. the player and a world
 		player = new Player();
-
 		// Generate a world with a "random" seed value
 		String worldSeed = rand.randomCharacterString(16);
 		LOGGER.log(Level.INFO, "Creating new World with random seed \"{0}\"", worldSeed);
 		world = new World("WORLD1", worldSeed, player);
-
 		// Link the player to the world
 		player.setParent(world);
 	}
 
 	/**
-	 * Render the scene, player and HUD
+	 * Renders the scene, player and HUD.
 	 */
-	public void render() {
+	private void render() {
 		// Use the color of the sky for clearing
 		glClearColor(world.getDaylightColor().x, world.getDaylightColor().y, world.getDaylightColor().z, 1.0f);
 
@@ -190,9 +183,12 @@ public class Main {
 		fogColorBuffer.rewind();
 		glFog(GL_FOG_COLOR, fogColorBuffer);
 
-		// Render the player, world and HUD
+        /*
+         * Render the player, world and HUD.
+         */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
+
 		player.render();
 		world.render();
 		renderHUD();
@@ -206,7 +202,7 @@ public class Main {
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(84.0f, (float) Configuration.DISPLAY_WIDTH / (float) Configuration.DISPLAY_HEIGHT, 0.01f, 256f);
+		gluPerspective(84.0f, (float) Configuration.DISPLAY_WIDTH / (float) Configuration.DISPLAY_HEIGHT, 0.01f, 512f);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -215,14 +211,14 @@ public class Main {
 	}
 
 	/**
-	 * Start the render loop. The application can be terminated by pressing
+	 * Starts the render loop. The application can be terminated by pressing
 	 * the ESCAPE key.
 	 */
-	public void start() {
+	private void start() {
 		LOGGER.log(Level.INFO, "Starting the game...");
-
 		while (!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-			// Sync. at 120 FPS
+
+			// Sync. at 60 FPS
 			Display.sync(120);
 
 			// Measure a delta value and the frames per second
@@ -231,7 +227,7 @@ public class Main {
 			_lastFpsTime += delta;
 			_fps++;
 
-			// Update the FPS and calculate the mean for display
+			// Updates the FPS and calculate the mean for display
 			if (_lastFpsTime >= 1000) {
 				_lastFpsTime = 0;
 
@@ -241,8 +237,10 @@ public class Main {
 				_fps = 0;
 			}
 
-			// Updating and rendering of the scene. The delta
-			// value is used within the updating process.
+            /*
+             * Updating and rendering of the scene. The delta
+             * value is used within the updating process.
+             */
 			update(delta);
 			render();
 
@@ -254,7 +252,7 @@ public class Main {
 	}
 
 	/**
-	 * Updates the player and the world
+	 * Updates the player and the world.
 	 */
 	private void update(long delta) {
 		if (world.isWorldGenerated()) {
@@ -264,7 +262,7 @@ public class Main {
 	}
 
 	/**
-	 * Render the HUD on the screen.
+	 * Renders the HUD on the screen.
 	 */
 	private void renderHUD() {
 		glMatrixMode(GL_PROJECTION);
@@ -299,6 +297,7 @@ public class Main {
 		glEnd();
 
 
+		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 
 		glMatrixMode(GL_PROJECTION);
@@ -307,5 +306,4 @@ public class Main {
 		glPopMatrix();
 		glLoadIdentity();
 	}
-
 }

@@ -56,9 +56,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	enum SIDE {
 
 		LEFT, RIGHT, TOP, BOTTOM, FRONT, BACK;
-	}
-
-	;
+	};
 
 	/**
 	 * Init. the textures used within chunks.
@@ -92,7 +90,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	public void render(boolean translucent) {
 
         /*
-		 * Draws the outline of each chunk.
+         * Draws the outline of each chunk.
          */
 		if (Configuration.SHOW_CHUNK_OUTLINES) {
 			glLineWidth(2.0f);
@@ -139,7 +137,13 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 		if (!translucent) {
 			glCallList(_displayListOpaque);
 		} else {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_ALPHA_TEST);
+			glAlphaFunc(GL_GREATER, 0.1f);
 			glCallList(_displayListTranslucent);
+			glDisable(GL_BLEND);
+			glDisable(GL_ALPHA_TEST);
 		}
 		glDisable(GL_TEXTURE_2D);
 	}
@@ -174,7 +178,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 
 	/**
 	 * Generates the terrain within this chunk.
-	 * <p/>
+	 *
 	 * TODO: Much to simple and boring
 	 */
 	public void generateTerrain() {
@@ -210,6 +214,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
                                 /*
                                  * The upper layer is filled with dirt.
                                  */
+
 								if (i <= 34 && i >= 28) {
 									setBlock(x, i, z, 0x7);
 								} else {
@@ -242,7 +247,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 
 	/**
 	 * Populates the chunk (e.g. placement of trees etc.).
-	 * <p/>
+	 *
 	 * TODO: Much to simple and boring
 	 */
 	public void populate() {
@@ -540,7 +545,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 							color.add(colorOffset.z * shadowIntens * _parent.getDaylight());
 							color.add(colorOffset.w);
 
-							tex.add(texOffsetX + 0.0625f);
+							tex.add(texOffsetX + 0.0624f);
 							tex.add(texOffsetY);
 							quads.add(0.5f + x + offset.x);
 							quads.add(0.5f + y + offset.y);
@@ -749,7 +754,7 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 	/**
 	 * Returns true, if the block side is ajdacent to a translucent block or an air
 	 * block.
-	 * <p/>
+	 *
 	 * NOTE: Air has to be handled separatly. Otherwise the water surface would be ignored in the tessellation progress!
 	 */
 	private boolean isSideVisibleForBlockTypes(int blockToCheck, int currentBlock) {
@@ -903,16 +908,17 @@ public class Chunk extends RenderableObject implements Comparable<Chunk> {
 		}
 	}
 
-	/**
-	 * Calculates the sunlight at a give position.
-	 *
-	 * @param x
-	 * @param z
-	 */
 	public void calcSunlightAtLocalPos(int x, int z) {
+		float light = Configuration.MAX_LIGHT;
+
 		for (int y = (int) Configuration.CHUNK_DIMENSIONS.y - 1; y >= 0; y--) {
 			if (Helper.getInstance().isBlockTypeTranslucent(_blocks[x][y][z])) {
-				_light[x][y][z] = Configuration.MAX_LIGHT;
+				_light[x][y][z] = light;
+
+				if (_blocks[x][y][z] != 0x0) {
+					light -= Configuration.WATER_LIGHT_ABSORPTION;
+					light = Math.max(Configuration.MIN_LIGHT, light);
+				}
 			} else {
 				break;
 			}

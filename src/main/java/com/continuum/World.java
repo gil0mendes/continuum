@@ -56,8 +56,8 @@ public class World extends RenderableObject {
 	 * Initializes a new world for the single player mode.
 	 *
 	 * @param title The title/description of the world
-	 * @param seed  The seed string used to genrate the terrain
-	 * @param p     The player
+	 * @param seed The seed string used to genrate the terrain
+	 * @param p The player
 	 */
 	public World(String title, String seed, Player p) {
 		this._player = p;
@@ -299,15 +299,14 @@ public class World extends RenderableObject {
 		 */
 		glPushMatrix();
 		// Position the sun relatively to the player
-		glTranslatef(_player.getPosition().x, Configuration.VIEWING_DISTANCE_IN_CHUNKS.y * Configuration.CHUNK_DIMENSIONS.y * 1.25f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.z * Configuration.CHUNK_DIMENSIONS.z + _player.getPosition().z);
+		glTranslatef(Configuration.VIEWING_DISTANCE_IN_CHUNKS.x * Configuration.CHUNK_DIMENSIONS.x + _player.getPosition().x / 2f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.y * Configuration.CHUNK_DIMENSIONS.y * 0.75f, Configuration.VIEWING_DISTANCE_IN_CHUNKS.z * Configuration.CHUNK_DIMENSIONS.z + _player.getPosition().z *2f);
 
 		// Disable fog
 		glDisable(GL_FOG);
 
 		glColor4f(1f, 1f, 1f, 1.0f);
-		// Rotate the sun slightly
-		glRotatef(-15f, 1f, 0f, 0f);
-
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_TEXTURE_2D);
 		_textureSun.bind();
 		glBegin(GL_QUADS);
@@ -321,6 +320,7 @@ public class World extends RenderableObject {
 		glVertex3f(-Configuration.SUN_SIZE, -Configuration.SUN_SIZE, -Configuration.SUN_SIZE);
 		glEnd();
 		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_BLEND);
 
 		glEnable(GL_FOG);
 		glPopMatrix();
@@ -385,7 +385,9 @@ public class World extends RenderableObject {
 			for (int x = -2; x < 3; x++) {
 				for (int z = -2; z < 3; z++) {
 					if (!(x == -2 && z == -2) && !(x == 2 && z == 2) && !(x == -2 && z == 2) && !(x == 2 && z == -2)) {
-						setBlock(posX + x, posY + y, posZ + z, 0x6, update);
+						if (_rand.randomDouble() <= 0.8f) {
+							setBlock(posX + x, posY + y, posZ + z, 0x6, update);
+						}
 					}
 				}
 			}

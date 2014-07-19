@@ -5,6 +5,7 @@ import java.util.Collections;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.util.glu.Sphere;
 import org.lwjgl.util.vector.Vector3f;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -21,11 +22,8 @@ public class Player extends RenderableObject {
 	private boolean _demoAutoFlyMode = false;
 	private boolean _godMode = false;
 
-	// Max. speed of the playering while walking
-	private static int WALKING_SPEED = 4;
-
 	// Player walking speed
-	private int _wSpeed = WALKING_SPEED;
+	private int _wSpeed = Configuration.WALKING_SPEED;
 
 	// Viewing direction of the player
 	private double _yaw = 135d;
@@ -35,7 +33,7 @@ public class Player extends RenderableObject {
 	private Vector3f _moveVector = new Vector3f(0, 0, 0);
 
 	// Acceleration
-	private Vector3f _accVector = new Vector3f();
+	private Vector3f _accVector = new Vector3f(0, 0, 0);
 
 	// Gravity (aka acceleration y)
 	private float _gravity = 0.0f;
@@ -48,7 +46,8 @@ public class Player extends RenderableObject {
 	 */
 	@Override
 	public void render() {
-		if (Configuration.ENABLE_BORRING && !_godMode) {
+
+		if (Configuration.ENABLE_BOBBING && !_godMode) {
 			float bobbing2 = _parent.getpGen2().noise(_position.x / 1.5f, _position.z / 1.5f, 0f) * 2f;
 			glRotatef(bobbing2, 0f, 0f, 1f);
 		}
@@ -56,12 +55,23 @@ public class Player extends RenderableObject {
 		glRotatef((float) _pitch, 1f, 0f, 0f);
 		glRotatef((float) _yaw, 0f, 1f, 0f);
 
-		if (Configuration.ENABLE_BORRING && !_godMode) {
+		if (Configuration.ENABLE_BOBBING && !_godMode) {
 			float bobbing1 = _parent.getpGen1().noise(_position.x * 1.5f, _position.z * 1.5f, 0f) * 0.15f;
 			glTranslatef(0.0f, bobbing1, 0);
 		}
 
 		glTranslatef(-_position.x, -_position.y, -_position.z);
+		// Offset the camera by the player's hight
+		glTranslatef(0, -Configuration.PLAYER_HEIGHT, 0);
+
+		glPushMatrix();
+		glTranslatef(_position.x, _position.y, _position.z);
+
+
+//        glColor3f(1f, 0f, 0f);
+//        Sphere s = new Sphere();
+//        s.draw(0.1f, 64, 4);
+		glPopMatrix();
 
 		RayFaceIntersection is = calcSelectedBlock();
 
@@ -140,7 +150,6 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Yaws the player's point of view.
-	 *
 	 * @param diff Amount of yawing to be applied.
 	 */
 	public void yaw(float diff) {
@@ -155,7 +164,6 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Pitches the player's point of view.
-	 *
 	 * @param diff Amount of pitching to be applied.
 	 */
 	public void pitch(float diff) {
@@ -236,12 +244,16 @@ public class Player extends RenderableObject {
 	public RayFaceIntersection calcSelectedBlock() {
 		ArrayList<RayFaceIntersection> inters = new ArrayList<RayFaceIntersection>();
 
+		// The ray should originate from the player's eye
+		Vector3f origin = new Vector3f(_position);
+		origin.y += Configuration.PLAYER_HEIGHT;
+
 		Vector3f vD = viewDirection();
 		for (int x = -4; x < 4; x++) {
 			for (int y = -4; y < 4; y++) {
 				for (int z = -4; z < 4; z++) {
 					if (x != 0 || y != 0 || z != 0) {
-						ArrayList<RayFaceIntersection> iss = _parent.rayBlockIntersection((int) _position.x + x, (int) _position.y + y, (int) _position.z + z, _position, vD);
+						ArrayList<RayFaceIntersection> iss = _parent.rayBlockIntersection((int) _position.x + x, (int) _position.y + y, (int) _position.z + z, origin, vD);
 						if (iss != null) {
 							inters.addAll(iss);
 						}
@@ -272,7 +284,7 @@ public class Player extends RenderableObject {
 				// Players should not place blocks inside themselves! That would be silly!
 				Vector3f playerBlockPos = new Vector3f(_position);
 				playerBlockPos.x = (int) (playerBlockPos.x + 0.5f);
-				playerBlockPos.y = (int) (playerBlockPos.y - Configuration.PLAYER_HEIGHT);
+				playerBlockPos.y = (int) (playerBlockPos.y);
 				playerBlockPos.z = (int) (playerBlockPos.z + 0.5f);
 
 				if (blockPos.x != playerBlockPos.x || (blockPos.y != playerBlockPos.y && blockPos.y != playerBlockPos.y + 1f) || blockPos.z != playerBlockPos.z) {
@@ -366,41 +378,26 @@ public class Player extends RenderableObject {
 	/**
 	 * TODO: Check for blocks above the player!
 	 *
-	 * @param oldPosition
-	 * @param delta
 	 * @return
 	 */
-	private boolean verticalHitTest(Vector3f oldPosition, float delta) {
-		int blockType1 = _parent.getBlock((int) (getPosition().x + 0.5f), (int) (getPosition().y - Configuration.PLAYER_HEIGHT), (int) (getPosition().z + 0.5f));
+	private boolean verticalHitTest() {
+		int blockType1 = _parent.getBlock((int) (getPosition().x + 0.5f), (int) getPosition().y, (int) (getPosition().z + 0.5f));
 
 		if (blockType1 > 0) {
-			_gravity = 0.0f;
-
-			if (!_godMode) {
-				_position.y = oldPosition.y;
-			}
-
 			return true;
 		}
 
 		return false;
 	}
 
-	private boolean horizontalHitTest(Vector3f oldPosition, float delta) {
+	private boolean horizontalHitTest() {
 		Vector3f dir = _accVector.normalise(null);
-		Vector3f blockPos = new Vector3f((int) (getPosition().x + 0.5f + dir.x * 0.1f), (int) (getPosition().y - Configuration.PLAYER_HEIGHT), (int) (getPosition().z + 0.5f + dir.z * 0.1f));
+		Vector3f blockPos = new Vector3f((int) (getPosition().x + 0.5f + dir.x * 0.1f), (int) getPosition().y, (int) (getPosition().z + 0.5f + dir.z * 0.1f));
 
 		int blockType1 = _parent.getBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z);
 		int blockType2 = _parent.getBlock((int) blockPos.x, (int) blockPos.y + 1, (int) blockPos.z);
 
 		if (blockType1 > 0 || blockType2 > 0) {
-			if (!_godMode) {
-				_position.x = oldPosition.x;
-				_position.z = oldPosition.z;
-				_accVector.x = 0f;
-				_accVector.z = 0f;
-			}
-
 			return true;
 		}
 
@@ -408,33 +405,22 @@ public class Player extends RenderableObject {
 	}
 
 	private void updatePlayerPosition(float delta) {
+		// Save the previous position before chaning any of the values
 		Vector3f oldPosition = new Vector3f(_position);
 
-		if (_godMode) {
-			getPosition().y += (_accVector.y / 1000.0f) * delta;
-			_gravity = 0.0f;
-		} else {
-			getPosition().y += (_gravity / 1000.0f) * delta;
-		}
-
-		getPosition().x += (_accVector.x / 1000.0f) * delta;
-		getPosition().z += (_accVector.z / 1000.0f) * delta;
-
-		_accVector.x += _moveVector.x;
-		_accVector.y += _moveVector.y;
-		_accVector.z += _moveVector.z;
-
-
+        /*
+         * Slowdown the speed of the player each time this method is called.
+         */
 		if (Math.abs(_accVector.y) > 0f) {
-			_accVector.y += -1f * _accVector.y * 0.05f;
+			_accVector.y += -1f * _accVector.y * Configuration.SLOWDOWN_INTENS;
 		}
 
 		if (Math.abs(_accVector.x) > 0f) {
-			_accVector.x += -1f * _accVector.x * 0.05f;
+			_accVector.x += -1f * _accVector.x * Configuration.SLOWDOWN_INTENS;
 		}
 
 		if (Math.abs(_accVector.z) > 0f) {
-			_accVector.z += -1f * _accVector.z * 0.05f;
+			_accVector.z += -1f * _accVector.z * Configuration.SLOWDOWN_INTENS;
 		}
 
 		if (Math.abs(_accVector.x) > _wSpeed || Math.abs(_accVector.z) > _wSpeed || Math.abs(_accVector.z) > _wSpeed) {
@@ -446,22 +432,60 @@ public class Player extends RenderableObject {
 			_accVector.y /= div;
 		}
 
-		boolean vHit = verticalHitTest(oldPosition, delta);
-		horizontalHitTest(oldPosition, delta);
 
-		if (vHit && _jump) {
-			_jump = false;
-			_gravity = Configuration.JUMP_INTENSITY;
-		}
+        /*
+         * Increase the speed of the player by adding the movement
+         * vector to the acceleration vector.
+         */
+		_accVector.x += _moveVector.x;
+		_accVector.y += _moveVector.y;
+		_accVector.z += _moveVector.z;
 
-		if (_gravity > -Configuration.MAX_GRAVITY) {
-			_gravity -= 0.05f * delta;
-		}
+        /*
+         * Update the position of the player
+         * according to the acceleration vector.
+         */
+		getPosition().y += (_accVector.y / 1000.0f) * delta;
+		getPosition().y += (_gravity / 1000.0f) * delta;
+		getPosition().x += (_accVector.x / 1000.0f) * delta;
+		getPosition().z += (_accVector.z / 1000.0f) * delta;
 
+		if (!_godMode) {
+			boolean vHit = verticalHitTest();
 
-		if (_demoAutoFlyMode && _godMode) {
-			_accVector.x = 16.f;
-			_accVector.z = 16.f;
+			if (!vHit) {
+				// If the player is not standing on ground: increase the g-force
+				if (_gravity > -Configuration.MAX_GRAVITY) {
+					_gravity -= Configuration.G_FORCE * delta;
+				}
+			} else {
+				_position.y = oldPosition.y;
+
+				// Jumping is only possible, if the player is standing on ground
+				if (_jump) {
+					_jump = false;
+					_gravity = Configuration.JUMP_INTENSITY;
+				} else {
+					// Nullify the gravity if no jump was triggered
+					_gravity = 0f;
+				}
+			}
+
+            /*
+             * Check for horizontal collisions __after__ checking for vertical
+             * collisions.
+             */
+			if (horizontalHitTest()) {
+				// TODO: Calculate the normal to allow sliding alongside blocks!
+//                Vector3f norm = new Vector3f(1,0,0);
+//
+//                _position.z = oldPosition.z + (_accVector.z / 1000.0f) * delta * norm.z;
+//                _position.x = oldPosition.x + (_accVector.x / 1000.0f) * delta * norm.x;
+
+				// Simple collision handling
+				_position.z = oldPosition.z;
+				_position.x = oldPosition.x;
+			}
 		}
 	}
 
@@ -474,7 +498,6 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Returns the parent world.
-	 *
 	 * @return the parent world
 	 */
 	public World getParent() {
@@ -483,7 +506,6 @@ public class Player extends RenderableObject {
 
 	/**
 	 * Sets the parent world an resets the player.
-	 *
 	 * @param parent the parent world
 	 */
 	public void setParent(World parent) {
