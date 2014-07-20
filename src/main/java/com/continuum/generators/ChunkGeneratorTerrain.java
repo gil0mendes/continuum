@@ -2,7 +2,7 @@ package com.continuum.generators;
 
 import com.continuum.utilities.BlockMath;
 import com.continuum.world.Chunk;
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 
 /**
  * Generates the base terrain of the world.

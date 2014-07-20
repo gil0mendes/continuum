@@ -1,6 +1,6 @@
 package com.continuum.world;
 
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 import com.continuum.RenderableObject;
 import com.continuum.ShaderManager;
 import com.continuum.blocks.Block;

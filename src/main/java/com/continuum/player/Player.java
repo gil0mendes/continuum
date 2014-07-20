@@ -2,7 +2,7 @@ package com.continuum.player;
 
 import java.util.Collections;
 
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 import com.continuum.RenderableObject;
 import com.continuum.datastructures.AABB;
 import com.continuum.datastructures.BlockPosition;

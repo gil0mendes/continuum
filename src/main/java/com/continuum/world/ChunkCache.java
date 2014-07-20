@@ -1,6 +1,6 @@
 package com.continuum.world;
 
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 import com.continuum.utilities.BlockMath;
 import com.continuum.utilities.Helper;
 import javolution.util.FastList;

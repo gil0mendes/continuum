@@ -6,7 +6,7 @@ import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 import com.continuum.RenderableObject;
 import com.continuum.ShaderManager;
 import com.continuum.blocks.Block;

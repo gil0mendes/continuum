@@ -1,7 +1,7 @@
 package com.continuum.generators;
 
 import com.continuum.world.Chunk;
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 import com.continuum.utilities.FastRandom;
 import com.continuum.utilities.PerlinNoise;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;

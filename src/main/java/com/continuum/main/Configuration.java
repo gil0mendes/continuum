@@ -1,4 +1,4 @@
-package com.continuum;
+package com.continuum.main;
 
 import com.continuum.utilities.VectorPool;
 import javolution.util.FastMap;
@@ -10,6 +10,10 @@ import org.lwjgl.util.vector.Vector3f;
  * Helper class to allow global access to properties and game settings.
  */
 public class Configuration {
+    /**
+     * Maximum amount frames to skip
+     */
+    public static final int FRAME_SKIP_MAX_FRAMES = 5;
 	/**
 	 * TODO
 	 */

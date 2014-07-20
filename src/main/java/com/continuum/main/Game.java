@@ -1,13 +1,20 @@
-package com.continuum;
+package com.continuum.main;
 
 import java.awt.Font;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.*;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
+import com.continuum.ShaderManager;
 import com.continuum.player.Player;
 import com.continuum.utilities.FastRandom;
 import com.continuum.utilities.Helper;
@@ -29,12 +36,11 @@ import org.newdawn.slick.TrueTypeFont;
 /**
  * The heart and soul of Continuum.
  */
-public final class Main {
+public final class Game {
 
 	/* ------- */
-	private static final int TICKS_PER_SECOND = 60;
+	private static final int TICKS_PER_SECOND = 120;
 	private static final int SKIP_TICKS = 1000 / TICKS_PER_SECOND;
-	private static final int MAX_FRAMESKIP = 10;
 	/* ------- */
 	private static TrueTypeFont _font1;
 	private long _lastLoopTime;
@@ -50,8 +56,28 @@ public final class Main {
 	/* ------- */
 	private Player _player;
 	private World _world;
-	/* ------- */
-	private final FastRandom _rand = new FastRandom();
+    /* ------- */
+    private final FastRandom _rand = new FastRandom();
+    /* ------- */
+    private static Game _instance;
+    /* ------- */
+    private  final Logger _logger = Logger.getLogger("continuum");
+    /* ------- */
+    private boolean _sandbox = false;
+    /* ------- */
+
+    /**
+     * Get game instance
+     *
+     * @return
+     */
+    public static Game getInstance() {
+        if (_instance == null) {
+            _instance = new Game();
+        }
+
+        return _instance;
+    }
 
 	/**
 	 * Entry point of the application.
@@ -59,7 +85,14 @@ public final class Main {
 	 * @param args Arguments
 	 */
 	public static void main(String[] args) {
-		Helper.LOGGER.log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
+        Game.getInstance().addLogFileHandler("continuum.log", Level.SEVERE);
+		Game.getInstance().getLogger().log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
+
+        try {
+            loadLibs();
+        } catch (Exception ex) {
+            Game.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry: " + ex);
+        }
 
         /*
         * Update missing game files...
@@ -71,10 +104,10 @@ public final class Main {
 			System.exit(0);
 		}
 
-		Main main = null;
+		Game main = null;
 
 		try {
-			main = new Main();
+			main = new Game();
 			main.create();
 			main.start();
 		} catch (Exception ex) {
@@ -87,6 +120,33 @@ public final class Main {
 
 		System.exit(0);
 	}
+
+    private static void loadLibs() throws Exception {
+        if (System.getProperty("os.name").equals("Mac OS X")) {
+            addLibraryPath("natives/macosx");
+        } else if (System.getProperty("os.name").equals("Linux")) {
+            addLibraryPath("natives/linux");
+        } else {
+            addLibraryPath("natives/windows");
+        }
+    }
+
+    private static void addLibraryPath(String s) throws Exception {
+        final Field usrPathsFields = ClassLoader.class.getDeclaredField("usr_paths");
+        usrPathsFields.setAccessible(true);
+
+        final String[] paths = (String[]) usrPathsFields.get(null);
+
+        for (String path : paths){
+            if (path.equals(s)) {
+                return;
+            }
+        }
+
+        final String[] newPaths = Arrays.copyOf(paths, paths.length + 1);
+        newPaths[newPaths.length - 1] = s;
+        usrPathsFields.set(null, newPaths);
+    }
 
 	/**
 	 * Init. the display and mouse/keyboard input.
@@ -236,7 +296,7 @@ public final class Main {
 
 			// Pause the game while the debug console is being shown
 			loopCounter = 0;
-			while (Helper.getInstance().getTime() > nextGameTick && loopCounter < MAX_FRAMESKIP) {
+			while (Helper.getInstance().getTime() > nextGameTick && loopCounter < Configuration.FRAME_SKIP_MAX_FRAMES) {
 				if (!_pauseGame) {
 					update();
 				}
@@ -541,4 +601,28 @@ public final class Main {
 			_fps = 0;
 		}
 	}
+
+    public void addLogFileHandler(String s, Level logLevel)
+    {
+        try {
+            FileHandler fh = new FileHandler(s, true);
+            fh.setLevel(logLevel);
+            fh.setFormatter(new SimpleFormatter());
+            _logger.addHandler(fh);
+        } catch (IOException ex) {
+            _logger.log(Level.WARNING, ex.toString(), ex);
+        }
+    }
+
+    public Logger getLogger() {
+        return _logger;
+    }
+
+    public void setSandbox(boolean b) {
+        _sandbox = b;
+    }
+
+    public boolean isSandbox() {
+        return _sandbox;
+    }
 }

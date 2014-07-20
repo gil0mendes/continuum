@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.continuum.Main
+Main-Class: com.continuum.main.Game
 

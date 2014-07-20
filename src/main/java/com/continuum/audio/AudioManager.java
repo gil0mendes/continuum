@@ -1,5 +1,6 @@
 package com.continuum.audio;
 
+import com.continuum.main.Game;
 import javolution.util.FastMap;
 import org.newdawn.slick.openal.Audio;
 import org.newdawn.slick.openal.AudioLoader;

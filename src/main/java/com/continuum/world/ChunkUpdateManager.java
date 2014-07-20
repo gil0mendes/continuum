@@ -1,6 +1,6 @@
 package com.continuum.world;
 
-import com.continuum.Configuration;
+import com.continuum.main.Configuration;
 import javolution.util.FastList;
 
 import java.util.Collection;
