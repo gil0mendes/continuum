@@ -1,15 +1,17 @@
 package com.continuum.utilities;
 
+import java.util.ArrayList;
+
 /**
  * Random number generator based on the Xorshift generator by George Marsaglia.
  */
 public class FastRandom {
 
-	long seed = System.currentTimeMillis();
+	private long seed = System.currentTimeMillis();
 
 	/**
-	 * Initializes a new instance of the random number genrator using
-	 * a specified seed
+	 * Initializes a new instance of the random number generator using
+	 * a specified seed.
 	 *
 	 * @param seed The seed to use
 	 */
@@ -18,7 +20,7 @@ public class FastRandom {
 	}
 
 	/**
-	 * Initializes a new instance of the random number genrator using
+	 * Initializes a new instance of the random number generator using
 	 * System.currentTimeMillis() as seed.
 	 */
 	public FastRandom() {
@@ -37,7 +39,7 @@ public class FastRandom {
 	}
 
 	/**
-	 * Returns a random value as int.
+	 * Returns a random value as integer.
 	 *
 	 * @return Random value
 	 */
@@ -78,5 +80,43 @@ public class FastRandom {
 		}
 
 		return s.toString();
+	}
+
+	/**
+	 * Calculates a standardized normal distributed value (using the polar method).
+	 *
+	 * @return
+	 */
+	public double standNormalDistrDouble() {
+
+		double q = Double.MAX_VALUE;
+		double u1 = 0;
+		double u2;
+
+		while (q >= 1d || q == 0) {
+			u1 = randomDouble();
+			u2 = randomDouble();
+
+			q = Math.pow(u1, 2) + Math.pow(u2, 2);
+		}
+
+		double p = Math.sqrt((-2d * (Math.log(q))) / q);
+		return u1 * p; // or u2 * p
+	}
+
+	/**
+	 * Fisher-Yates shuffling algorithm by Donald Knuth.
+	 *
+	 * @param array
+	 */
+	public void shuffle(ArrayList<Integer> array) {
+		for (int i = array.size() - 1; i >= 0; i--) {
+			int j = (int) (Math.abs(randomLong()) % array.size());
+			int jElem = array.get(j);
+			int iElem = array.get(i);
+
+			array.set(i, jElem);
+			array.set(j, iElem);
+		}
 	}
 }

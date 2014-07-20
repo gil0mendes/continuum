@@ -1,4 +1,3 @@
 #!/bin/bash
-cd `dirname $0`
-java -Xms128m -Xmx512m -classpath *:lib/*:lib/lwjgl/jar/* -Djava.library.path=lib/lwjgl/native/linux com.continuum.Main
-
+cd "$(dirname "$0")"
+java -Xms64m -Xmx256m -jar Continuum.jar

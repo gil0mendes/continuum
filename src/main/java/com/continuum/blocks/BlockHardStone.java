@@ -4,7 +4,7 @@ import com.continuum.utilities.Helper;
 import org.lwjgl.util.vector.Vector2f;
 
 /**
- * A dirt block.
+ * A hard stone block.
  */
 public class BlockHardStone extends Block {
 
@@ -16,5 +16,10 @@ public class BlockHardStone extends Block {
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
 		return Helper.getInstance().calcOffsetForTextureAt(1, 1);
+	}
+
+	@Override
+	public boolean isRemovable() {
+		return true;
 	}
 }

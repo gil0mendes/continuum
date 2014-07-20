@@ -26,6 +26,11 @@
     <orderEntry type="library" exported="" name="Gradle: lwjgl_util-2.9.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: slick2d-core-1.0.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: jorbis-0.0.17" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: jdom-2.0.2" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: AppleJavaExtensions-1.4" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: annotations-13.0" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: javolution-5.5.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: trove4j-3.0.3" level="project" />
   </component>
 </module>
 

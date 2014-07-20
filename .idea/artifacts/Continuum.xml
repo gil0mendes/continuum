@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="Continuum">
+    <output-path>$PROJECT_DIR$/out/artifacts/Continuum</output-path>
+    <root id="root">
+      <element id="artifact" artifact-name="Continuum_jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/scripts/run_linux.sh" />
+      <element id="file-copy" path="$PROJECT_DIR$/scripts/run_macosx.command" />
+      <element id="file-copy" path="$PROJECT_DIR$/scripts/run_windows.bat" />
+      <element id="dir-copy" path="$PROJECT_DIR$/natives" />
+    </root>
+  </artifact>
+</component>

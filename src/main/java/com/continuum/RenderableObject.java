@@ -1,32 +1,32 @@
 package com.continuum;
 
+import com.continuum.utilities.VectorPool;
 import org.lwjgl.util.vector.Vector3f;
 
 /**
  * The base class of all renderable objects.
- *
- * @author Gil Mendes <gil00mendes@gmail.com>
  */
-public  abstract class RenderableObject
-{
-	// Position vector
-	protected Vector3f _position = new Vector3f(0.0f, 0.0f, 0.0f);
+public abstract class RenderableObject {
 
 	/**
-	 * Rendering operations have to be place here.
+	 * The position of this renderable object.
 	 */
-	public void render() {}
+	protected Vector3f _position = VectorPool.getVector();
 
 	/**
-	 * Updating operation have to placed here. The delta value can be
-	 * used to determinate how much time has passed since the last update.
-	 *
-	 * @param delta Time since the last update
+	 * Rendering operations have to be placed here.
 	 */
-	public void update(long delta) {}
+	public void render() {
+	}
 
 	/**
-	 * Returns the position of the object
+	 * Updating operations have to be placed here.
+	 */
+	public void update() {
+	}
+
+	/**
+	 * Returns the position of the object.
 	 *
 	 * @return The position
 	 */
@@ -35,12 +35,11 @@ public  abstract class RenderableObject
 	}
 
 	/**
-	 * Set the position of the object.
+	 * Sets the position of the object.
 	 *
-	 * @param newPostion The position
+	 * @param position The position
 	 */
-	public void setPosition(Vector3f newPostion) {
-		this._position = newPostion;
+	public void setPosition(Vector3f position) {
+		_position.set(position);
 	}
-
 }

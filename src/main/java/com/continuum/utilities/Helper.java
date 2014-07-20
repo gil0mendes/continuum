@@ -1,23 +1,42 @@
 package com.continuum.utilities;
 
-import com.continuum.Configuration;
 import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
+
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  * This is a simple helper class for various tasks.
- *
- * @author Gil Mendes <gil00mendes@gmail.com>
  */
 public class Helper {
 
-	static final float _div = 1.0f / 16.0f;
-	private static long _timerTicksPerSecond = Sys.getTimerResolution();
+	/**
+	 * The logger used for managing and creating the default log file.
+	 */
+	public static final Logger LOGGER = Logger.getLogger("continuum");
+	/* ---------- */
+	private static final float _div = 1.0f / 16.0f;
+	private static final long _timerTicksPerSecond = Sys.getTimerResolution();
+	/* ---------- */
 	private static Helper _instance = null;
 
+	static {
+		try {
+			FileHandler fh = new FileHandler("continuum.log", true);
+			fh.setFormatter(new SimpleFormatter());
+			LOGGER.addHandler(fh);
+		} catch (IOException ex) {
+			LOGGER.log(Level.WARNING, ex.toString(), ex);
+		}
+	}
+
 	/**
-	 * Returns the static instance of this helper class.
+	 * Returns (and creates – if necessary) the static instance
+	 * of this helper class.
 	 *
 	 * @return The instance
 	 */
@@ -25,6 +44,7 @@ public class Helper {
 		if (_instance == null) {
 			_instance = new Helper();
 		}
+
 
 		return _instance;
 	}
@@ -42,32 +62,63 @@ public class Helper {
 	}
 
 	/**
-	 * Returns the spawning point of the player.
-	 * TODO: Should not determine the spawning point randomly
+	 * Returns the system time in milliseconds.
 	 *
-	 * @return The coordinates of the spawning point
-	 */
-	public Vector3f calcPlayerOrigin() {
-		return new Vector3f(Configuration.CHUNK_DIMENSIONS.x * Configuration.VIEWING_DISTANCE_IN_CHUNKS.x / 2, 64, (Configuration.CHUNK_DIMENSIONS.z * Configuration.VIEWING_DISTANCE_IN_CHUNKS.z) / 2);
-	}
-
-	/**
-	 * Returns the system time.
-	 *
-	 * @return The system time
+	 * @return The system time in milliseconds.
 	 */
 	public long getTime() {
 		return (Sys.getTime() * 1000) / _timerTicksPerSecond;
 	}
 
+
 	/**
-	 * Applies Cantor's pairing function on 2D coordinates.
+	 * Tests if a given position is within the bounds of a given 3D array.
 	 *
-	 * @param k1 X-Coordinate
-	 * @param k2 Y-Coordinate
-	 * @return Unique 1D value
+	 * @param x     X-position
+	 * @param y     Y-position
+	 * @param z     Z-position
+	 * @param array The array
+	 * @return True if the position is within the bounds of the array
 	 */
-	public int cantorize(int k1, int k2) {
-		return ((k1 + k2) * (k1 + k2 + 1) / 2) + k2;
+	public boolean checkBounds3D(int x, int y, int z, byte[][][] array) {
+		int length1 = array.length;
+
+		if (x < 0 || x >= length1) {
+			return false;
+		}
+
+		int length2 = array[x].length;
+
+		if (y < 0 || y >= length2) {
+			return false;
+		}
+
+		int length3 = array[x][y].length;
+
+		return !(z < 0 || z >= length3);
+
+	}
+
+	/**
+	 * Returns true if the flag at given byte position
+	 * is set.
+	 *
+	 * @param value Byte value storing the flags
+	 * @param index Index position of the flag
+	 * @return True if the flag is set
+	 */
+	public boolean isFlagSet(byte value, short index) {
+		return (value & (1 << index)) != 0;
+	}
+
+	/**
+	 * Sets a flag at a given byte position.
+	 *
+	 * @param value Byte value storing the flags
+	 * @param index Index position of the flag
+	 * @return The byte value containing the modified flag
+	 */
+	public byte setFlag(byte value, short index) {
+		return (byte) (value | (1 << index));
 	}
 }
