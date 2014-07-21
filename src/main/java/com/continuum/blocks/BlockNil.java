@@ -26,11 +26,6 @@ public class BlockNil extends Block {
 	}
 
 	@Override
-	public boolean renderBoundingBox() {
-		return false;
-	}
-
-	@Override
 	public boolean isRemovable() {
 		return false;
 	}

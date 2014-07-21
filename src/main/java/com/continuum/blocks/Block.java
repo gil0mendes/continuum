@@ -1,177 +1,266 @@
 package com.continuum.blocks;
 
 import com.continuum.datastructures.AABB;
+import com.continuum.rendering.RenderableObject;
+import com.continuum.rendering.TextureManager;
 import com.continuum.utilities.Helper;
-import com.continuum.utilities.VectorPool;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+
+import static org.lwjgl.opengl.GL11.*;
 
 /**
  * Block class
  */
-public abstract class Block {
+public abstract class Block implements RenderableObject {
 
-	/**
-	 * The six sides of a block.
-	 */
-	public static enum SIDE {
+    /**
+     * The six sides of a block.
+     */
+    public static enum SIDE {
 
-		/**
-		 * Left side.
-		 */
-		LEFT,
-		/**
-		 * Right side.
-		 */
-		RIGHT,
-		/**
-		 * Top side.
-		 */
-		TOP,
-		/**
-		 * Bottom side.
-		 */
-		BOTTOM,
-		/**
-		 * Front side.
-		 */
-		FRONT,
-		/**
-		 * Back side.
-		 */
-		BACK
-	}
+        /**
+         * Left side.
+         */
+        LEFT,
+        /**
+         * Right side.
+         */
+        RIGHT,
+        /**
+         * Top side.
+         */
+        TOP,
+        /**
+         * Bottom side.
+         */
+        BOTTOM,
+        /**
+         * Front side.
+         */
+        FRONT,
+        /**
+         * Back side.
+         */
+        BACK
+    }
 
-	private static final Block[] _blocks = {new BlockAir(), new BlockGrass(), new BlockDirt(), new BlockStone(), new BlockWater(), new BlockTreeTrunk(), new BlockLeaf(), new BlockSand(), new BlockHardStone(), new BlockRedFlower(), new BlockYellowFlower(), new BlockHighGrass(), new BlockLargeHighGrass(), new BlockTorch(), new BlockLava(), new BlockWood(), new BlockCobbleStone(), new BlockIce(), new BlockGlass(), new BlockBrick(), new BlockCoal(), new BlockGold(), new BlockDarkLeaf()};
-	private static final BlockNil nilBlock = new BlockNil();
+    public static enum BLOCK_FORM {
+        NORMAL, CACTUS, LOWERED_BOCK, BILLBOARD
+    }
 
-	/**
-	 * Returns the object for the given block type ID.
-	 *
-	 * @param type Block type ID
-	 * @return The object for the given ID
-	 */
-	public static Block getBlockForType(byte type) {
-		if (type < 0 || type >= _blocks.length) {
-			return nilBlock;
-		}
+    private static final Block[] _blocks = {
+            new BlockAir(), new BlockGrass(), new BlockDirt(), new BlockStone(), // 0-3
+            new BlockWater(), new BlockTreeTrunk(), new BlockLeaf(), new BlockSand(), // 4-7
+            new BlockHardStone(), new BlockRedFlower(), new BlockYellowFlower(), // 8-10
+            new BlockHighGrass(), new BlockLargeHighGrass(), new BlockTorch(), new BlockLava(), // 11-14
+            new BlockWood(), new BlockCobbleStone(), new BlockIce(), new BlockGlass(), new BlockBrick(), // 15-19
+            new BlockCoal(), new BlockGold(), new BlockDarkLeaf(), new BlockSnow(), new BlockCactus(), // 20-24
+            new BlockBookShelf(), new BlockColorBlack(), new BlockColorBlue(), new BlockColorBrown(), new BlockColorGreen(), // 25-29
+            new BlockColorPurple(), new BlockColorRed(), new BlockColorWhite(), new BlockRedStone(), new BlockSilver(), new BlockDiamond() // 30-35
+    };
+    private static final BlockNil NIL_BLOCK = new BlockNil();
+    private static final Vector4f _colorOffset = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-		return _blocks[type];
-	}
+    /**
+     * Returns the object for the given block type ID.
+     *
+     * @param type Block type ID
+     * @return The object for the given ID
+     */
+    public static Block getBlockForType(byte type) {
+        if (type < 0 || type >= _blocks.length) {
+            return NIL_BLOCK;
+        }
 
-	/**
-	 * Returns the amount of blocks available.
-	 *
-	 * @return Amount of blocks available
-	 */
-	public static int getBlockCount() {
-		return _blocks.length;
-	}
+        return _blocks[type];
+    }
 
-	/**
-	 * Returns true if a given block type is translucent.
-	 *
-	 * @return True if the block type is translucent
-	 */
-	public boolean isBlockTypeTranslucent() {
-		return false;
-	}
+    /**
+     * Returns the amount of blocks available.
+     *
+     * @return Amount of blocks available
+     */
+    public static int getBlockCount() {
+        return _blocks.length;
+    }
 
-	/**
-	 * Calculates the color offset for a given block type and a speific
-	 * side of the block.
-	 *
-	 * @param side The block side
-	 * @return The color offset
-	 */
-	public Vector4f getColorOffsetFor(SIDE side) {
-		return new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
-	}
+    /**
+     * Returns true if a given block type is translucent.
+     *
+     * @return True if the block type is translucent
+     */
+    public boolean isBlockTypeTranslucent() {
+        return false;
+    }
 
-	/**
-	 * Calculates the texture offset for a given block type and a specific
-	 * side of the block.
-	 *
-	 * @param side The side of the block
-	 * @return The texture offset
-	 */
-	public Vector2f getTextureOffsetFor(SIDE side) {
-		return Helper.getInstance().calcOffsetForTextureAt(2, 0);
-	}
+    /**
+     * Calculates the color offset for a given block type and a specific
+     * side of the block.
+     *
+     * @param side The block side
+     * @return The color offset
+     */
+    public Vector4f getColorOffsetFor(SIDE side) {
+        return _colorOffset;
+    }
 
-	/**
-	 * Returns true, if the current block is a billboard.
-	 *
-	 * @return True if billboard
-	 */
-	public boolean isBlockBillboard() {
-		return false;
-	}
+    /**
+     * Calculates the texture offset for a given block type and a specific
+     * side of the block.
+     *
+     * @param side The side of the block
+     * @return The texture offset
+     */
+    public Vector2f getTextureOffsetFor(SIDE side) {
+        return Helper.calcOffsetForTextureAt(2, 0);
+    }
 
-	/**
-	 * Returns true, if the block is invisible.
-	 *
-	 * @return True if invisible
-	 */
-	public boolean isBlockInvisible() {
-		return false;
-	}
+    /**
+     * Returns true, if the block is invisible.
+     *
+     * @return True if invisible
+     */
+    public boolean isBlockInvisible() {
+        return false;
+    }
 
-	/**
-	 * Returns true, if the block should be ignored
-	 * within the collision checks.
-	 *
-	 * @return True if penetrable
-	 */
-	public boolean isPenetrable() {
-		return false;
-	}
+    /**
+     * Returns true, if the block should be ignored
+     * within the collision checks.
+     *
+     * @return True if penetrable
+     */
+    public boolean isPenetrable() {
+        return false;
+    }
 
-	/**
-	 * Returns true, if the block should be considered
-	 * while calculating shadows.
-	 *
-	 * @return True if casting shadows
-	 */
-	public boolean isCastingShadows() {
-		return true;
-	}
+    /**
+     * Returns true, if the block should be considered
+     * while calculating shadows.
+     *
+     * @return True if casting shadows
+     */
+    public boolean isCastingShadows() {
+        return true;
+    }
 
-	/**
-	 * @return
-	 */
-	public boolean doNotTessellate() {
-		return false;
-	}
+    public boolean doNotTessellate() {
+        return false;
+    }
 
-	/**
-	 * @return
-	 */
-	public boolean renderBoundingBox() {
-		return true;
-	}
+    public boolean shouldRenderBoundingBox() {
+        return true;
+    }
 
-	/**
-	 * @return
-	 */
-	public byte getLuminance() {
-		return 0;
-	}
+    public byte getLuminance() {
+        return 0;
+    }
 
-	/**
-	 * @return
-	 */
-	public boolean isRemovable() {
-		return true;
-	}
+    public boolean isRemovable() {
+        return true;
+    }
 
-	/**
-	 * @param x
-	 * @param y
-	 * @param z
-	 * @return
-	 */
-	public static AABB AABBForBlockAt(int x, int y, int z) {
-		return new AABB(VectorPool.getVector(x, y, z), VectorPool.getVector(0.5f, 0.5f, 0.5f));
-	}
+    public boolean playerCanAttachBlocks() {
+        return (getBlockForm() == BLOCK_FORM.NORMAL);
+    }
+
+    public static AABB AABBForBlockAt(Vector3f pos) {
+        return new AABB(pos, new Vector3f(0.5f, 0.5f, 0.5f));
+    }
+
+    public static AABB AABBForBlockAt(int x, int y, int z) {
+        return new AABB(new Vector3f(x, y, z), new Vector3f(0.5f, 0.5f, 0.5f));
+    }
+
+    public BLOCK_FORM getBlockForm() {
+        return BLOCK_FORM.NORMAL;
+    }
+
+    public boolean letSelectionRayThrough() {
+        return false;
+    }
+
+    public void render() {
+        if (isBlockInvisible())
+            return;
+
+        glEnable(GL_TEXTURE_2D);
+        TextureManager.getInstance().bindTexture("terrain");
+
+        glBegin(GL_QUADS);
+        GL11.glColor3f(1.0f, 1.0f, 1.0f);
+
+        // TOP
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.TOP).x, getTextureOffsetFor(SIDE.TOP).y);
+        GL11.glVertex3f(-0.5f, 0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.TOP).x + 0.0624f, getTextureOffsetFor(SIDE.TOP).y);
+        GL11.glVertex3f(0.5f, 0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.TOP).x + 0.0624f, getTextureOffsetFor(SIDE.TOP).y + 0.0624f);
+        GL11.glVertex3f(0.5f, 0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.TOP).x, getTextureOffsetFor(SIDE.TOP).y + 0.0624f);
+        GL11.glVertex3f(-0.5f, 0.5f, -0.5f);
+
+        // LEFT
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.LEFT).x, getTextureOffsetFor(SIDE.LEFT).y + 0.0624f);
+        GL11.glVertex3f(-0.5f, -0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.LEFT).x + 0.0624f, getTextureOffsetFor(SIDE.LEFT).y + 0.0624f);
+        GL11.glVertex3f(-0.5f, -0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.LEFT).x + 0.0624f, getTextureOffsetFor(SIDE.LEFT).y);
+        GL11.glVertex3f(-0.5f, 0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.LEFT).x, getTextureOffsetFor(SIDE.LEFT).y);
+        GL11.glVertex3f(-0.5f, 0.5f, -0.5f);
+
+
+        // BACK
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BACK).x, getTextureOffsetFor(SIDE.BACK).y + 0.0624f);
+        GL11.glVertex3f(-0.5f, -0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BACK).x + 0.0624f, getTextureOffsetFor(SIDE.BACK).y + 0.0624f);
+        GL11.glVertex3f(0.5f, -0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BACK).x + 0.0624f, getTextureOffsetFor(SIDE.BACK).y);
+        GL11.glVertex3f(0.5f, 0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BACK).x, getTextureOffsetFor(SIDE.BACK).y);
+        GL11.glVertex3f(-0.5f, 0.5f, 0.5f);
+
+        // RIGHT
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.RIGHT).x, getTextureOffsetFor(SIDE.RIGHT).y);
+        GL11.glVertex3f(0.5f, 0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.RIGHT).x + 0.0624f, getTextureOffsetFor(SIDE.RIGHT).y);
+        GL11.glVertex3f(0.5f, 0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.RIGHT).x + 0.0624f, getTextureOffsetFor(SIDE.RIGHT).y + 0.0624f);
+        GL11.glVertex3f(0.5f, -0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.RIGHT).x, getTextureOffsetFor(SIDE.RIGHT).y + 0.0624f);
+        GL11.glVertex3f(0.5f, -0.5f, -0.5f);
+
+        GL11.glColor3f(0.5f, 0.5f, 0.5f);
+
+        // FRONT
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.FRONT).x, getTextureOffsetFor(SIDE.FRONT).y);
+        GL11.glVertex3f(-0.5f, 0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.FRONT).x + 0.0624f, getTextureOffsetFor(SIDE.FRONT).y);
+        GL11.glVertex3f(0.5f, 0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.FRONT).x + 0.0624f, getTextureOffsetFor(SIDE.FRONT).y + 0.0624f);
+        GL11.glVertex3f(0.5f, -0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.FRONT).x, getTextureOffsetFor(SIDE.FRONT).y + 0.0624f);
+        GL11.glVertex3f(-0.5f, -0.5f, -0.5f);
+        // BOTTOM
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BOTTOM).x, getTextureOffsetFor(SIDE.BOTTOM).y);
+        GL11.glVertex3f(-0.5f, -0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BOTTOM).x + 0.0624f, getTextureOffsetFor(SIDE.BOTTOM).y);
+        GL11.glVertex3f(0.5f, -0.5f, -0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BOTTOM).x + 0.0624f, getTextureOffsetFor(SIDE.BOTTOM).y + 0.0624f);
+        GL11.glVertex3f(0.5f, -0.5f, 0.5f);
+        GL11.glTexCoord2f(getTextureOffsetFor(SIDE.BOTTOM).x, getTextureOffsetFor(SIDE.BOTTOM).y + 0.0624f);
+        GL11.glVertex3f(-0.5f, -0.5f, 0.5f);
+
+        GL11.glEnd();
+
+        glDisable(GL11.GL_TEXTURE_2D);
+    }
+
+    public void update() {
+        // Do nothing
+    }
 }

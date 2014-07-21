@@ -21,12 +21,7 @@ public class BlockHighGrass extends Block {
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.getInstance().calcOffsetForTextureAt(7, 2);
-	}
-
-	@Override
-	public boolean isBlockBillboard() {
-		return true;
+		return Helper.calcOffsetForTextureAt(7, 2);
 	}
 
 	@Override
@@ -39,8 +34,4 @@ public class BlockHighGrass extends Block {
 		return false;
 	}
 
-	@Override
-	public boolean renderBoundingBox() {
-		return false;
-	}
 }

@@ -8,27 +8,6 @@ repositories {
 }
 
 dependencies {
-    // LWJGL
-    compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: '2.9.1'
-    compile group: 'org.lwjgl.lwjgl', name: 'lwjgl_util', version: '2.9.1'
-
-    // Stick
-    compile group: 'org.slick2d', name: 'slick2d-core', version: '1.0.1'
-
-    // jDom
-    compile group: 'org.jdom', name: 'jdom', version: '2.0.2'
-
-    // Apple Java Extensions
-    compile group: 'com.apple', name: 'AppleJavaExtensions', version: '1.4'
-
-    // Annotations
-    compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
-
-    // Javolution
-    compile group: 'javolution', name: 'javolution', version: '5.5.1'
-
-    // Trove
-    compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
 
     // jUnit
     testCompile group: 'junit', name: 'junit', version: '4.11'

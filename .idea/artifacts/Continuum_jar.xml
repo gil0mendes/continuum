@@ -6,22 +6,19 @@
         <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
       </element>
       <element id="module-output" name="Continuum" />
-      <element id="library" level="project" name="Gradle: jdom-2.0.2" />
-      <element id="library" level="project" name="Gradle: lwjgl-2.9.1" />
-      <element id="library" level="project" name="Gradle: lwjgl_util-2.9.1" />
-      <element id="library" level="project" name="Gradle: slick2d-core-1.0.1" />
-      <element id="library" level="project" name="Gradle: annotations-13.0" />
-      <element id="library" level="project" name="Gradle: AppleJavaExtensions-1.4" />
-      <element id="library" level="project" name="Gradle: javolution-5.5.1" />
-      <element id="library" level="project" name="Gradle: trove4j-3.0.3" />
-      <element id="library" level="project" name="Gradle: hamcrest-core-1.3" />
-      <element id="library" level="project" name="Gradle: jinput-2.0.5" />
-      <element id="library" level="project" name="Gradle: jinput-platform-2.0.5-natives-linux" />
-      <element id="library" level="project" name="Gradle: jinput-platform-2.0.5-natives-osx" />
-      <element id="library" level="project" name="Gradle: jinput-platform-2.0.5-natives-windows" />
-      <element id="library" level="project" name="Gradle: jorbis-0.0.17" />
-      <element id="library" level="project" name="Gradle: junit-4.11" />
-      <element id="library" level="project" name="Gradle: jutils-1.0.0" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/annotations.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/AppleJavaExtensions.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/javolution-5.5.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jdom.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jinput.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jogg-0.0.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jorbis-0.0.15.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/junit-dep-4.9.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/lwjgl.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/lwjgl_util.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/lzma.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/slick-util.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/trove-3.0.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

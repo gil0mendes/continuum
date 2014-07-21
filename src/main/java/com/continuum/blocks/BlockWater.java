@@ -16,7 +16,7 @@ public class BlockWater extends Block {
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.getInstance().calcOffsetForTextureAt(14, 13);
+		return Helper.calcOffsetForTextureAt(14, 13);
 	}
 
 	@Override
@@ -26,11 +26,6 @@ public class BlockWater extends Block {
 
 	@Override
 	public boolean isCastingShadows() {
-		return false;
-	}
-
-	@Override
-	public boolean renderBoundingBox() {
 		return false;
 	}
 

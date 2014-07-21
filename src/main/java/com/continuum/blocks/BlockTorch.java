@@ -21,12 +21,7 @@ public class BlockTorch extends Block {
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.getInstance().calcOffsetForTextureAt(0, 5);
-	}
-
-	@Override
-	public boolean isBlockBillboard() {
-		return true;
+		return Helper.calcOffsetForTextureAt(0, 5);
 	}
 
 	@Override
@@ -36,11 +31,6 @@ public class BlockTorch extends Block {
 
 	@Override
 	public boolean isCastingShadows() {
-		return false;
-	}
-
-	@Override
-	public boolean renderBoundingBox() {
 		return false;
 	}
 

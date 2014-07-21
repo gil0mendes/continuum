@@ -21,6 +21,6 @@ public class BlockSand extends Block {
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.getInstance().calcOffsetForTextureAt(2, 1);
+		return Helper.calcOffsetForTextureAt(2, 1);
 	}
 }

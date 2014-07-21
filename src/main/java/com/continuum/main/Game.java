@@ -7,29 +7,28 @@ import static org.lwjgl.util.glu.GLU.*;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import com.continuum.ShaderManager;
-import com.continuum.player.Player;
+import com.continuum.rendering.ShaderManager;
+import com.continuum.world.characters.Player;
 import com.continuum.utilities.FastRandom;
 import com.continuum.utilities.Helper;
-import com.continuum.utilities.VectorPool;
-import com.continuum.world.Chunk;
 import com.continuum.world.World;
-import com.webupdater.WebUpdater;
+import com.continuum.world.chunk.Chunk;
 import javolution.util.FastList;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.openal.AL;
 import org.lwjgl.opengl.Display;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
 
@@ -58,6 +57,8 @@ public final class Game {
 	private World _world;
     /* ------- */
     private final FastRandom _rand = new FastRandom();
+    /* ------- */
+    private long _timeTicksPerSecond;
     /* ------- */
     private static Game _instance;
     /* ------- */
@@ -88,38 +89,44 @@ public final class Game {
         Game.getInstance().addLogFileHandler("continuum.log", Level.SEVERE);
 		Game.getInstance().getLogger().log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
 
+        // Load native libraries
         try {
             loadLibs();
         } catch (Exception ex) {
             Game.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry: " + ex);
         }
 
-        /*
-        * Update missing game files...
-        */
-		WebUpdater wu = new WebUpdater();
-
-		if (!wu.update()) {
-			Helper.LOGGER.log(Level.SEVERE, "Couldn't download missing game files. Sorry.");
-			System.exit(0);
-		}
-
-		Game main = null;
+		Game game = null;
 
 		try {
-			main = new Game();
-			main.create();
-			main.start();
+			game = Game.getInstance();
+
+			game.initDisplay();
+            game.initControllers();
+
+			game.initGame();
+
+            game.startGame();
 		} catch (Exception ex) {
-			Helper.LOGGER.log(Level.SEVERE, ex.toString(), ex);
+			Game.getInstance().getLogger().log(Level.SEVERE, ex.toString()
+            , ex);
 		} finally {
-			if (main != null) {
-				main.destroy();
+			if (game != null) {
+				game.destroy();
 			}
 		}
 
 		System.exit(0);
 	}
+
+    /**
+     * Returns the system time in milliseconds.
+     *
+     * @return The system time in milliseconds.
+     */
+    public long getTime() {
+        return (Sys.getTime() * 1000) / _timeTicksPerSecond;
+    }
 
     private static void loadLibs() throws Exception {
         if (System.getProperty("os.name").equals("Mac OS X")) {
@@ -148,51 +155,54 @@ public final class Game {
         usrPathsFields.set(null, newPaths);
     }
 
-	/**
-	 * Init. the display and mouse/keyboard input.
-	 *
-	 * @throws LWJGLException
-	 */
-	private void create() throws LWJGLException {
-		Helper.LOGGER.log(Level.INFO, "Loading Blockmania. Please stand by...");
+    /**
+     * Init. the display.
+     *
+     * @throws LWJGLException
+     */
+    public void initDisplay() throws LWJGLException {
+        Game.getInstance().getLogger().log(Level.INFO, "Loading Continuum. Please stand by...");
 
-		// Display
-		if (Configuration.FULLSCREEN) {
-			Display.setDisplayMode(Display.getDesktopDisplayMode());
-			Display.setFullscreen(true);
-		} else {
-			Display.setDisplayMode(Configuration.DISPLAY_MODE);
-		}
+        // Display
+        if (Configuration.FULLSCREEN){
+            Display.setDisplayMode(Display.getDesktopDisplayMode());
+            Display.setFullscreen(true);
+        } else {
+            Display.setDisplayMode(Configuration.DISPLAY_MODE);
+        }
 
-		Display.setTitle(Configuration.GAME_TITLE);
-		Display.create(Configuration.PIXEL_FORMAT);
+        Display.setTitle(Configuration.GAME_TITLE);
+        Display.create(Configuration.PIXEL_FORMAT);
+    }
 
-		// Keyboard
-		Keyboard.create();
-		Keyboard.enableRepeatEvents(true);
+    /**
+     * Init. game inputs.
+     *
+     * @throws LWJGLException
+     */
+    public void initControllers() throws LWJGLException {
+        // Keyboard
+        Keyboard.create();
+        Keyboard.enableRepeatEvents(true);
 
-		// Mouse
-		Mouse.setGrabbed(true);
-		Mouse.create();
-
-		// OpenGL
-		initGL();
-		resizeGL();
-	}
+        // Mouse
+        Mouse.setGrabbed(true);
+        Mouse.create();
+    }
 
 	/**
 	 * Clean up before exiting the application.
 	 */
 	private void destroy() {
-		Mouse.destroy();
+        AL.destroy();
+        Mouse.destroy();
 		Keyboard.destroy();
 		Display.destroy();
 	}
 
-	/**
-	 * Initializes OpenGL.
-	 */
-	private void initGL() {
+	public void initGame() {
+        _timeTicksPerSecond = Sys.getTimerResolution();
+
 		// Init. fonts
 		_font1 = new TrueTypeFont(new Font("Arial", Font.PLAIN, 12), true);
 
@@ -207,16 +217,11 @@ public final class Game {
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		GL11.glHint(GL11.GL_PERSPECTIVE_CORRECTION_HINT, GL11.GL_NICEST);
+        glShadeModel(GL11.GL_SMOOTH);
 
-		Chunk.init();
-		World.init();
+        World.init();
 
-        /*
-         * Init. player and world
-         */
-		_player = new Player();
 		// Generate a world with a random seed value
 		String worldSeed = Configuration.DEFAULT_SEED;
 
@@ -224,27 +229,20 @@ public final class Game {
 			worldSeed = _rand.randomCharacterString(16);
 		}
 
-		initNewWorld("World1", worldSeed);
+		initNewWorldAndPlayer("World1", worldSeed);
 	}
 
 	/**
 	 * Renders the scene.
 	 */
 	private void render() {
-
-		// Fog has the same color as the sky
-		float[] fogColor = {_world.getDaylight(), _world.getDaylight(), _world.getDaylight(), 1.0f};
-		FloatBuffer fogColorBuffer = BufferUtils.createFloatBuffer(4);
-		fogColorBuffer.put(fogColor);
-		fogColorBuffer.rewind();
-		glFog(GL_FOG_COLOR, fogColorBuffer);
-		glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogi(GL_FOG_MODE, GL_LINEAR);
 
 		// Update the viewing distance
-		float minDist = Math.min(Configuration.getSettingNumeric("V_DIST_X") * Configuration.CHUNK_DIMENSIONS.x, Configuration.getSettingNumeric("V_DIST_Z") * Configuration.CHUNK_DIMENSIONS.z);
-		float viewingDistance = minDist / 2f;
-		glFogf(GL_FOG_START, 16f);
-		glFogf(GL_FOG_END, viewingDistance);
+		double minDist = Math.min(Configuration.getSettingNumeric("V_DIST_X") * Configuration.CHUNK_DIMENSIONS.x, Configuration.getSettingNumeric("V_DIST_Z") * Configuration.CHUNK_DIMENSIONS.z);
+        double viewingDistance = minDist / 2f;
+		glFogf(GL_FOG_START, (float)(viewingDistance * 0.05));
+		glFogf(GL_FOG_END, (float)viewingDistance);
 
         /*
          * Render the player, world and HUD.
@@ -254,21 +252,18 @@ public final class Game {
 
 		_world.render();
 
-		glBindTexture(GL_TEXTURE_2D, 0);
-		ShaderManager.getInstance().enableShader(null);
-
-		renderHUD();
+        renderHUD();
 	}
 
 	/**
 	 * Resizes the viewport according to the chosen display width and height.
 	 */
-	private void resizeGL() {
+	private void resizeViewport() {
 		glViewport(0, 0, Display.getDisplayMode().getWidth(), Display.getDisplayMode().getHeight());
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(74.0f, (float) Display.getDisplayMode().getWidth() / (float) Display.getDisplayMode().getHeight(), 0.1f, 1024f);
+		gluPerspective(80.0f, (float) Display.getDisplayMode().getWidth() / (float) Display.getDisplayMode().getHeight(), 0.1f, 756f);
 		glPushMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -279,12 +274,14 @@ public final class Game {
 	/**
 	 * Starts the render loop.
 	 */
-	private void start() {
-		Helper.LOGGER.log(Level.INFO, "Starting Blockmania...");
-		_lastLoopTime = Helper.getInstance().getTime();
+    public void startGame() {
+		Game.getInstance().getLogger().log(Level.INFO, "Starting Continuum...");
+		_lastLoopTime =getTime();
 
-		double nextGameTick = Helper.getInstance().getTime();
+		double nextGameTick = getTime();
 		int loopCounter;
+
+        resizeViewport();
 
         /*
          * Main game loop.
@@ -296,7 +293,7 @@ public final class Game {
 
 			// Pause the game while the debug console is being shown
 			loopCounter = 0;
-			while (Helper.getInstance().getTime() > nextGameTick && loopCounter < Configuration.FRAME_SKIP_MAX_FRAMES) {
+			while (getTime() > nextGameTick && loopCounter < Configuration.FRAME_SKIP_MAX_FRAMES) {
 				if (!_pauseGame) {
 					update();
 				}
@@ -315,15 +312,37 @@ public final class Game {
 		if (_saveWorldOnExit) {
 			_world.dispose();
 		}
+
 		Display.destroy();
 	}
 
+    public void stopGame() {
+        _runGame = false;
+    }
+
+    public void pauseGame(){
+        if (_world != null) {
+            _world.suspendUpdateThread();
+        }
+
+        Mouse.setGrabbed(false);
+        _pauseGame = true;
+    }
+
+    public void unpauseGame() {
+        _pauseGame = false;
+        Mouse.setGrabbed(false);
+
+        if (_world != null) {
+            _world.resumeUpdateThread();
+        }
+    }
+
 	/**
-	 * Updates the player and world.
+	 * Updates the world.
 	 */
 	private void update() {
 		_world.update();
-		_player.update();
 	}
 
 	/**
@@ -333,17 +352,16 @@ public final class Game {
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0, Display.getDisplayMode().getWidth(), Display.getDisplayMode().getHeight(), 0, -1, 1);
+		glOrtho(0, Display.getDisplayMode().getWidth(), Display.getDisplayMode().getHeight(), 0, -5, 1);
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
 
 		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
 
 		// Draw the crosshair
 		if (Configuration.getSettingBoolean("CROSSHAIR")) {
-			glColor3f(1f, 1f, 1f);
+			glColor4f(1f, 1f, 1f, 1f);
 			glLineWidth(2f);
 
 			glBegin(GL_LINES);
@@ -353,6 +371,9 @@ public final class Game {
 			glVertex2d(Display.getDisplayMode().getWidth() / 2f, Display.getDisplayMode().getHeight() / 2f + 8f);
 			glEnd();
 		}
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         /*
          * Draw debugging information.
@@ -428,107 +449,104 @@ public final class Game {
 	/**
 	 * Parses the console string and executes the command.
 	 */
-	private void processConsoleString() {
-		boolean success = false;
+    private void processConsoleString() {
+        boolean success = false;
 
-		FastList<String> parsingResult = new FastList<String>();
-		String temp = "";
+        FastList<String> parsingResult = new FastList<String>();
+        String temp = "";
 
-		for (int i = 0; i < _consoleInput.length(); i++) {
-			char c = _consoleInput.charAt(i);
+        for (int i = 0; i < _consoleInput.length(); i++) {
+            char c = _consoleInput.charAt(i);
 
-			if (c != ' ') {
-				temp = temp.concat(String.valueOf(c));
-			}
+            if (c != ' ') {
+                temp = temp.concat(String.valueOf(c));
+            }
 
-			if (c == ' ' || i == _consoleInput.length() - 1) {
-				parsingResult.add(temp);
-				temp = "";
-			}
-		}
+            if (c == ' ' || i == _consoleInput.length() - 1) {
+                parsingResult.add(temp);
+                temp = "";
+            }
+        }
 
-		// Try to parse the input
-		try {
-			if (parsingResult.get(0).equals("place")) {
-				if (parsingResult.get(1).equals("tree")) {
-					_player.plantTree(Integer.parseInt(parsingResult.get(2)));
-					success = true;
-				} else if (parsingResult.get(1).equals("block")) {
-					_player.placeBlock(Byte.parseByte(parsingResult.get(2)));
-					success = true;
-				}
-			} else if (parsingResult.get(0).equals("set")) {
-				if (parsingResult.get(1).equals("time")) {
-					_world.setTime(Float.parseFloat(parsingResult.get(2)));
-					success = true;
-					// Otherwise try lookup the given variable within the settings
-				} else {
+        // Try to parse the input
+        try {
+            if (parsingResult.get(0).equals("place")) {
+                if (parsingResult.get(1).equals("tree")) {
+                    _player.plantTree(Integer.parseInt(parsingResult.get(2)));
+                    success = true;
+                } else if (parsingResult.get(1).equals("block")) {
+                    _player.placeBlock(Byte.parseByte(parsingResult.get(2)));
+                    success = true;
+                }
+            } else if (parsingResult.get(0).equals("set")) {
+                if (parsingResult.get(1).equals("time")) {
+                    _world.setTime(Float.parseFloat(parsingResult.get(2)));
+                    success = true;
+                    // Otherwise try lookup the given variable within the settings
+                } else {
 
-					Boolean bRes = Configuration.getSettingBoolean(parsingResult.get(1).toUpperCase());
+                    Boolean bRes = Configuration.getSettingBoolean(parsingResult.get(1).toUpperCase());
 
-					if (bRes != null) {
-						Configuration.setSetting(parsingResult.get(1).toUpperCase(), Boolean.parseBoolean(parsingResult.get(2)));
-						success = true;
-					} else {
-						Float fRes = Configuration.getSettingNumeric(parsingResult.get(1).toUpperCase());
-						if (fRes != null) {
-							Configuration.setSetting(parsingResult.get(1).toUpperCase(), Float.parseFloat(parsingResult.get(2)));
-							success = true;
-						}
-					}
-				}
+                    if (bRes != null) {
+                        Configuration.setSetting(parsingResult.get(1).toUpperCase(), Boolean.parseBoolean(parsingResult.get(2)));
+                        success = true;
+                    } else {
+                        Double fRes = Configuration.getSettingNumeric(parsingResult.get(1).toUpperCase());
+                        if (fRes != null) {
+                            Configuration.setSetting(parsingResult.get(1).toUpperCase(), Double.parseDouble(parsingResult.get(2)));
+                            success = true;
+                        }
+                    }
+                }
 
-			} else if (parsingResult.get(0).equals("respawn")) {
-				_world.resetPlayer();
-				success = true;
-			} else if (parsingResult.get(0).equals("goto")) {
-				int x = Integer.parseInt(parsingResult.get(1));
-				int y = Integer.parseInt(parsingResult.get(2));
-				int z = Integer.parseInt(parsingResult.get(3));
-				_player.setPosition(VectorPool.getVector(x, y, z));
-				success = true;
-			} else if (parsingResult.get(0).equals("exit")) {
-				_saveWorldOnExit = true;
-				_runGame = false;
-				success = true;
-			} else if (parsingResult.get(0).equals("exit!")) {
-				_saveWorldOnExit = false;
-				_runGame = false;
-				success = true;
-			} else if (parsingResult.get(0).equals("info")) {
-				Helper.LOGGER.log(Level.INFO, _player.selectedBlockInformation());
-				success = true;
-			} else if (parsingResult.get(0).equals("load")) {
-				String worldSeed = _rand.randomCharacterString(16);
+            } else if (parsingResult.get(0).equals("respawn")) {
+                _world.resetPlayer();
+                success = true;
+            } else if (parsingResult.get(0).equals("goto")) {
+                int x = Integer.parseInt(parsingResult.get(1));
+                int y = Integer.parseInt(parsingResult.get(2));
+                int z = Integer.parseInt(parsingResult.get(3));
+                _player.setPosition(new Vector3f(x, y, z));
+                success = true;
+            } else if (parsingResult.get(0).equals("exit")) {
+                _saveWorldOnExit = true;
+                _runGame = false;
+                success = true;
+            } else if (parsingResult.get(0).equals("exit!")) {
+                _saveWorldOnExit = false;
+                _runGame = false;
+                success = true;
+            } else if (parsingResult.get(0).equals("info")) {
+                Game.getInstance().getLogger().log(Level.INFO, _player.selectedBlockInformation());
+                success = true;
+            } else if (parsingResult.get(0).equals("load")) {
+                String worldSeed = _rand.randomCharacterString(16);
 
-				if (parsingResult.size() > 1) {
-					worldSeed = parsingResult.get(1);
-				}
+                if (parsingResult.size() > 1) {
+                    worldSeed = parsingResult.get(1);
+                }
 
-				initNewWorld(worldSeed, worldSeed);
-				success = true;
-			} else if (parsingResult.get(0).equals("chunk_pos")) {
-				_world.printPlayerChunkPosition();
-				success = true;
-			} else if (parsingResult.get(0).equals("update_all")) {
-				_world.updateAllChunks();
-				success = true;
-			} else if (parsingResult.get(0).equals("set_spawn")) {
-				_world.setSpawningPoint();
-				success = true;
-			}
-		} catch (Exception e) {
-			Helper.LOGGER.log(Level.INFO, e.getMessage());
-		}
+                initNewWorldAndPlayer(worldSeed, worldSeed);
+                success = true;
+            } else if (parsingResult.get(0).equals("chunk_pos")) {
+                _world.printPlayerChunkPosition();
+                success = true;
+            } else if (parsingResult.get(0).equals("set_spawn")) {
+                _world.setSpawningPoint();
+                success = true;
+            }
+        } catch (Exception e) {
+            Game.getInstance().getLogger().log(Level.INFO, e.getMessage());
+        }
 
-		if (success) {
-			Helper.LOGGER.log(Level.INFO, "Console command \"{0}\" accepted.", _consoleInput);
-		} else {
-			Helper.LOGGER.log(Level.WARNING, "Console command \"{0}\" is invalid.", _consoleInput);
-		}
+        if (success) {
+            Game.getInstance().getLogger().log(Level.INFO, "Console command \"{0}\" accepted.", _consoleInput);
+        } else {
+            Game.getInstance().getLogger().log(Level.WARNING, "Console command \"{0}\" is invalid.", _consoleInput);
+        }
 
-		toggleDebugConsole();
-	}
+        toggleDebugConsole();
+    }
 
 	/**
 	 * Disables/enables the debug console.
@@ -550,8 +568,8 @@ public final class Game {
 	 * @param title Title of the world
 	 * @param seed  Seed value used for the generators
 	 */
-	private void initNewWorld(String title, String seed) {
-		Helper.LOGGER.log(Level.INFO, "Creating new World with seed \"{0}\"", seed);
+	private void initNewWorldAndPlayer(String title, String seed) {
+		Game.getInstance().getLogger().log(Level.INFO, "Creating new World with seed \"{0}\"", seed);
 
 		// Get rid of the old world
 		if (_world != null) {
@@ -559,23 +577,16 @@ public final class Game {
 		}
 
 		// Init some world
-		_world = new World(title, seed, _player);
-		// Link the player to the world
-		_player.setParent(_world);
+		_world = new World(title, seed);
+
+		// Init. a new player
+		_player = new Player(_world);
+        _world.setPlayer(_player);
 
 		_world.startUpdateThread();
 
-		Helper.LOGGER.log(Level.INFO, "Waiting for some chunks to pop up...", seed);
-		while (_world.getAmountGeneratedChunks() < 64) {
-			try {
-				Thread.sleep(150);
-			} catch (InterruptedException ex) {
-				Helper.LOGGER.log(Level.SEVERE, null, ex);
-			}
-		}
-
 		// Reset the delta value
-		_lastLoopTime = Helper.getInstance().getTime();
+		_lastLoopTime = getTime();
 	}
 
 	/**
@@ -583,8 +594,8 @@ public final class Game {
 	 */
 	private void updateStatistics() {
 		// Measure a delta value and the frames per second
-		long delta = Helper.getInstance().getTime() - _lastLoopTime;
-		_lastLoopTime = Helper.getInstance().getTime();
+		long delta = getTime() - _lastLoopTime;
+		_lastLoopTime = getTime();
 		_lastFpsTime += delta;
 		_fps++;
 
@@ -622,7 +633,7 @@ public final class Game {
         _sandbox = b;
     }
 
-    public boolean isSandbox() {
+    public boolean isSandboxed() {
         return _sandbox;
     }
 }
