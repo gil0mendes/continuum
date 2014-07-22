@@ -2,6 +2,7 @@
 
 uniform sampler2D textureAtlas;
 uniform float daylight = 1.0;
+uniform int swimming = 0;
 
 varying float fog;
 varying vec3 normal;
@@ -18,37 +19,40 @@ void main(){
     vec4 color = texture2D(textureAtlas, vec2(gl_TexCoord[0]));
     color = srgbToLinear(color);
 
-    /*
-        Apply non-grey vertex colors only to grey texture values.
-    */
-    if (color.r == color.g && color.g == color.b) {
-        color.rgb *= gl_Color.rgb;
-    }
+    if (color.a < 0.1)
+        discard;
+
+    color.rgb *= gl_Color.rgb;
+    color.a *= gl_Color.a;
 
     vec2 lightCoord = vec2(gl_TexCoord[1]);
 
-    float daylightPow = pow(0.8, (1.0-daylight)*15.0);
+    float daylightPow = clamp(pow(0.8, (1.0-daylight)*15.0) + 0.4, 0.0, 1.0);
+    float daylightValue = daylightPow * lightCoord.x;
 
-    vec3 daylightValue = vec3(daylightPow * lightCoord.x);
-    vec3 blocklightValue = vec3(lightCoord.y);
+    float blocklightValue = lightCoord.y;
 
-    /*
-        Blocklight has a reddish color.
-    */
-    blocklightValue.r *= 1.0;
-    blocklightValue.g *= 0.7;
-    blocklightValue.b *= 0.7;
+    vec3 daylightColorValue = vec3(daylightValue);
+    vec3 blocklightColorValue = vec3(blocklightValue);
 
-    /*
-        Nights are slightly bluish and not completely black.
-    */
-    daylightValue.b += 0.175;
-    daylightValue.g += 0.075;
-    daylightValue.r += 0.075;
+    blocklightColorValue.r *= 1.0;
+    blocklightColorValue.g *= 0.9;
+    blocklightColorValue.b *= 0.8;
+
+    blocklightColorValue = clamp(blocklightColorValue,0.0,1.0);
+    daylightColorValue = clamp(daylightColorValue, 0.0, 1.0);
+
+    color.xyz *= daylightColorValue + blocklightColorValue * (1.0-daylightValue);
+
+    if (swimming == 0) {
+        gl_FragColor.rgb = mix(linearToSrgb(color), vec4(0.84,0.88,1.0,1.0) * daylight, fog).rgb;
+    } else {
+        gl_FragColor.rgb = mix(linearToSrgb(color), vec4(0.0,0.0,0.0,1.0) * daylight, fog*16.0).rgb;
+        gl_FragColor.rg *= 0.4;
+        gl_FragColor.b *= 0.7;
+    }
 
 
-    color.xyz *= clamp(daylightValue + blocklightValue, 0.0, 1.0);
 
-    gl_FragColor.rgb = mix(linearToSrgb(color), gl_Fog.color, fog / 2.0).rgb;
-    gl_FragColor.w = color.w;
+    gl_FragColor.a = color.a;
 }
