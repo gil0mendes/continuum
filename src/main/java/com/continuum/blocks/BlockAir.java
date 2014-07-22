@@ -1,8 +1,5 @@
 package com.continuum.blocks;
 
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector4f;
-
 /**
  * A air block.
  */
@@ -19,22 +16,17 @@ public class BlockAir extends Block {
 	}
 
 	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return null;
-	}
-
-	@Override
-	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return null;
-	}
-
-	@Override
 	public boolean isPenetrable() {
 		return true;
 	}
 
 	@Override
 	public boolean isCastingShadows() {
+		return false;
+	}
+
+	@Override
+	public boolean shouldRenderBoundingBox() {
 		return false;
 	}
 }

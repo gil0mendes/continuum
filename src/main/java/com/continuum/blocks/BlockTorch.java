@@ -15,11 +15,6 @@ public class BlockTorch extends Block {
 	}
 
 	@Override
-	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return new Vector4f(1f, 1f, 1f, 1.0f);
-	}
-
-	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
 		return Helper.calcOffsetForTextureAt(0, 5);
 	}
@@ -34,11 +29,21 @@ public class BlockTorch extends Block {
 		return false;
 	}
 
+	@Override
+	public boolean shouldRenderBoundingBox() {
+		return false;
+	}
+
 	/**
 	 * @return
 	 */
 	@Override
 	public byte getLuminance() {
 		return 15;
+	}
+
+	@Override
+	public BLOCK_FORM getBlockForm() {
+		return BLOCK_FORM.BILLBOARD;
 	}
 }

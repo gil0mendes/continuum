@@ -9,19 +9,26 @@ import org.lwjgl.util.vector.Vector4f;
  */
 public class BlockWater extends Block {
 
+	private static final Vector4f colorOffset = new Vector4f(0.9f, 0.9f, 1.0f, 0.7f);
+
 	@Override
 	public boolean isBlockTypeTranslucent() {
 		return true;
 	}
 
 	@Override
+	public Vector4f getColorOffsetFor(SIDE side) {
+		return colorOffset;
+	}
+
+	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(14, 13);
+		return Helper.calcOffsetForTextureAt(15, 13);
 	}
 
 	@Override
 	public boolean isPenetrable() {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -30,7 +37,22 @@ public class BlockWater extends Block {
 	}
 
 	@Override
+	public boolean shouldRenderBoundingBox() {
+		return false;
+	}
+
+	@Override
 	public boolean isRemovable() {
+		return false;
+	}
+
+	@Override
+	public boolean letSelectionRayThrough() {
 		return true;
+	}
+
+	@Override
+	public BLOCK_FORM getBlockForm() {
+		return BLOCK_FORM.LOWERED_BOCK;
 	}
 }

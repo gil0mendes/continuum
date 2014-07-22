@@ -9,6 +9,8 @@ import org.lwjgl.util.vector.Vector4f;
  */
 public class BlockLargeHighGrass extends Block {
 
+	private static final Vector4f colorOffset = new Vector4f(0.8f, 0.8f, 0.8f, 1.0f);
+
 	@Override
 	public boolean isBlockTypeTranslucent() {
 		return true;
@@ -16,12 +18,12 @@ public class BlockLargeHighGrass extends Block {
 
 	@Override
 	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return new Vector4f(160f / 255f, 223f / 255f, 84f / 255f, 1.0f);
+		return colorOffset;
 	}
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(8, 3);
+		return Helper.calcOffsetForTextureAt(15, 11);
 	}
 
 	@Override
@@ -31,6 +33,16 @@ public class BlockLargeHighGrass extends Block {
 
 	@Override
 	public boolean isCastingShadows() {
+		return true;
+	}
+
+	@Override
+	public boolean shouldRenderBoundingBox() {
 		return false;
+	}
+
+	@Override
+	public BLOCK_FORM getBlockForm() {
+		return BLOCK_FORM.BILLBOARD;
 	}
 }

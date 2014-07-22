@@ -15,13 +15,8 @@ public class BlockRedFlower extends Block {
 	}
 
 	@Override
-	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return new Vector4f(1f, 1f, 1f, 1.0f);
-	}
-
-	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(12, 0);
+		return Helper.calcOffsetForTextureAt(13, 0);
 	}
 
 	@Override
@@ -32,5 +27,15 @@ public class BlockRedFlower extends Block {
 	@Override
 	public boolean isCastingShadows() {
 		return false;
+	}
+
+	@Override
+	public boolean shouldRenderBoundingBox() {
+		return false;
+	}
+
+	@Override
+	public BLOCK_FORM getBlockForm() {
+		return BLOCK_FORM.BILLBOARD;
 	}
 }

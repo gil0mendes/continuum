@@ -15,13 +15,8 @@ public class BlockHighGrass extends Block {
 	}
 
 	@Override
-	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return new Vector4f(160f / 255f, 223f / 255f, 84f / 255f, 1.0f);
-	}
-
-	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(7, 2);
+		return Helper.calcOffsetForTextureAt(12, 11);
 	}
 
 	@Override
@@ -31,7 +26,17 @@ public class BlockHighGrass extends Block {
 
 	@Override
 	public boolean isCastingShadows() {
+		return true;
+	}
+
+	@Override
+	public boolean shouldRenderBoundingBox() {
 		return false;
+	}
+
+	@Override
+	public BLOCK_FORM getBlockForm() {
+		return BLOCK_FORM.BILLBOARD;
 	}
 
 }
