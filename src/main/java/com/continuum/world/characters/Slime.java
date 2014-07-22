@@ -20,7 +20,7 @@ public final class Slime extends Character {
     private Vector3f _movementTarget = new Vector3f();
 
     public Slime(World parent) {
-        super(parent, Configuration.getSettingNumeric("WALKING_SPEED") / 2, Configuration.getSettingNumeric("RUNNING_FACTOR"), Configuration.getSettingNumeric("JUMP_INTENSITY") / 1.2);
+        super(parent, Configuration.getSettingNumeric("WALKING_SPEED") / 4, Configuration.getSettingNumeric("RUNNING_FACTOR"), Configuration.getSettingNumeric("JUMP_INTENSITY"));
         _instanceCounter++;
     }
 
@@ -119,19 +119,23 @@ public final class Slime extends Character {
     }
 
     public void processMovement() {
-        if (Game.getInstance().getTime() - _lastChangeOfDirectionAt > 5000 || getPosition().equals(_movementTarget)) {
-            if (distanceSquaredTo(_parent.getPlayer().getPosition()) > 5 && distanceSquaredTo(_parent.getPlayer().getPosition()) < 32) {
-                _movementTarget.set(_parent.getPlayer().getPosition());
-            } else {
-                _movementTarget.set((float) (getPosition().x + _rand.randomDouble() * 500), getPosition().y, (float) (getPosition().z + _rand.randomDouble() * 500));
-            }
+        double distanceToPlayer = distanceSquaredTo(_parent.getPlayer().getPosition());
 
+        if (distanceToPlayer > 5 && distanceToPlayer < 32) {
+            _movementTarget.set(_parent.getPlayer().getPosition());
+        }
+
+        if (Game.getInstance().getTime() - _lastChangeOfDirectionAt > 5000 || distanceToPlayer <= 5) {
+            _movementTarget.set((float) (getPosition().x + _rand.randomDouble() * 500), getPosition().y, (float) (getPosition().z + _rand.randomDouble() * 500));
             _lastChangeOfDirectionAt = Game.getInstance().getTime();
         }
 
+
         lookAt(_movementTarget);
         walkForward();
-        jump();
+
+        if (_rand.randomDouble() < -0.94)
+            jump();
     }
 
     protected AABB generateAABBForPosition(Vector3f p) {

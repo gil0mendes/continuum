@@ -10,12 +10,19 @@ public class BlockGlass extends Block {
 
 	@Override
 	public boolean isBlockTypeTranslucent() {
-		return true;
+		return false;
 	}
 
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(1, 3);
+        if (side == SIDE.LEFT || side == SIDE.RIGHT || side == SIDE.FRONT || side == SIDE.BACK) {
+            return Helper.calcOffsetForTextureAt(3, 0);
+        }
+        else if (side == SIDE.BOTTOM) {
+            return Helper.calcOffsetForTextureAt(2, 0);
+        } else {
+            return Helper.calcOffsetForTextureAt(1, 3);
+        }
 	}
 }
