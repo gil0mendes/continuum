@@ -9,7 +9,6 @@ import com.continuum.generators.*;
 import com.continuum.main.Game;
 import com.continuum.rendering.TextureManager;
 import com.continuum.rendering.particles.BlockParticleEmitter;
-import com.continuum.utilities.MathHelper;
 import com.continuum.world.characters.Player;
 import com.continuum.utilities.FastRandom;
 import com.continuum.world.characters.Slime;
@@ -17,6 +16,8 @@ import com.continuum.world.chunk.Chunk;
 import com.continuum.world.chunk.ChunkCache;
 import com.continuum.world.chunk.ChunkUpdateManager;
 import com.continuum.world.entity.Entity;
+import com.continuum.world.horizon.Clouds;
+import com.continuum.world.horizon.SunMoon;
 import javolution.util.FastList;
 import javolution.util.FastMap;
 import javolution.util.FastSet;
@@ -55,7 +56,7 @@ public final class World implements RenderableObject {
 	private final FastMap<String, ChunkGenerator> _chunkGenerators = new FastMap<String, ChunkGenerator>(32);
 	private final FastMap<String, ObjectGenerator> _objectGenerators = new FastMap<String, ObjectGenerator>(32);
 	/* ------ */
-	private final FastRandom _rand;
+	private final FastRandom _random;
 	/* PROPERTIES */
 	private String _title, _seed;
 	private Vector3f _spawningPoint;
@@ -70,25 +71,19 @@ public final class World implements RenderableObject {
 	private boolean _updatingEnabled = false;
 	private boolean _updateThreadAlive = true;
 	private final Thread _updateThread;
-	/* HORIZON */
-	private static int _dlSunMoon = -1;
-	private static int _dlClouds = -1;
-	private static boolean[][] _clouds;
-	private final Vector2f _cloudOffset = new Vector2f();
-	private final Vector2f _windDirection = new Vector2f(0.25f, 0);
-	private double _lastWindUpdate = 0;
-	private short _nextWindUpdateInSeconds = 32;
 	/* ENTITIES */
 	private final FastList<Entity> _entities = new FastList<Entity>();
 	/* PARTICLE EMITTERS */
 	private final BlockParticleEmitter _blockParticleEmitter = new BlockParticleEmitter();
+	/* HORIZON */
+	private final Clouds _clouds;
+	private final SunMoon _sunMoon;
 
 	/**
 	 * Initializes a new world for the single player mode.
 	 *
 	 * @param title The title/description of the world
 	 * @param seed  The seed string used to generate the terrain
-	 * @param p     The player
 	 */
 	public World(String title, String seed) {
 		if (title == null) {
@@ -113,6 +108,10 @@ public final class World implements RenderableObject {
 		// If loading failed accept the given seed
 		loadMetaData();
 
+		// Init. horizon
+		_clouds = new Clouds(this);
+		_sunMoon = new SunMoon(this);
+
 		// Init. generators
 		_chunkGenerators.put("terrain", new ChunkGeneratorTerrain(_seed));
 		_chunkGenerators.put("forest", new ChunkGeneratorForest(_seed));
@@ -123,7 +122,7 @@ public final class World implements RenderableObject {
 		_objectGenerators.put("cactus", new ObjectGeneratorCactus(this, _seed));
 
 		// Init. random generator
-		_rand = new FastRandom(seed.hashCode());
+		_random = new FastRandom(seed.hashCode());
 		_visibleChunks = new FastList<Chunk>();
 
 		_updateThread = new Thread(new Runnable() {
@@ -210,36 +209,6 @@ public final class World implements RenderableObject {
 	}
 
 	/**
-	 * Init. the static resources.
-	 */
-	public static void init() {
-        /*
-         * Create cloud array.
-         */
-		try {
-			BufferedImage cloudImage = ImageIO.read(ResourceLoader.getResource("com/continuum/data/textures/clouds.png").openStream());
-			_clouds = new boolean[cloudImage.getWidth()][cloudImage.getHeight()];
-
-			for (int x = 0; x < cloudImage.getWidth(); x++) {
-				for (int y = 0; y < cloudImage.getHeight(); y++) {
-					if ((cloudImage.getRGB(x, y) & 0x00FFFFFF) != 0) {
-						_clouds[x][y] = true;
-					}
-				}
-			}
-		} catch (IOException ex) {
-			Game.getInstance().getLogger().log(Level.SEVERE, null, ex);
-		}
-
-		// Init display lists
-		_dlClouds = glGenLists(1);
-		_dlSunMoon = glGenLists(1);
-
-		generateSunMoonDisplayList();
-		generateCloudDisplayList();
-	}
-
-	/**
 	 * Renders the world.
 	 */
 	public void render() {
@@ -265,10 +234,10 @@ public final class World implements RenderableObject {
 
 		_player.applyPlayerModelViewMatrix();
 
-		renderSunMoon();
+		_sunMoon.render();
 
 		if (!_player.isHeadUnderWater())
-			renderClouds();
+			_clouds.render();
 
         /*
         * Render the world from the player's view.
@@ -312,63 +281,6 @@ public final class World implements RenderableObject {
 		for (int i = 0; i < _entities.size(); i++) {
 			_entities.get(i).update();
 		}
-	}
-
-	private void renderSunMoon() {
-		glPushMatrix();
-		// Position the sun relatively to the player
-		glTranslated(_player.getPosition().x, Configuration.CHUNK_DIMENSIONS.y * 2.0, Configuration.getSettingNumeric("V_DIST_Z") * Configuration.CHUNK_DIMENSIONS.z + _player.getPosition().z);
-		glRotatef(-35, 1, 0, 0);
-
-		glColor4f(1f, 1f, 1f, 1.0f);
-
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
-
-		glEnable(GL_TEXTURE_2D);
-		if (isDaytime()) {
-			TextureManager.getInstance().bindTexture("sun");
-		} else {
-			TextureManager.getInstance().bindTexture("moon");
-		}
-
-		glCallList(_dlSunMoon);
-
-		glDisable(GL_BLEND);
-		glDisable(GL_TEXTURE_2D);
-		glPopMatrix();
-
-		glDisable(GL_TEXTURE_2D);
-	}
-
-	private void renderClouds() {
-		glEnable(GL_BLEND);
-		GL11.glBlendFunc(770, 771);
-
-		ShaderManager.getInstance().enableShader("cloud");
-
-		// Render two passes: The first one only writes to the depth buffer, the second one to the frame buffer
-		for (int i = 0; i < 2; i++) {
-			if (i == 0) {
-				glColorMask(false, false, false, false);
-			} else {
-				glColorMask(true, true, true, true);
-			}
-
-            /*
-            * Draw clouds.
-            */
-			if (_dlClouds > 0 && isDaytime()) {
-				glPushMatrix();
-				glTranslatef(_player.getPosition().x + _cloudOffset.x, 140f, _player.getPosition().z + _cloudOffset.y);
-				glCallList(_dlClouds);
-				glPopMatrix();
-			}
-		}
-
-		ShaderManager.getInstance().enableShader(null);
-		glDisable(GL_BLEND);
 	}
 
 	private FastList<Chunk> fetchVisibleChunks() {
@@ -433,7 +345,7 @@ public final class World implements RenderableObject {
 		_player.update();
 		_chunkUpdateManager.updateDisplayLists();
 
-		updateClouds();
+		_clouds.update();
 
 		for (FastSet.Record n = _visibleChunks.head(), end = _visibleChunks.tail(); (n = n.getNext()) != end; )
 			_visibleChunks.valueOf(n).update();
@@ -442,25 +354,6 @@ public final class World implements RenderableObject {
 		_chunkCache.disposeUnusedChunks();
 
 		updateParticleEmitters();
-	}
-
-	private void updateClouds() {
-		// Move the clouds a bit each update
-		_cloudOffset.x += _windDirection.x;
-		_cloudOffset.y += _windDirection.y;
-
-		if (_cloudOffset.x >= _clouds.length * 16 / 2 || _cloudOffset.x <= -(_clouds.length * 16 / 2)) {
-			_windDirection.x = -_windDirection.x;
-		} else if (_cloudOffset.y >= _clouds.length * 16 / 2 || _cloudOffset.y <= -(_clouds.length * 16 / 2)) {
-			_windDirection.y = -_windDirection.y;
-		}
-
-		if (Game.getInstance().getTime() - _lastWindUpdate > _nextWindUpdateInSeconds * 1000) {
-			_windDirection.x = (float) _rand.randomDouble() / 8;
-			_windDirection.y = (float) _rand.randomDouble() / 8;
-			_nextWindUpdateInSeconds = (short) (Math.abs(_rand.randomInt()) % 16 + 32);
-			_lastWindUpdate = Game.getInstance().getTime();
-		}
 	}
 
 	/**
@@ -809,8 +702,8 @@ public final class World implements RenderableObject {
 			Entity slime = new Slime(this);
 			Vector3f slimeSpawningPoint = new Vector3f(_spawningPoint);
 
-			slimeSpawningPoint.x += _rand.randomDouble() * 30f;
-			slimeSpawningPoint.z += _rand.randomDouble() * 30f;
+			slimeSpawningPoint.x += _random.randomDouble() * 30f;
+			slimeSpawningPoint.z += _random.randomDouble() * 30f;
 
 			slime.setPosition(slimeSpawningPoint);
 			slime.getPosition().y = 100;
@@ -902,7 +795,7 @@ public final class World implements RenderableObject {
 	 *
 	 * @return
 	 */
-	boolean isDaytime() {
+	public boolean isDaytime() {
 		return _time > 0.075f && _time < 0.575;
 	}
 
@@ -911,7 +804,7 @@ public final class World implements RenderableObject {
 	 *
 	 * @return
 	 */
-	boolean isNighttime() {
+	public boolean isNighttime() {
 		return !isDaytime();
 	}
 
@@ -935,8 +828,8 @@ public final class World implements RenderableObject {
 	 */
 	private Vector3f findSpawningPoint() {
 		for (; ; ) {
-			int randX = (int) (_rand.randomDouble() * 16000f);
-			int randZ = (int) (_rand.randomDouble() * 16000f);
+			int randX = (int) (_random.randomDouble() * 16000f);
+			int randZ = (int) (_random.randomDouble() * 16000f);
 
 			double dens = ((ChunkGeneratorTerrain) getChunkGenerator("terrain")).calcDensity(randX, 32, randZ, ChunkGeneratorTerrain.BIOME_TYPE.PLAINS);
 
@@ -1089,51 +982,15 @@ public final class World implements RenderableObject {
 		return _chunkUpdateManager;
 	}
 
-	/**
-	 * Generates the cloud display list.
-	 */
-	private static void generateCloudDisplayList() {
-		glNewList(_dlClouds, GL_COMPILE);
-		glBegin(GL_QUADS);
-
-		int length = _clouds.length;
-
-		for (int x = 0; x < length; x++) {
-			for (int y = 0; y < length; y++) {
-				if (_clouds[x][y]) {
-					try {
-						Primitives.drawCloud(16, 16, 16, x * 16f - (length / 2 * 16f), 0, y * 16f - (length / 2 * 16f), !_clouds[x - 1][y], !_clouds[x + 1][y], !_clouds[x][y + 1], !_clouds[x][y - 1]);
-					} catch (Exception e) {
-
-					}
-				}
-			}
-		}
-
-		glEnd();
-		glEndList();
-	}
-
-	private static void generateSunMoonDisplayList() {
-		glNewList(_dlSunMoon, GL_COMPILE);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 0.0f);
-		glVertex3d(-Configuration.SUN_SIZE, Configuration.SUN_SIZE, -Configuration.SUN_SIZE);
-		glTexCoord2f(1.f, 0.0f);
-		glVertex3d(Configuration.SUN_SIZE, Configuration.SUN_SIZE, -Configuration.SUN_SIZE);
-		glTexCoord2f(1.f, 1.0f);
-		glVertex3d(Configuration.SUN_SIZE, -Configuration.SUN_SIZE, -Configuration.SUN_SIZE);
-		glTexCoord2f(0.f, 1.0f);
-		glVertex3d(-Configuration.SUN_SIZE, -Configuration.SUN_SIZE, -Configuration.SUN_SIZE);
-		glEnd();
-		glEndList();
-	}
-
 	public FastList<Chunk> getVisibleChunks() {
 		return _visibleChunks;
 	}
 
 	public BlockParticleEmitter getBlockParticleEmitter() {
 		return _blockParticleEmitter;
+	}
+
+	public FastRandom getRandom() {
+		return  _random;
 	}
 }
