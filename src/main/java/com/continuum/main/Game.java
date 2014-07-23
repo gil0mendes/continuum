@@ -16,7 +16,6 @@ import java.util.logging.SimpleFormatter;
 import com.continuum.rendering.ShaderManager;
 import com.continuum.world.characters.Player;
 import com.continuum.utilities.FastRandom;
-import com.continuum.utilities.Helper;
 import com.continuum.world.World;
 import com.continuum.world.chunk.Chunk;
 import javolution.util.FastList;
@@ -38,7 +37,7 @@ import org.newdawn.slick.TrueTypeFont;
 public final class Game {
 
 	/* ------- */
-	private static final int TICKS_PER_SECOND = 120;
+	private static final int TICKS_PER_SECOND = 60;
 	private static final int SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 	/* ------- */
 	private static TrueTypeFont _font1;
@@ -91,7 +90,7 @@ public final class Game {
 
         // Load native libraries
         try {
-            loadLibs();
+            loadNativeLibs();
         } catch (Exception ex) {
             Game.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry: " + ex);
         }
@@ -119,16 +118,7 @@ public final class Game {
 		System.exit(0);
 	}
 
-    /**
-     * Returns the system time in milliseconds.
-     *
-     * @return The system time in milliseconds.
-     */
-    public long getTime() {
-        return (Sys.getTime() * 1000) / _timeTicksPerSecond;
-    }
-
-    private static void loadLibs() throws Exception {
+    private static void loadNativeLibs() throws Exception {
         if (System.getProperty("os.name").equals("Mac OS X")) {
             addLibraryPath("natives/macosx");
         } else if (System.getProperty("os.name").equals("Linux")) {
@@ -154,6 +144,19 @@ public final class Game {
         newPaths[newPaths.length - 1] = s;
         usrPathsFields.set(null, newPaths);
     }
+
+	/**
+	 * Returns the system time in milliseconds.
+	 *
+	 * @return The system time in milliseconds.
+	 */
+	public long getTime() {
+		if (_timeTicksPerSecond == 0) {
+			return 0;
+		}
+
+		return (Sys.getTime() * 1000) / _timeTicksPerSecond;
+	}
 
     /**
      * Init. the display.
@@ -516,9 +519,6 @@ public final class Game {
                 _saveWorldOnExit = false;
                 _runGame = false;
                 success = true;
-            } else if (parsingResult.get(0).equals("info")) {
-                Game.getInstance().getLogger().log(Level.INFO, _player.selectedBlockInformation());
-                success = true;
             } else if (parsingResult.get(0).equals("load")) {
                 String worldSeed = _rand.randomCharacterString(16);
 
@@ -527,9 +527,6 @@ public final class Game {
                 }
 
                 initNewWorldAndPlayer(worldSeed, worldSeed);
-                success = true;
-            } else if (parsingResult.get(0).equals("chunk_pos")) {
-                _world.printPlayerChunkPosition();
                 success = true;
             } else if (parsingResult.get(0).equals("set_spawn")) {
                 _world.setSpawningPoint();

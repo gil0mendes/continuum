@@ -1,6 +1,5 @@
 package com.continuum.generators;
 
-import com.continuum.main.Configuration;
 import com.continuum.noise.PerlinNoise;
 import com.continuum.utilities.FastRandom;
 import com.continuum.world.chunk.Chunk;
@@ -40,29 +39,5 @@ public abstract class ChunkGenerator {
      */
     public void generate(Chunk c) {
         throw new NotImplementedException();
-    }
-
-    /**
-     * @param c
-     * @return
-     */
-    int getOffsetX(Chunk c) {
-        return (int) c.getPosition().x * (int) Configuration.CHUNK_DIMENSIONS.x;
-    }
-
-    /**
-     * @param c
-     * @return
-     */
-    int getOffsetY(Chunk c) {
-        return (int) c.getPosition().y * (int) Configuration.CHUNK_DIMENSIONS.y;
-    }
-
-    /**
-     * @param c
-     * @return
-     */
-    int getOffsetZ(Chunk c) {
-        return (int) c.getPosition().z * (int) Configuration.CHUNK_DIMENSIONS.z;
     }
 }

@@ -8,154 +8,110 @@ import com.continuum.utilities.MathHelper;
  */
 public class PerlinNoise {
 
-    private final int[] _noisePermutations;
+	private final int[] _noisePermutations, _noiseTable;
 
-    /**
-     * @param seed
-     */
-    public PerlinNoise(int seed) {
-        FastRandom rand = new FastRandom(seed);
-        _noisePermutations = new int[512];
+	/**
+	 * @param seed
+	 */
+	public PerlinNoise(int seed) {
+		FastRandom rand = new FastRandom(seed);
+		_noisePermutations = new int[512];
+		_noiseTable = new int[256];
 
-        for (int i = 0; i < 256; i++) {
-            int r = rand.randomInt();
+		for (int i = 0; i < 256; i++)
+			_noiseTable[i] = i;
 
-            if (r < 0)
-                r *= -1;
+		for (int i = 0; i < 256; i++) {
+			int j = rand.randomInt() % 256;
+			j = (j < 0) ? -j : j;
 
-            _noisePermutations[i] = _noisePermutations[i + 256] = r % 256;
-        }
-    }
+			int swap = _noiseTable[i];
+			_noiseTable[i] = _noiseTable[j];
+			_noiseTable[j] = swap;
+		}
 
-    /**
-     * @param x
-     * @param y
-     * @param z
-     * @return
-     */
-    public double noise(double x, double y, double z) {
-        int X = (int) MathHelper.fastFloor(x) & 255, Y = (int) MathHelper.fastFloor(y) & 255, Z = (int) MathHelper.fastFloor(z) & 255;
+		for (int i = 0; i < 256; i++)
+			_noisePermutations[i] = _noisePermutations[i + 256] = _noiseTable[i];
 
-        x -= MathHelper.fastFloor(x);
-        y -= MathHelper.fastFloor(y);
-        z -= MathHelper.fastFloor(z);
+	}
 
-        double u = fade(x), v = fade(y), w = fade(z);
-        int A = _noisePermutations[X % 255] + Y, AA = _noisePermutations[A % 255] + Z, AB = _noisePermutations[(A + 1) % 255] + Z,
-                B = _noisePermutations[(X + 1) % 255] + Y, BA = _noisePermutations[B % 255] + Z, BB = _noisePermutations[(B + 1) % 255] + Z;
+	/**
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	public double noise(double x, double y, double z) {
+		int X = (int) Math.floor(x) & 255, Y = (int) Math.floor(y) & 255, Z = (int) Math.floor(z) & 255;
 
-        return lerp(w, lerp(v, lerp(u, grad(_noisePermutations[AA % 255], x, y, z),
-                                grad(_noisePermutations[BA % 255], x - 1, y, z)),
-                        lerp(u, grad(_noisePermutations[AB % 255], x, y - 1, z),
-                                grad(_noisePermutations[BB % 255], x - 1, y - 1, z))),
-                lerp(v, lerp(u, grad(_noisePermutations[(AA + 1) % 255], x, y, z - 1),
-                                grad(_noisePermutations[(BA + 1) % 255], x - 1, y, z - 1)),
-                        lerp(u, grad(_noisePermutations[(AB + 1) % 255], x, y - 1, z - 1),
-                                grad(_noisePermutations[(BB + 1) % 255], x - 1, y - 1, z - 1))));
-    }
+		x -= Math.floor(x);
+		y -= Math.floor(y);
+		z -= Math.floor(z);
 
-    /**
-     * @param t
-     * @return
-     */
-    private static double fade(double t) {
-        return t * t * t * (t * (t * 6 - 15) + 10);
-    }
+		double u = fade(x), v = fade(y), w = fade(z);
+		int A = _noisePermutations[X] + Y, AA = _noisePermutations[A] + Z, AB = _noisePermutations[(A + 1)] + Z,
+				B = _noisePermutations[(X + 1)] + Y, BA = _noisePermutations[B] + Z, BB = _noisePermutations[(B + 1)] + Z;
 
-    /**
-     * @param t
-     * @param a
-     * @param b
-     * @return
-     */
-    private static double lerp(double t, double a, double b) {
-        return a + t * (b - a);
-    }
+		return lerp(w, lerp(v, lerp(u, grad(_noisePermutations[AA], x, y, z),
+								grad(_noisePermutations[BA], x - 1, y, z)),
+						lerp(u, grad(_noisePermutations[AB], x, y - 1, z),
+								grad(_noisePermutations[BB], x - 1, y - 1, z))),
+				lerp(v, lerp(u, grad(_noisePermutations[(AA + 1)], x, y, z - 1),
+								grad(_noisePermutations[(BA + 1)], x - 1, y, z - 1)),
+						lerp(u, grad(_noisePermutations[(AB + 1)], x, y - 1, z - 1),
+								grad(_noisePermutations[(BB + 1)], x - 1, y - 1, z - 1))));
+	}
 
-    /**
-     * @param hash
-     * @param x
-     * @param y
-     * @param z
-     * @return
-     */
-    private static double grad(int hash, double x, double y, double z) {
-        int h = hash & 15;
-        double u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-        return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-    }
+	/**
+	 * @param t
+	 * @return
+	 */
+	private static double fade(double t) {
+		return t * t * t * (t * (t * 6 - 15) + 10);
+	}
 
-    /**
-     * @param x
-     * @param y
-     * @param z
-     * @param octaves
-     * @param lacunarity
-     * @return
-     */
-    public double multiFractalNoise(double x, double y, double z, int octaves, double lacunarity) {
-        double result = 0;
+	/**
+	 * @param t
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	private static double lerp(double t, double a, double b) {
+		return a + t * (b - a);
+	}
 
-        for (int i = 1; i <= octaves; i++) {
-            result += noise(x, y, z) * Math.pow(lacunarity, -0.86471 * i);
+	/**
+	 * @param hash
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	private static double grad(int hash, double x, double y, double z) {
+		int h = hash & 15;
+		double u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
+		return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+	}
 
-            x *= lacunarity;
-            y *= lacunarity;
-            z *= lacunarity;
-        }
+	/**
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @param octaves
+	 * @param lacunarity
+	 * @return
+	 */
+	public double fBm(double x, double y, double z, int octaves, double lacunarity, double h) {
+		double result = 0.0;
 
-        return result;
-    }
+		for (int i = 0; i < octaves; i++) {
+			result += noise(x, y, z) * Math.pow(lacunarity, -h * i);
 
-    /**
-     * @param x
-     * @param y
-     * @param z
-     * @param octaves
-     * @param lacunarity
-     * @param gain
-     * @param offset
-     * @return
-     */
-    public double ridgedMultiFractalNoise(double x, double y, double z, int octaves, double lacunarity, double gain, double offset) {
-        double frequency = 1.0;
-        double signal;
+			x *= lacunarity;
+			y *= lacunarity;
+			z *= lacunarity;
+		}
 
-        /*
-* Fetch the first noise octave.
-*/
-        signal = ridge(noise(x, y, z), offset);
-        double result = signal;
-        double weight;
-
-        for (int i = 1; i <= octaves; i++) {
-            x *= lacunarity;
-            y *= lacunarity;
-            z *= lacunarity;
-
-            weight = gain * signal;
-
-            if (weight > 1.0) {
-                weight = 1.0;
-            } else if (weight < 0.0) {
-                weight = 0.0;
-            }
-
-            signal = ridge(noise(x, y, z), offset);
-
-            signal *= weight;
-            result += signal * Math.pow(frequency, -0.96461f);
-            frequency *= lacunarity;
-        }
-
-
-        return result;
-    }
-
-    private double ridge(double n, double offset) {
-        n = MathHelper.fastAbs(n);
-        n = offset - n;
-        n = n * n;
-        return n;
-    }
+		return result;
+	}
 }

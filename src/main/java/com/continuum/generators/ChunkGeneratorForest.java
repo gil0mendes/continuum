@@ -42,13 +42,13 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
 
                     if (forestDens > 0.01) {
 
-                        int randX = x + rand.randomInt() % 12;
-                        int randZ = z + rand.randomInt() % 12;
+                        int randX = x + rand.randomInt() % 12 + 4;
+                        int randZ = z + rand.randomInt() % 12 + 4;
 
                         if (c.getBlock(randX, y, randZ) == 0x1 || c.getBlock(randX, y, randZ) == 0x17) {
                             generateTree(c, randX, y, randZ);
                         } else if (c.getBlock(randX, y, randZ) == 0x7) {
-                            c.getParent().getObjectGenerator("cactus").generate(c.getBlockWorldPosX(randX), c.getBlockWorldPosY(y) + 1, c.getBlockWorldPosZ(randZ), false);
+                            c.getParent().getObjectGenerator("cactus").generate(c.getBlockWorldPosX(randX), y + 1, c.getBlockWorldPosZ(randZ), false);
                         }
                     }
                 }
@@ -69,9 +69,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
             double grassDens = calcGrassDensity(c.getBlockWorldPosX(x), c.getBlockWorldPosZ(z));
 
             if (grassDens > 0.0) {
-                /*
-* Generate high grass.
-*/
+				// Generate high grass.
                 double rand = _rand.standNormalDistrDouble();
                 if (rand > -0.4 && rand < 0.4) {
                     c.setBlock(x, y + 1, z, (byte) 0xB);
@@ -79,9 +77,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
                     c.setBlock(x, y + 1, z, (byte) 0xC);
                 }
 
-                /*
-* Generate flowers.
-*/
+                // Generate flowers
                 if (_rand.standNormalDistrDouble() < -2) {
                     if (_rand.randomBoolean()) {
                         c.setBlock(x, y + 1, z, (byte) 0x9);
@@ -102,19 +98,19 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
      */
     void generateTree(Chunk c, int x, int y, int z) {
         // Trees should only be placed in direct sunlight
-        if (!c.canBlockSeeTheSky(x,y+1,z))
+        if (!c.canBlockSeeTheSky(x, y + 1, z))
             return;
 
         double r2 = _rand.standNormalDistrDouble();
         if (r2 > -2 && r2 < -1) {
             c.setBlock(x, y + 1, z, (byte) 0x0);
-            c.getParent().getObjectGenerator("pineTree").generate(c.getBlockWorldPosX(x), c.getBlockWorldPosY(y) + 1, c.getBlockWorldPosZ(z), false);
+            c.getParent().getObjectGenerator("pineTree").generate(c.getBlockWorldPosX(x), y + 1, c.getBlockWorldPosZ(z), false);
         } else if (r2 > 1 && r2 < 2) {
             c.setBlock(x, y + 1, z, (byte) 0x0);
-            c.getParent().getObjectGenerator("firTree").generate(c.getBlockWorldPosX(x), c.getBlockWorldPosY(y) + 1, c.getBlockWorldPosZ(z), false);
+            c.getParent().getObjectGenerator("firTree").generate(c.getBlockWorldPosX(x), y + 1, c.getBlockWorldPosZ(z), false);
         } else {
             c.setBlock(x, y + 1, z, (byte) 0x0);
-            c.getParent().getObjectGenerator("tree").generate(c.getBlockWorldPosX(x), c.getBlockWorldPosY(y) + 1, c.getBlockWorldPosZ(z), false);
+            c.getParent().getObjectGenerator("tree").generate(c.getBlockWorldPosX(x), y + 1, c.getBlockWorldPosZ(z), false);
         }
     }
 
@@ -127,7 +123,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
      */
     double calcForestDensity(double x, double z) {
         double result = 0.0;
-        result += _pGen3.multiFractalNoise(0.2 * x, 0, 0.2 * z, 7, 2.3614521);
+		result += _pGen1.fBm(0.01 * x, 0, 0.01 * z, 7, 2.3614521, 0.85431);
         return result;
     }
 
@@ -138,7 +134,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
      */
     double calcGrassDensity(double x, double z) {
         double result = 0.0;
-        result += _pGen3.multiFractalNoise(0.01 * x, 0, 0.01 * z, 7, 2.37152);
+		result += _pGen3.fBm(0.05 * x, 0, 0.05 * z, 4, 2.37152, 0.8571);
         return result;
     }
 }
