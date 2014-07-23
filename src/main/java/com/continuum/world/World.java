@@ -8,6 +8,7 @@ import com.continuum.blocks.Block;
 import com.continuum.generators.*;
 import com.continuum.main.Game;
 import com.continuum.rendering.TextureManager;
+import com.continuum.rendering.particles.BlockParticleEmitter;
 import com.continuum.utilities.MathHelper;
 import com.continuum.world.characters.Player;
 import com.continuum.utilities.FastRandom;
@@ -79,13 +80,14 @@ public final class World implements RenderableObject {
     private short _nextWindUpdateInSeconds = 32;
     /* ENTITIES */
     private final FastList<Entity> _entities = new FastList<Entity>();
+	/* PARTICLE EMITTER */
+	private final BlockParticleEmitter _blockParticleEmitter = new BlockParticleEmitter();
 
     /**
      * Initializes a new world for the single player mode.
      *
      * @param title The title/description of the world
      * @param seed The seed string used to generate the terrain
-     * @param p The player
      */
     public World(String title, String seed) {
         if (title == null) {
@@ -287,7 +289,17 @@ public final class World implements RenderableObject {
 
         renderEntities();
         renderChunks();
+
+		renderParticleEmitters();
     }
+
+	private void renderParticleEmitters() {
+		_blockParticleEmitter.render();
+	}
+
+	private void updatePartibleEmitters() {
+		_blockParticleEmitter.update();
+	}
 
     private void renderEntities() {
         for (int i = 0; i < _entities.size(); i++) {
@@ -427,6 +439,8 @@ public final class World implements RenderableObject {
 
         updateEntities();
         _chunkCache.disposeUnusedChunks();
+
+		updatePartibleEmitters();
     }
 
     private void updateClouds() {
@@ -1134,4 +1148,8 @@ public final class World implements RenderableObject {
     public FastList<Chunk> getVisibleChunks() {
         return _visibleChunks;
     }
+
+	public BlockParticleEmitter getBlockParticleEmitter() {
+		return _blockParticleEmitter;
+	}
 }

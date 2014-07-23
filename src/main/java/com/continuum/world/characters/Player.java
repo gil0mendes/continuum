@@ -222,7 +222,14 @@ public final class Player extends Character {
             RayBlockIntersection.Intersection is = calcSelectedBlock();
             if (is != null) {
                 Vector3f blockPos = is.getBlockPosition();
+				byte currentBlockType = getParent().getBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z);
                 getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, (byte) 0x0, true, true);
+
+				// Particle effect
+				_parent.getBlockParticleEmitter().setOrigin(blockPos);
+				_parent.getBlockParticleEmitter().emitParticles(128, currentBlockType);
+
+				// Play audio effect
                 AudioManager.getInstance().getAudio("PlaceRemoveBlock").playAsSoundEffect(0.6f + (float) Math.abs(_rand.randomDouble()) * 0.4f, 0.7f + (float) Math.abs(_rand.randomDouble()) * 0.3f, false);
             }
         }
