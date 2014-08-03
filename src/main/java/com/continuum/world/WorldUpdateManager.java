@@ -3,12 +3,14 @@ package com.continuum.world;
 import com.continuum.world.World;
 import com.continuum.world.chunk.Chunk;
 import javolution.util.FastList;
+import javolution.util.FastSet;
 
 import java.util.Collections;
 
 public final class WorldUpdateManager {
 
 	private final FastList<Chunk> _vboUpdates = new FastList<Chunk>(128);
+	private final FastSet<Chunk> _currentProcessedChunks = new FastSet<Chunk>();
 
 	private double _meanUpdateDuration = 0.0;
 	private final World _parent;
@@ -25,7 +27,7 @@ public final class WorldUpdateManager {
 	public void processChunkUpdates() {
 		long timeStart = System.currentTimeMillis();
 
-		FastList<Chunk> dirtyChunks = new FastList<Chunk>(_parent.getVisibleChunks());
+		final FastList<Chunk> dirtyChunks = new FastList<Chunk>(_parent.getVisibleChunks());
 
 		for (int i = dirtyChunks.size() - 1; i >= 0; i--) {
 			Chunk c = dirtyChunks.get(i);
@@ -40,10 +42,37 @@ public final class WorldUpdateManager {
 			}
 		}
 
-		if (!dirtyChunks.isEmpty()) {
-			Collections.sort(dirtyChunks);
-			Chunk closestChunk = dirtyChunks.getFirst();
-			processChunkUpdate(closestChunk);
+		Collections.sort(dirtyChunks);
+
+		if (dirtyChunks.isEmpty()) {
+			return;
+		}
+
+		final Chunk chunkToProcess = dirtyChunks.removeFirst();
+
+		if (!_currentProcessedChunks.contains(chunkToProcess)) {
+			_currentProcessedChunks.add(chunkToProcess);
+
+			Thread t = new Thread() {
+				@Override
+				public void run() {
+					synchronized (_currentProcessedChunks) {
+						if (_currentProcessedChunks.size() > Runtime.getRuntime().availableProcessors() / 2) {
+							try {
+								_currentProcessedChunks.wait();
+							} catch (InterruptedException e) {}
+						}
+					}
+
+					processChunkUpdate(chunkToProcess);
+					synchronized (_currentProcessedChunks) {
+						_currentProcessedChunks.remove(chunkToProcess);
+						_currentProcessedChunks.notify();
+					}
+				}
+			};
+
+			t.start();
 		}
 
 		_chunkUpdateAmount = dirtyChunks.size();
