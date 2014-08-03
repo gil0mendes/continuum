@@ -28,7 +28,7 @@ public final class WorldUpdateManager {
 	public void processChunkUpdates() {
 		long timeStart = System.currentTimeMillis();
 
-		final FastList<Chunk> dirtyChunks = new FastList<Chunk>(_parent.getVisibleChunks());
+		final FastList<Chunk> dirtyChunks = new FastList<Chunk>(_parent.getChunksInProximity());
 
 		for (int i = dirtyChunks.size() - 1; i >= 0; i--) {
 			Chunk c = dirtyChunks.get(i);
@@ -58,7 +58,7 @@ public final class WorldUpdateManager {
 			Thread t = new Thread() {
 				@Override
 				public void run() {
-					while (_threadCount > Runtime.getRuntime().availableProcessors()) {
+					while (_threadCount > Math.max(Runtime.getRuntime().availableProcessors() - 2, 1)) {
 						synchronized (_currentlyProcessedChunks) {
 							try {
 								_currentlyProcessedChunks.wait();
