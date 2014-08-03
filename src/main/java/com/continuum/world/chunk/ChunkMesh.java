@@ -30,6 +30,10 @@ public class ChunkMesh {
         public IntBuffer indices;
     }
 
+	public enum RENDER_TYPE {
+		OPAQUE, BILLBOARD_AND_TRANSLUCENT, WATER, LAVA
+	}
+
     private static final int STRIDE = (3 + 2 + 2 + 4) * 4;
     private static final int OFFSET_VERTEX = 0;
     private static final int OFFSET_TEX_0 = (3 * 4);
@@ -38,10 +42,10 @@ public class ChunkMesh {
 
     /* ------ */
 
-    private final int[] _vertexBuffers = new int[3];
-    private final int[] _idxBuffers = new int[3];
-    private final int[] _idxBufferCount = new int[3];
-    public VertexElements[] _vertexElements = new VertexElements[3];
+    private final int[] _vertexBuffers = new int[5];
+    private final int[] _idxBuffers = new int[5];
+    private final int[] _idxBufferCount = new int[5];
+    public VertexElements[] _vertexElements = new VertexElements[5];
 
     private boolean _generated;
 
@@ -49,6 +53,8 @@ public class ChunkMesh {
         _vertexElements[0] = new VertexElements();
         _vertexElements[1] = new VertexElements();
         _vertexElements[2] = new VertexElements();
+		_vertexElements[3] = new VertexElements();
+		_vertexElements[4] = new VertexElements();
     }
 
     /**
@@ -109,43 +115,53 @@ public class ChunkMesh {
         ARBVertexBufferObject.glBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     }
 
-    public void render(boolean translucent) {
-        if (!translucent) {
-            renderVbo(0);
-        } else {
-            glDisable(GL_CULL_FACE);
+	public void render(RENDER_TYPE type) {
+		switch (type) {
+			case OPAQUE:
+				renderVbo(type.ordinal());
+				break;
+			case BILLBOARD_AND_TRANSLUCENT:
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				renderVbo(type.ordinal());
 
-            renderVbo(1);
+				glDisable(GL_CULL_FACE);
 
-            glEnable(GL_BLEND);
-            glDisable(GL_CULL_FACE);
+				// BILLBOARDS
+				renderVbo(type.ordinal() + 1);
 
-            // BILLBOARDS
-            renderVbo(2);
+				glEnable(GL_CULL_FACE);
+				glDisable(GL_BLEND);
+				break;
+			case WATER:
+			case LAVA:
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glDisable(GL_CULL_FACE);
+				renderVbo(type.ordinal() + 1);
+				glEnable(GL_CULL_FACE);
+				glDisable(GL_BLEND);
+				break;
+			default:
+				return;
+		}
+	}
 
-            glEnable(GL_CULL_FACE);
-            glDisable(GL_BLEND);
+	public boolean isGenerated() {
+		return _generated;
+	}
 
-        }
-    }
+	public void disposeMesh() {
+		IntBuffer ib = BufferUtils.createIntBuffer(_vertexBuffers.length + _idxBuffers.length);
+		for (int i = 0; i < _vertexBuffers.length; i++) {
+			ib.put(_idxBuffers[i]);
+			ib.put(_vertexBuffers[i]);
+			_idxBuffers[i] = -1;
+			_vertexBuffers[i] = -1;
+		}
+		ib.flip();
 
-    public boolean isGenerated() {
-        return _generated;
-    }
-
-    public void disposeMesh() {
-        IntBuffer ib = BufferUtils.createIntBuffer(_vertexBuffers.length + _idxBuffers.length);
-        for (int i = 0; i < _vertexBuffers.length; i++) {
-            ib.put(_idxBuffers[i]);
-            ib.put(_vertexBuffers[i]);
-            _idxBuffers[i] = -1;
-            _vertexBuffers[i] = -1;
-        }
-        ib.flip();
-
-        ARBVertexBufferObject.glDeleteBuffersARB(ib);
-    }
+		ARBVertexBufferObject.glDeleteBuffersARB(ib);
+	}
 }

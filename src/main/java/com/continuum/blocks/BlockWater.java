@@ -9,7 +9,7 @@ import org.lwjgl.util.vector.Vector4f;
  */
 public class BlockWater extends Block {
 
-	private static final Vector4f colorOffset = new Vector4f(0.9f, 0.9f, 1.0f, 0.7f);
+	private static final Vector4f colorOffset = new Vector4f(0.9f, 0.9f, 1.0f, 0.8f);
 
 	@Override
 	public boolean isBlockTypeTranslucent() {
@@ -23,7 +23,12 @@ public class BlockWater extends Block {
 
 	@Override
 	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(15, 13);
+		return Helper.calcOffsetForTextureAt(0, 0);
+	}
+
+	@Override
+	public Vector2f getTerrainTextureOffsetFor(SIDE side) {
+		return Helper.calcOffsetForTextureAt(13, 12);
 	}
 
 	@Override

@@ -5,7 +5,7 @@ import javolution.util.FastList;
 
 public final class ChunkUpdateManager {
 
-    private final FastList<Chunk> _displayListUpdates = new FastList<Chunk>(128);
+    private final FastList<Chunk> _vboUpdates = new FastList<Chunk>(128);
 
     private double _meanUpdateDuration = 0.0;
     private final World _parent;
@@ -51,45 +51,31 @@ public final class ChunkUpdateManager {
      */
     private void processChunkUpdate(Chunk c) {
         if (c != null) {
-            /*
-* Generate the chunk...
-*/
+            // Generate the chunk...
             c.generate();
 
-            /*
-* ... and fetch its neighbors...
-*/
+            // ... and fetch its neighbors...
             Chunk[] neighbors = c.loadOrCreateNeighbors();
 
-            /*
-* Before starting the illumination process, make sure that the neighbor chunks
-* are present and generated.
-*/
+            // Before starting the illumination process, make sure that the neighbor chunks
+			// are present and generated.
             for (int i = 0; i < neighbors.length; i++) {
                 if (neighbors[i] != null) {
                     neighbors[i].generate();
                 }
             }
 
-            /*
-* If the light of this chunk is marked as dirty...
-*/
+            // If the light of this chunk is marked as dirty...
             if (c.isLightDirty()) {
-                /*
-* ... propagate light into adjacent chunks...
-*/
+                // ... propagate light into adjacent chunks...
                 c.updateLight();
             }
 
-            /*
-* Check if this chunk was changed...
-*/
+            // Check if this chunk was changed...
             if (c.isDirty() && !c.isLightDirty() && !c.isFresh()) {
-                /*
-* ... if yes, regenerate the vertex arrays
-*/
+                // ... if yes, regenerate the vertex arrays
                 c.generateMesh();
-                _displayListUpdates.add(c);
+                _vboUpdates.add(c);
             }
         }
     }
@@ -97,9 +83,9 @@ public final class ChunkUpdateManager {
     /**
      * TODO
      */
-    public void updateDisplayLists() {
-        if (!_displayListUpdates.isEmpty()) {
-            Chunk c = _displayListUpdates.removeFirst();
+    public void updateVBOs() {
+        if (!_vboUpdates.isEmpty()) {
+            Chunk c = _vboUpdates.removeFirst();
             c.generateVBOs();
         }
     }
@@ -115,7 +101,7 @@ public final class ChunkUpdateManager {
      * @return
      */
     public int updatesDLSize() {
-        return _displayListUpdates.size();
+        return _vboUpdates.size();
     }
 
     /**

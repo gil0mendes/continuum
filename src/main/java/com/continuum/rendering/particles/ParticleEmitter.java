@@ -4,6 +4,8 @@ import com.continuum.rendering.RenderableObject;
 import javolution.util.FastList;
 import org.lwjgl.util.vector.Vector3f;
 
+import static org.lwjgl.opengl.GL11.*;
+
 /**
  * Particle emitter class
  */
@@ -16,9 +18,11 @@ public abstract class ParticleEmitter implements RenderableObject {
 	protected Vector3f _origin = new Vector3f();
 
 	public void render() {
+		glEnable(GL_TEXTURE_2D);
 		for (FastList.Node<Particle> n = _particles.head(), end = _particles.tail(); (n = n.getNext()) != end; ) {
 			n.getValue().render();
 		}
+		glDisable(GL_TEXTURE_2D);
 	}
 
 	public void update() {
