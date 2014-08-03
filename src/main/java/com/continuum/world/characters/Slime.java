@@ -2,7 +2,7 @@ package com.continuum.world.characters;
 
 import com.continuum.datastructures.AABB;
 import com.continuum.main.Configuration;
-import com.continuum.main.Game;
+import com.continuum.main.Continuum;
 import com.continuum.rendering.TextureManager;
 import com.continuum.utilities.FastRandom;
 import com.continuum.world.World;
@@ -15,8 +15,8 @@ public final class Slime extends Character {
 
     public static int _instanceCounter;
 
-    private FastRandom _rand = new FastRandom(Game.getInstance().getTime() + _instanceCounter);
-    private long _lastChangeOfDirectionAt = Game.getInstance().getTime();
+    private FastRandom _rand = new FastRandom(Continuum.getInstance().getTime() + _instanceCounter);
+    private long _lastChangeOfDirectionAt = Continuum.getInstance().getTime();
     private Vector3f _movementTarget = new Vector3f();
 
     public Slime(World parent) {
@@ -125,9 +125,9 @@ public final class Slime extends Character {
             _movementTarget.set(_parent.getPlayer().getPosition());
         }
 
-        if (Game.getInstance().getTime() - _lastChangeOfDirectionAt > 5000 || distanceToPlayer <= 5) {
+        if (Continuum.getInstance().getTime() - _lastChangeOfDirectionAt > 5000 || distanceToPlayer <= 5) {
             _movementTarget.set((float) (getPosition().x + _rand.randomDouble() * 500), getPosition().y, (float) (getPosition().z + _rand.randomDouble() * 500));
-            _lastChangeOfDirectionAt = Game.getInstance().getTime();
+            _lastChangeOfDirectionAt = Continuum.getInstance().getTime();
         }
 
 

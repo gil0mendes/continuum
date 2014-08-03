@@ -1,6 +1,6 @@
 package com.continuum.rendering;
 
-import com.continuum.main.Game;
+import com.continuum.main.Continuum;
 import javolution.util.FastMap;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
@@ -25,16 +25,16 @@ public class TextureManager {
 
     public TextureManager() {
         try {
-            Game.getInstance().getLogger().log(Level.FINE, "Loading textures...");
+            Continuum.getInstance().getLogger().log(Level.FINE, "Loading textures...");
 
             _textures.put("terrain", TextureLoader.getTexture("png", ResourceLoader.getResource("com/continuum/data/textures/terrain.png").openStream(), GL_NEAREST));
             _textures.put("sun", TextureLoader.getTexture("png", ResourceLoader.getResource("com/continuum/data/textures/sun.png").openStream(), GL_NEAREST));
             _textures.put("moon", TextureLoader.getTexture("png", ResourceLoader.getResource("com/continuum/data/textures/moon.png").openStream(), GL_NEAREST));
             _textures.put("slime", TextureLoader.getTexture("png", ResourceLoader.getResource("com/continuum/data/textures/slime.png").openStream(), GL_NEAREST));
 
-            Game.getInstance().getLogger().log(Level.FINE, "Finished loading textures!");
+            Continuum.getInstance().getLogger().log(Level.FINE, "Finished loading textures!");
         } catch (IOException ex) {
-            Game.getInstance().getLogger().log(Level.SEVERE, null, ex);
+            Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
         }
     }
 

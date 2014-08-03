@@ -70,7 +70,7 @@ public final class Configuration {
 	private static final FastMap<String, Boolean> _settingsBoolean = new FastMap<String, Boolean>(32);
 
 	static {
-		if (Game.getInstance().isSandboxed()) {
+		if (Continuum.getInstance().isSandboxed()) {
 			CHUNK_DIMENSIONS = new Vector3f(16, 128, 16);
 		} else {
 			CHUNK_DIMENSIONS = new Vector3f(16, 128, 16);
@@ -169,7 +169,7 @@ public final class Configuration {
 	private static void loadSettings() {
 		loadDefaults();
 
-		if (!Game.getInstance().isSandboxed()) {
+		if (!Continuum.getInstance().isSandboxed()) {
 			if (Boolean.getBoolean("continuum.demo")) {
 				loadDemo();
 			} else if (Boolean.getBoolean("continuum.debugMode")) {

@@ -1,6 +1,6 @@
 package com.continuum.world.horizon;
 
-import com.continuum.main.Game;
+import com.continuum.main.Continuum;
 import com.continuum.rendering.Primitives;
 import com.continuum.rendering.RenderableObject;
 import com.continuum.rendering.ShaderManager;
@@ -52,7 +52,7 @@ public class Clouds implements RenderableObject {
 				}
 			}
 		} catch (IOException ex) {
-			Game.getInstance().getLogger().log(Level.SEVERE, null, ex);
+			Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
 		}
 	}
 
@@ -121,11 +121,11 @@ public class Clouds implements RenderableObject {
 			_windDirection.y = -_windDirection.y;
 		}
 
-		if (Game.getInstance().getTime() - _lastWindUpdate > _nextWindUpdateInSeconds * 1000) {
+		if (Continuum.getInstance().getTime() - _lastWindUpdate > _nextWindUpdateInSeconds * 1000) {
 			_windDirection.x = (float) _parent.getRandom().randomDouble() / 8;
 			_windDirection.y = (float) _parent.getRandom().randomDouble() / 8;
 			_nextWindUpdateInSeconds = (short) (Math.abs(_parent.getRandom().randomInt()) % 16 + 32);
-			_lastWindUpdate = Game.getInstance().getTime();
+			_lastWindUpdate = Continuum.getInstance().getTime();
 		}
 	}
 }

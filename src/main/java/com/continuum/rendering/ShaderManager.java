@@ -1,7 +1,6 @@
 package com.continuum.rendering;
 
-import com.continuum.main.Game;
-import com.continuum.utilities.Helper;
+import com.continuum.main.Continuum;
 import javolution.util.FastMap;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ARBShaderObjects;
@@ -13,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.HashMap;
 import java.util.logging.Level;
 
 public class ShaderManager {
@@ -40,10 +38,10 @@ public class ShaderManager {
     private ShaderManager() {
         initShader();
 
-        Game.getInstance().getLogger().log(Level.INFO, "Loading Continuum shader manager...");
-        Game.getInstance().getLogger().log(Level.INFO, "GL_VERSION: {0}", GL11.glGetString(GL11.GL_VERSION));
-        Game.getInstance().getLogger().log(Level.INFO, "SHADING_LANGUAGE VERSION: {0}", GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
-        Game.getInstance().getLogger().log(Level.INFO, "EXTENSIONS: {0}", GL11.glGetString(GL11.GL_EXTENSIONS));
+        Continuum.getInstance().getLogger().log(Level.INFO, "Loading Continuum shader manager...");
+        Continuum.getInstance().getLogger().log(Level.INFO, "GL_VERSION: {0}", GL11.glGetString(GL11.GL_VERSION));
+        Continuum.getInstance().getLogger().log(Level.INFO, "SHADING_LANGUAGE VERSION: {0}", GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
+        Continuum.getInstance().getLogger().log(Level.INFO, "EXTENSIONS: {0}", GL11.glGetString(GL11.GL_EXTENSIONS));
     }
 
     private void initShader() {
@@ -80,7 +78,7 @@ public class ShaderManager {
                 fragCode += line + "\n";
             }
         } catch (Exception e) {
-            Game.getInstance().getLogger().log(Level.SEVERE, "Failed reading fragment shading code.");
+            Continuum.getInstance().getLogger().log(Level.SEVERE, "Failed reading fragment shading code.");
             return 0;
         }
 
@@ -108,7 +106,7 @@ public class ShaderManager {
                 fragCode += line + "\n";
             }
         } catch (Exception e) {
-            Game.getInstance().getLogger().log(Level.SEVERE, "Failed reading vertex shading code.");
+            Continuum.getInstance().getLogger().log(Level.SEVERE, "Failed reading vertex shading code.");
             return 0;
         }
 
@@ -139,7 +137,7 @@ public class ShaderManager {
         byte[] infoBytes = new byte[actualLength];
         infoBuffer.get(infoBytes);
 
-        Game.getInstance().getLogger().log(Level.INFO, "{0}", new String(infoBytes));
+        Continuum.getInstance().getLogger().log(Level.INFO, "{0}", new String(infoBytes));
     }
 
     /**

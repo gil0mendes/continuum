@@ -4,17 +4,43 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 
 import java.applet.Applet;
+import java.awt.*;
 
 /**
  * The heart and soul of Continuum.
  */
 public class ContinuumApple extends Applet {
 
-    private final Game _game;
+    private final Continuum _continuum;
+    private final Canvas _canvas;
 
     public ContinuumApple() {
-        _game = Game.getInstance();
-        _game.setSandbox(true);
+        _continuum = Continuum.getInstance();
+        _continuum.setSandbox(true);
+
+        setLayout(new BorderLayout());
+
+        _canvas = new Canvas() {
+            @Override
+            public void addNotify() {
+                super.addNotify();
+                startGame();
+            }
+
+            @Override
+            public void removeNotify() {
+                super.removeNotify();
+                _continuum.stopGame();
+            }
+        };
+
+        _canvas.setSize(getWidth(), getHeight());
+
+        add(_canvas);
+
+        _canvas.setFocusable(true);
+        _canvas.requestFocus();
+        _canvas.setIgnoreRepaint(true);
     }
 
     private void startGame() {
@@ -22,14 +48,14 @@ public class ContinuumApple extends Applet {
             @Override
             public void run() {
                 try {
-                    Display.setParent(null);
+                    Display.setParent(_canvas);
                     Display.setDisplayMode(new DisplayMode(1024, 576));
                     Display.setTitle("Continuum - Applet");
                     Display.create();
 
-                    _game.initControllers();
-                    _game.initGame();
-                    _game.startGame();
+                    _continuum.initControllers();
+                    _continuum.initGame();
+                    _continuum.startGame();
                 } catch (Exception e) {
                     System.err.println(e);
                 }
@@ -46,16 +72,16 @@ public class ContinuumApple extends Applet {
 
     @Override
     public void start() {
-        _game.unpauseGame();
+        _continuum.unpauseGame();
     }
 
     @Override
     public void stop() {
-        _game.pauseGame();
+        _continuum.pauseGame();
     }
 
     @Override
     public void destroy() {
-        _game.stopGame();
+        _continuum.stopGame();
     }
 }

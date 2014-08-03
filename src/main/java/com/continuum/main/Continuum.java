@@ -34,7 +34,7 @@ import org.newdawn.slick.TrueTypeFont;
 /**
  * The heart and soul of Continuum.
  */
-public final class Game {
+public final class Continuum {
 
 	/* ------- */
 	private static final int TICKS_PER_SECOND = 60;
@@ -59,7 +59,7 @@ public final class Game {
     /* ------- */
     private long _timeTicksPerSecond;
     /* ------- */
-    private static Game _instance;
+    private static Continuum _instance;
     /* ------- */
     private  final Logger _logger = Logger.getLogger("continuum");
     /* ------- */
@@ -71,9 +71,9 @@ public final class Game {
      *
      * @return
      */
-    public static Game getInstance() {
+    public static Continuum getInstance() {
         if (_instance == null) {
-            _instance = new Game();
+            _instance = new Continuum();
         }
 
         return _instance;
@@ -85,33 +85,33 @@ public final class Game {
 	 * @param args Arguments
 	 */
 	public static void main(String[] args) {
-        Game.getInstance().addLogFileHandler("continuum.log", Level.SEVERE);
-		Game.getInstance().getLogger().log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
+        Continuum.getInstance().addLogFileHandler("continuum.log", Level.SEVERE);
+		Continuum.getInstance().getLogger().log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
 
         // Load native libraries
         try {
             loadNativeLibs();
         } catch (Exception ex) {
-            Game.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry: " + ex);
+            Continuum.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry: " + ex);
         }
 
-		Game game = null;
+		Continuum continuum = null;
 
 		try {
-			game = Game.getInstance();
+			continuum = Continuum.getInstance();
 
-			game.initDisplay();
-            game.initControllers();
+			continuum.initDisplay();
+            continuum.initControllers();
 
-			game.initGame();
+			continuum.initGame();
 
-            game.startGame();
+            continuum.startGame();
 		} catch (Exception ex) {
-			Game.getInstance().getLogger().log(Level.SEVERE, ex.toString()
+			Continuum.getInstance().getLogger().log(Level.SEVERE, ex.toString()
             , ex);
 		} finally {
-			if (game != null) {
-				game.destroy();
+			if (continuum != null) {
+				continuum.destroy();
 			}
 		}
 
@@ -164,7 +164,7 @@ public final class Game {
      * @throws LWJGLException
      */
     public void initDisplay() throws LWJGLException {
-        Game.getInstance().getLogger().log(Level.INFO, "Loading Continuum. Please stand by...");
+        Continuum.getInstance().getLogger().log(Level.INFO, "Loading Continuum. Please stand by...");
 
         // Display
         if (Configuration.FULLSCREEN){
@@ -276,7 +276,7 @@ public final class Game {
 	 * Starts the render loop.
 	 */
     public void startGame() {
-		Game.getInstance().getLogger().log(Level.INFO, "Starting Continuum...");
+		Continuum.getInstance().getLogger().log(Level.INFO, "Starting Continuum...");
 		_lastLoopTime =getTime();
 
 		double nextGameTick = getTime();
@@ -531,13 +531,13 @@ public final class Game {
                 success = true;
             }
         } catch (Exception e) {
-            Game.getInstance().getLogger().log(Level.INFO, e.getMessage());
+            Continuum.getInstance().getLogger().log(Level.INFO, e.getMessage());
         }
 
         if (success) {
-            Game.getInstance().getLogger().log(Level.INFO, "Console command \"{0}\" accepted.", _consoleInput);
+            Continuum.getInstance().getLogger().log(Level.INFO, "Console command \"{0}\" accepted.", _consoleInput);
         } else {
-            Game.getInstance().getLogger().log(Level.WARNING, "Console command \"{0}\" is invalid.", _consoleInput);
+            Continuum.getInstance().getLogger().log(Level.WARNING, "Console command \"{0}\" is invalid.", _consoleInput);
         }
 
         toggleDebugConsole();
@@ -564,7 +564,7 @@ public final class Game {
 	 * @param seed  Seed value used for the generators
 	 */
 	private void initNewWorldAndPlayer(String title, String seed) {
-		Game.getInstance().getLogger().log(Level.INFO, "Creating new World with seed \"{0}\"", seed);
+		Continuum.getInstance().getLogger().log(Level.INFO, "Creating new World with seed \"{0}\"", seed);
 
 		// Get rid of the old world
 		if (_world != null) {
