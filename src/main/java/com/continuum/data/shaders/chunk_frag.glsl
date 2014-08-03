@@ -3,7 +3,7 @@
 uniform sampler2D textureAtlas;
 uniform float daylight = 1.0;
 uniform int swimming = 0;
-uniform float animatingOffset = 0;
+uniform float animationOffset = 0;
 uniform int animationType = 0;
 
 varying float fog;
@@ -18,18 +18,17 @@ vec4 linearToSrgb(vec4 color){
 }
 
 void main(){
-    vec4 textCoord = gl_TextCoord[0];
+    vec4 texCoord = gl_TexCoord[0];
 
-    // Texture animation
+    // TEXTURE ANIMATION
     if (animationType == 1) {
-		texCoord.x *= 16;
+        texCoord.x *= 16;
         texCoord.y /= 4;
 
         texCoord.y += animationOffset;
     }
 
-    vec4 color = texture2D(textureAtlas, vec2(textCoord));
-
+    vec4 color = texture2D(textureAtlas, vec2(texCoord));
     color = srgbToLinear(color);
 
     if (color.a < 0.1)
@@ -58,14 +57,10 @@ void main(){
     color.xyz *= daylightColorValue + blocklightColorValue * (1.0-daylightValue);
 
     if (swimming == 0) {
-        gl_FragColor.rgb = mix(linearToSrgb(color), vec4(0.84,0.88,1.0,1.0) * daylight, fog).rgb;
+        gl_FragColor = linearToSrgb(mix(color, vec4(0.9,0.9,0.9,1.0) * daylight, fog));
     } else {
-        gl_FragColor.rgb = mix(linearToSrgb(color), vec4(0.0,0.0,0.0,1.0) * daylight, fog*16.0).rgb;
+        gl_FragColor = linearToSrgb(mix(color, vec4(0.0,0.0,0.0,1.0) * daylight, fog*16.0));
         gl_FragColor.rg *= 0.4;
         gl_FragColor.b *= 0.7;
     }
-
-
-
-    gl_FragColor.a = color.a;
 }

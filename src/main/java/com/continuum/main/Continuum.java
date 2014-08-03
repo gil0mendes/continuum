@@ -242,7 +242,7 @@ public final class Continuum {
 		// Update the viewing distance
 		double minDist = Math.min(Configuration.getSettingNumeric("V_DIST_X") * Configuration.CHUNK_DIMENSIONS.x, Configuration.getSettingNumeric("V_DIST_Z") * Configuration.CHUNK_DIMENSIONS.z);
         double viewingDistance = minDist / 2f;
-		glFogf(GL_FOG_START, (float)(viewingDistance * 0.05));
+		glFogf(GL_FOG_START, (float)(viewingDistance * 0.5));
 		glFogf(GL_FOG_END, (float)viewingDistance);
 
         /*
@@ -527,7 +527,7 @@ public final class Continuum {
                 initNewWorldAndPlayer(worldSeed, worldSeed);
                 success = true;
             } else if (parsingResult.get(0).equals("set_spawn")) {
-                _world.setSpawningPoint();
+                _world.setSpawningPointToPlayerPosition();
                 success = true;
             }
         } catch (Exception e) {

@@ -96,7 +96,7 @@ public abstract class MovableEntity extends Entity {
 			return;
 		}
 
-		if ((Math.abs(_velocity.x) > 0.001 || Math.abs(_velocity.z) > 0.001) && _touchingGround) {
+		if ((Math.abs(_velocity.x) > 0.01 || Math.abs(_velocity.z) > 0.01) && _touchingGround) {
 			if (_currentFootstepSound == null) {
 				Vector3f playerDirection = directionOfPlayer();
 				_currentFootstepSound = _footstepSounds[Math.abs(_rand.randomInt()) % 5];
