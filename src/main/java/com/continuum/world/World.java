@@ -1,5 +1,7 @@
 package com.continuum.world;
 
+import com.continuum.generators.ChunkGenerator;
+import com.continuum.generators.ChunkGeneratorTerrain;
 import com.continuum.main.Configuration;
 import com.continuum.main.Continuum;
 import com.continuum.rendering.ShaderManager;
@@ -229,6 +231,7 @@ public final class World extends WorldProvider {
 	public void update() {
 		updateDaylight();
 		updateTicks();
+		_skysphere.update();
 
 		// Update the player
 		_player.update();
@@ -255,12 +258,6 @@ public final class World extends WorldProvider {
 		}
 	}
 
-	public void setPlayer(Player p) {
-		_player = p;
-		// Reset the player's position
-		resetPlayer();
-	}
-
 	/**
 	 * Chunk position of the player.
 	 *
@@ -279,13 +276,26 @@ public final class World extends WorldProvider {
 		return (int) (_player.getPosition().z / Configuration.CHUNK_DIMENSIONS.z);
 	}
 
+
+	/**
+	 * Set the player and reset.
+	 *
+	 * @param p
+	 */
+	public void setPlayer(Player p) {
+		_player = p;
+
+		// Reset the player's position
+		resetPlayer();
+	}
+
 	public void resetPlayer() {
 		_player.resetEntity();
 		_player.setPosition(getSpawningPoint());
 	}
 
-	public FastList<Chunk> getVisibleChunks() {
-		return _visibleChunks;
+	public ChunkGeneratorTerrain.BIOME_TYPE getActiveBiome() {
+		return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcBiomeTypeForGlobalPosition((int) _player.getPosition().x, (int) _player.getPosition().z);
 	}
 
 	public BlockParticleEmitter getBlockParticleEmitter() {
@@ -372,5 +382,13 @@ public final class World extends WorldProvider {
 	 */
 	public double getDaylight() {
 		return _daylight;
+	}
+
+	public FastList<Chunk> getVisibleChunks() {
+		return _visibleChunks;
+	}
+
+	public BlockParticleEmitter get_blockParticleEmitter() {
+		return _blockParticleEmitter;
 	}
 }

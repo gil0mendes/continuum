@@ -1,5 +1,6 @@
 package com.continuum.world.horizon;
 
+import com.continuum.generators.ChunkGeneratorTerrain;
 import com.continuum.rendering.RenderableObject;
 import com.continuum.rendering.ShaderManager;
 import com.continuum.world.World;
@@ -87,7 +88,11 @@ public class Skysphere implements RenderableObject {
 	}
 
 	public void update() {
-		// Nothing to do?
+		if (_parent.getActiveBiome() == ChunkGeneratorTerrain.BIOME_TYPE.SNOW) {
+			_turbidity = 10;
+		} else {
+			_turbidity = 5;
+		}
 	}
 
 	public float getSunPosAngle() {
