@@ -16,7 +16,7 @@ public class ContinuumApple extends Applet {
 
     public ContinuumApple() {
         _continuum = Continuum.getInstance();
-        _continuum.setSandbox(true);
+        _continuum.setSandboxed(true);
 
         setLayout(new BorderLayout());
 

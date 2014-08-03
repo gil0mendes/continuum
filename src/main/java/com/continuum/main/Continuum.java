@@ -13,7 +13,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+import com.continuum.rendering.FontManager;
 import com.continuum.rendering.ShaderManager;
+import com.continuum.rendering.VBOManager;
 import com.continuum.world.characters.Player;
 import com.continuum.utilities.FastRandom;
 import com.continuum.world.World;
@@ -28,7 +30,7 @@ import org.lwjgl.opengl.Display;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
-import org.newdawn.slick.Color;
+import org.newdawn.slick.SlickException;
 import org.newdawn.slick.TrueTypeFont;
 
 /**
@@ -85,14 +87,14 @@ public final class Continuum {
 	 * @param args Arguments
 	 */
 	public static void main(String[] args) {
-        Continuum.getInstance().addLogFileHandler("continuum.log", Level.SEVERE);
+        Continuum.getInstance().addLogFileHandler("continuum.log", Level.INFO);
 		Continuum.getInstance().getLogger().log(Level.INFO, "Welcome to {0}!", Configuration.GAME_TITLE);
 
         // Load native libraries
         try {
             loadNativeLibs();
         } catch (Exception ex) {
-            Continuum.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry: " + ex);
+            Continuum.getInstance().getLogger().log(Level.SEVERE, "Couldn't link static libraries. Sorry. " + ex);
         }
 
 		Continuum continuum = null;
@@ -106,9 +108,8 @@ public final class Continuum {
 			continuum.initGame();
 
             continuum.startGame();
-		} catch (Exception ex) {
-			Continuum.getInstance().getLogger().log(Level.SEVERE, ex.toString()
-            , ex);
+		} catch (Exception e) {
+			Continuum.getInstance().getLogger().log(Level.SEVERE, "Failed to start game. I'm sorry. " + e.toString(), e);
 		} finally {
 			if (continuum != null) {
 				continuum.destroy();
@@ -164,9 +165,6 @@ public final class Continuum {
      * @throws LWJGLException
      */
     public void initDisplay() throws LWJGLException {
-        Continuum.getInstance().getLogger().log(Level.INFO, "Loading Continuum. Please stand by...");
-
-        // Display
         if (Configuration.FULLSCREEN){
             Display.setDisplayMode(Display.getDesktopDisplayMode());
             Display.setFullscreen(true);
@@ -203,7 +201,7 @@ public final class Continuum {
 		Display.destroy();
 	}
 
-	public void initGame() {
+	public void initGame() throws IOException, SlickException {
         _timeTicksPerSecond = Sys.getTimerResolution();
 
 		// Init. fonts
@@ -213,6 +211,8 @@ public final class Continuum {
          * Load shaders.
          */
 		ShaderManager.getInstance();
+		VBOManager.getInstance();
+		FontManager.getInstance();
 
         /*
          * Init. OpenGL
@@ -242,17 +242,16 @@ public final class Continuum {
 		// Update the viewing distance
 		double minDist = Math.min(Configuration.getSettingNumeric("V_DIST_X") * Configuration.CHUNK_DIMENSIONS.x, Configuration.getSettingNumeric("V_DIST_Z") * Configuration.CHUNK_DIMENSIONS.z);
         double viewingDistance = minDist / 2f;
-		glFogf(GL_FOG_START, (float)(viewingDistance * 0.5));
+		glFogf(GL_FOG_START, (float)(viewingDistance * 0.025));
 		glFogf(GL_FOG_END, (float)viewingDistance);
 
-        /*
-         * Render the player, world and HUD.
-         */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
 
+		// Render world
 		_world.render();
 
+		// Render HUD
         renderHUD();
 	}
 
@@ -275,17 +274,17 @@ public final class Continuum {
 	/**
 	 * Starts the render loop.
 	 */
-    public void startGame() {
-		Continuum.getInstance().getLogger().log(Level.INFO, "Starting Continuum...");
-		_lastLoopTime =getTime();
+	public void startGame() {
+		Continuum.getInstance().getLogger().log(Level.INFO, "Starting Blockmania...");
+		_lastLoopTime = getTime();
 
 		double nextGameTick = getTime();
 		int loopCounter;
 
-        resizeViewport();
+		resizeViewport();
 
         /*
-         * Main game loop.
+         * Blockmania game loop.
          */
 		while (_runGame && !Display.isCloseRequested()) {
 			updateStatistics();
@@ -317,30 +316,26 @@ public final class Continuum {
 		Display.destroy();
 	}
 
-    public void stopGame() {
-        _runGame = false;
-    }
+	public void stopGame() {
+		_runGame = false;
+	}
 
-    public void pauseGame(){
-        if (_world != null) {
-            _world.suspendUpdateThread();
-        }
+	public void pauseGame() {
+		if (_world != null)
+			_world.suspendUpdateThread();
+		Mouse.setGrabbed(false);
+		_pauseGame = true;
+	}
 
-        Mouse.setGrabbed(false);
-        _pauseGame = true;
-    }
-
-    public void unpauseGame() {
-        _pauseGame = false;
-        Mouse.setGrabbed(false);
-
-        if (_world != null) {
-            _world.resumeUpdateThread();
-        }
-    }
+	public void unpauseGame() {
+		_pauseGame = false;
+		Mouse.setGrabbed(true);
+		if (_world != null)
+			_world.resumeUpdateThread();
+	}
 
 	/**
-	 * Updates the world.
+	 * Executes updates.
 	 */
 	private void update() {
 		_world.update();
@@ -359,7 +354,6 @@ public final class Continuum {
 		glLoadIdentity();
 
 		glDisable(GL_DEPTH_TEST);
-
 		// Draw the crosshair
 		if (Configuration.getSettingBoolean("CROSSHAIR")) {
 			glColor4f(1f, 1f, 1f, 1f);
@@ -373,22 +367,22 @@ public final class Continuum {
 			glEnd();
 		}
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         /*
-         * Draw debugging information.
-         */
+        * Draw debugging information.
+        */
 		if (Configuration.getSettingBoolean("DEBUG")) {
-			_font1.drawString(4, 4, String.format("%s (fps: %.2f, mem usage: %.2f MB)", Configuration.GAME_TITLE, _meanFps, _memoryUsage));
-			_font1.drawString(4, 22, String.format("%s", _player));
-			_font1.drawString(4, 38, String.format("%s", _world));
-			_font1.drawString(4, 54, String.format("total vus: %s", Chunk.getVertexArrayUpdateCount()));
+			FontManager.getInstance().getFont("default").drawString(4, 4, String.format("%s (fps: %.2f, mem usage: %.2f MB)", Configuration.GAME_TITLE, _meanFps, _memoryUsage));
+			FontManager.getInstance().getFont("default").drawString(4, 22, String.format("%s", _player));
+			FontManager.getInstance().getFont("default").drawString(4, 38, String.format("%s", _world));
+			FontManager.getInstance().getFont("default").drawString(4, 54, String.format("total vus: %s", Chunk.getVertexArrayUpdateCount()));
 		}
 
 		if (_pauseGame) {
 			// Display the console input text
-			_font1.drawString(4, Display.getDisplayMode().getHeight() - 16 - 4, String.format("%s_", _consoleInput), Color.red);
+			FontManager.getInstance().getFont("default").drawString(4, Display.getDisplayMode().getHeight() - 16 - 4, String.format("%s_", _consoleInput));
 		}
 
 		glDisable(GL_BLEND);
@@ -437,7 +431,7 @@ public final class Continuum {
 
 					char c = Keyboard.getEventCharacter();
 
-					if (c >= 'a' && c < 'z' + 1 || c >= '0' && c < '9' + 1 || c >= 'A' && c < 'A' + 1 || c == ' ' || c == '_' || c == '.' || c == '!') {
+					if (c >= 'a' && c < 'z' + 1 || c >= '0' && c < '9' + 1 || c >= 'A' && c < 'A' + 1 || c == ' ' || c == '_' || c == '.' || c == '!' || c == '-') {
 						_consoleInput.append(c);
 					}
 				}
@@ -450,110 +444,107 @@ public final class Continuum {
 	/**
 	 * Parses the console string and executes the command.
 	 */
-    private void processConsoleString() {
-        boolean success = false;
+	private void processConsoleString() {
+		boolean success = false;
 
-        FastList<String> parsingResult = new FastList<String>();
-        String temp = "";
+		FastList<String> parsingResult = new FastList<String>();
+		String temp = "";
 
-        for (int i = 0; i < _consoleInput.length(); i++) {
-            char c = _consoleInput.charAt(i);
+		for (int i = 0; i < _consoleInput.length(); i++) {
+			char c = _consoleInput.charAt(i);
 
-            if (c != ' ') {
-                temp = temp.concat(String.valueOf(c));
-            }
+			if (c != ' ') {
+				temp = temp.concat(String.valueOf(c));
+			}
 
-            if (c == ' ' || i == _consoleInput.length() - 1) {
-                parsingResult.add(temp);
-                temp = "";
-            }
-        }
+			if (c == ' ' || i == _consoleInput.length() - 1) {
+				parsingResult.add(temp);
+				temp = "";
+			}
+		}
 
-        // Try to parse the input
-        try {
-            if (parsingResult.get(0).equals("place")) {
-                if (parsingResult.get(1).equals("tree")) {
-                    _player.plantTree(Integer.parseInt(parsingResult.get(2)));
-                    success = true;
-                } else if (parsingResult.get(1).equals("block")) {
-                    _player.placeBlock(Byte.parseByte(parsingResult.get(2)));
-                    success = true;
-                }
-            } else if (parsingResult.get(0).equals("set")) {
-                if (parsingResult.get(1).equals("time")) {
-                    _world.setTime(Float.parseFloat(parsingResult.get(2)));
-                    success = true;
-                    // Otherwise try lookup the given variable within the settings
-                } else {
+		// Try to parse the input
+		try {
+			if (parsingResult.get(0).equals("place")) {
+				if (parsingResult.get(1).equals("tree")) {
+					_player.plantTree(Integer.parseInt(parsingResult.get(2)));
+					success = true;
+				} else if (parsingResult.get(1).equals("block")) {
+					_player.placeBlock(Byte.parseByte(parsingResult.get(2)));
+					success = true;
+				}
+			} else if (parsingResult.get(0).equals("set")) {
+				if (parsingResult.get(1).equals("time")) {
+					_world.setTime(Float.parseFloat(parsingResult.get(2)));
+					success = true;
+					// Otherwise try lookup the given variable within the settings
+				} else {
+					Boolean bRes = Configuration.getSettingBoolean(parsingResult.get(1).toUpperCase());
 
-                    Boolean bRes = Configuration.getSettingBoolean(parsingResult.get(1).toUpperCase());
+					if (bRes != null) {
+						Configuration.setSetting(parsingResult.get(1).toUpperCase(), Boolean.parseBoolean(parsingResult.get(2)));
+						success = true;
+					} else {
+						Double fRes = Configuration.getSettingNumeric(parsingResult.get(1).toUpperCase());
+						if (fRes != null) {
+							Configuration.setSetting(parsingResult.get(1).toUpperCase(), Double.parseDouble(parsingResult.get(2)));
+							success = true;
+						}
+					}
+				}
+			} else if (parsingResult.get(0).equals("respawn")) {
+				_world.resetPlayer();
+				success = true;
+			} else if (parsingResult.get(0).equals("goto")) {
+				int x = Integer.parseInt(parsingResult.get(1));
+				int y = Integer.parseInt(parsingResult.get(2));
+				int z = Integer.parseInt(parsingResult.get(3));
+				_player.setPosition(new Vector3f(x, y, z));
+				success = true;
+			} else if (parsingResult.get(0).equals("exit")) {
+				_saveWorldOnExit = true;
+				_runGame = false;
+				success = true;
+			} else if (parsingResult.get(0).equals("exit!")) {
+				_saveWorldOnExit = false;
+				_runGame = false;
+				success = true;
+			} else if (parsingResult.get(0).equals("load")) {
+				String worldSeed = _rand.randomCharacterString(16);
 
-                    if (bRes != null) {
-                        Configuration.setSetting(parsingResult.get(1).toUpperCase(), Boolean.parseBoolean(parsingResult.get(2)));
-                        success = true;
-                    } else {
-                        Double fRes = Configuration.getSettingNumeric(parsingResult.get(1).toUpperCase());
-                        if (fRes != null) {
-                            Configuration.setSetting(parsingResult.get(1).toUpperCase(), Double.parseDouble(parsingResult.get(2)));
-                            success = true;
-                        }
-                    }
-                }
+				if (parsingResult.size() > 1) {
+					worldSeed = parsingResult.get(1);
+				}
 
-            } else if (parsingResult.get(0).equals("respawn")) {
-                _world.resetPlayer();
-                success = true;
-            } else if (parsingResult.get(0).equals("goto")) {
-                int x = Integer.parseInt(parsingResult.get(1));
-                int y = Integer.parseInt(parsingResult.get(2));
-                int z = Integer.parseInt(parsingResult.get(3));
-                _player.setPosition(new Vector3f(x, y, z));
-                success = true;
-            } else if (parsingResult.get(0).equals("exit")) {
-                _saveWorldOnExit = true;
-                _runGame = false;
-                success = true;
-            } else if (parsingResult.get(0).equals("exit!")) {
-                _saveWorldOnExit = false;
-                _runGame = false;
-                success = true;
-            } else if (parsingResult.get(0).equals("load")) {
-                String worldSeed = _rand.randomCharacterString(16);
+				initNewWorldAndPlayer(worldSeed, worldSeed);
+				success = true;
+			} else if (parsingResult.get(0).equals("set_spawn")) {
+				_world.setSpawningPointToPlayerPosition();
+				success = true;
+			}
+		} catch (Exception e) {
+			Continuum.getInstance().getLogger().log(Level.INFO, e.getMessage());
+		}
 
-                if (parsingResult.size() > 1) {
-                    worldSeed = parsingResult.get(1);
-                }
+		if (success) {
+			Continuum.getInstance().getLogger().log(Level.INFO, "Console command \"{0}\" accepted.", _consoleInput);
+		} else {
+			Continuum.getInstance().getLogger().log(Level.WARNING, "Console command \"{0}\" is invalid.", _consoleInput);
+		}
 
-                initNewWorldAndPlayer(worldSeed, worldSeed);
-                success = true;
-            } else if (parsingResult.get(0).equals("set_spawn")) {
-                _world.setSpawningPointToPlayerPosition();
-                success = true;
-            }
-        } catch (Exception e) {
-            Continuum.getInstance().getLogger().log(Level.INFO, e.getMessage());
-        }
-
-        if (success) {
-            Continuum.getInstance().getLogger().log(Level.INFO, "Console command \"{0}\" accepted.", _consoleInput);
-        } else {
-            Continuum.getInstance().getLogger().log(Level.WARNING, "Console command \"{0}\" is invalid.", _consoleInput);
-        }
-
-        toggleDebugConsole();
-    }
+		toggleDebugConsole();
+	}
 
 	/**
 	 * Disables/enables the debug console.
 	 */
 	private void toggleDebugConsole() {
 		if (!_pauseGame) {
-			_world.suspendUpdateThread();
+			pauseGame();
 			_consoleInput.setLength(0);
-			_pauseGame = true;
+
 		} else {
-			_pauseGame = false;
-			_world.resumeUpdateThread();
+			unpauseGame();
 		}
 	}
 
@@ -573,10 +564,9 @@ public final class Continuum {
 
 		// Init some world
 		_world = new World(title, seed);
-
 		// Init. a new player
 		_player = new Player(_world);
-        _world.setPlayer(_player);
+		_world.setPlayer(_player);
 
 		_world.startUpdateThread();
 
@@ -594,7 +584,7 @@ public final class Continuum {
 		_lastFpsTime += delta;
 		_fps++;
 
-		// Update the FPS and calculate the mean for displaying
+		// Update the FPS and calculate the average
 		if (_lastFpsTime >= 1000) {
 			_lastFpsTime = 0;
 
@@ -608,27 +598,26 @@ public final class Continuum {
 		}
 	}
 
-    public void addLogFileHandler(String s, Level logLevel)
-    {
-        try {
-            FileHandler fh = new FileHandler(s, true);
-            fh.setLevel(logLevel);
-            fh.setFormatter(new SimpleFormatter());
-            _logger.addHandler(fh);
-        } catch (IOException ex) {
-            _logger.log(Level.WARNING, ex.toString(), ex);
-        }
-    }
+	public void addLogFileHandler(String s, Level logLevel) {
+		try {
+			FileHandler fh = new FileHandler(s, true);
+			fh.setLevel(logLevel);
+			fh.setFormatter(new SimpleFormatter());
+			_logger.addHandler(fh);
+		} catch (IOException ex) {
+			_logger.log(Level.WARNING, ex.toString(), ex);
+		}
+	}
 
-    public Logger getLogger() {
-        return _logger;
-    }
+	public Logger getLogger() {
+		return _logger;
+	}
 
-    public void setSandbox(boolean b) {
-        _sandbox = b;
-    }
+	public void setSandboxed(boolean b) {
+		_sandbox = b;
+	}
 
-    public boolean isSandboxed() {
-        return _sandbox;
-    }
+	public boolean isSandboxed() {
+		return _sandbox;
+	}
 }

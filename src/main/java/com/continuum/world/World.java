@@ -263,8 +263,10 @@ public final class World extends WorldProvider {
 		// Update the clouds
 		_clouds.update();
 
+		FastList<Chunk> visibleChunks = fetchVisibleChunks();
+
 		// Update chunks
-		for (FastList.Node<Chunk> n = _chunksInProximity.head(), end = _chunksInProximity.tail(); (n = n.getNext()) != end; )
+		for (FastList.Node<Chunk> n = visibleChunks.head(), end = visibleChunks.tail(); (n = n.getNext()) != end; )
 			n.getValue().update();
 
 		// Update the particle emitters
