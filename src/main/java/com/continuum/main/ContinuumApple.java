@@ -11,46 +11,47 @@ import java.awt.*;
  */
 public class ContinuumApple extends Applet {
 
-    private final Continuum _continuum;
-    private final Canvas _canvas;
+    private Continuum _continuum;
+    private Canvas _canvas;
+	private Thread _gameThread;
 
-    public ContinuumApple() {
-        _continuum = Continuum.getInstance();
-        _continuum.setSandboxed(true);
+	@Override
+	public void init() {
+		setLayout(new BorderLayout());
 
-        setLayout(new BorderLayout());
+		_canvas = new Canvas() {
+			@Override
+			public void addNotify() {
+				super.addNotify();
+				startGame();
+			}
 
-        _canvas = new Canvas() {
-            @Override
-            public void addNotify() {
-                super.addNotify();
-                startGame();
-            }
+			@Override
+			public void removeNotify() {
+				super.removeNotify();
+				_continuum.stopGame();
 
-            @Override
-            public void removeNotify() {
-                super.removeNotify();
-                _continuum.stopGame();
-            }
-        };
+				try {
+					_gameThread.join();
+				} catch (InterruptedException e) {}
+			}
+		};
 
-        _canvas.setSize(getWidth(), getHeight());
+		_canvas.setSize(getWidth(), getHeight());
 
-        add(_canvas);
+		add(_canvas);
 
-        _canvas.setFocusable(true);
-        _canvas.requestFocus();
-        _canvas.setIgnoreRepaint(true);
-    }
+		_canvas.setFocusable(true);
+		_canvas.requestFocus();
+		_canvas.setIgnoreRepaint(true);
+	}
 
     private void startGame() {
-        Thread t = new Thread() {
+        _gameThread = new Thread() {
             @Override
             public void run() {
                 try {
-                    Display.setParent(_canvas);
-                    Display.setDisplayMode(new DisplayMode(1024, 576));
-                    Display.setTitle("Continuum - Applet");
+                    Display.setParent(_canvas);;
                     Display.create();
 
                     _continuum.initControllers();
@@ -62,26 +63,22 @@ public class ContinuumApple extends Applet {
             }
         };
 
-        t.start();
-    }
-
-    @Override
-    public void init() {
-        startGame();
+		_gameThread.start();
     }
 
     @Override
     public void start() {
-        _continuum.unpauseGame();
+
     }
 
     @Override
     public void stop() {
-        _continuum.pauseGame();
-    }
+
+	}
 
     @Override
     public void destroy() {
-        _continuum.stopGame();
+        remove(_canvas);
+		super.destroy();
     }
 }
