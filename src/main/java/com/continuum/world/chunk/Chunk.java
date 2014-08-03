@@ -33,8 +33,6 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 	/* ------ */
 	protected boolean _dirty, _lightDirty, _fresh, _cached;
 	/* ------ */
-	protected Integer _chunkId = -1;
-	/* ------ */
 	protected WorldProvider _parent;
 	/* ------ */
 	protected final BlockmaniaArray _blocks;
@@ -366,6 +364,9 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 	 * @param type      The type of the light
 	 */
 	public void setLight(int x, int y, int z, byte intensity, LIGHT_TYPE type) {
+		if (!isCached())
+			return;
+
 		BlockmaniaSmartArray lSource;
 		if (type == LIGHT_TYPE.SUN) {
 			lSource = _sunlight;
@@ -422,6 +423,9 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 	 * @param type The block type
 	 */
 	public void setBlock(int x, int y, int z, byte type) {
+		if (!isCached())
+			return;
+
 		byte oldValue = _blocks.get(x, y, z);
 		_blocks.set(x, y, z, type);
 
@@ -506,7 +510,7 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 
 	@Override
 	public String toString() {
-		return String.format("Chunk (%d) at %s.", getChunkId(), _position);
+		return String.format("Chunk at %s.", _position);
 	}
 
 	/**
@@ -584,6 +588,9 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 	}
 
 	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeInt((int) _position.getX());
+		out.writeInt((int) _position.getZ());
+
 		// Save flags...
 		byte flags = 0x0;
 		if (_lightDirty) {
@@ -604,6 +611,9 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 	}
 
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		_position.setX(in.readInt());
+		_position.setZ(in.readInt());
+
 		// The first byte contains the flags...
 		byte flags = in.readByte();
 		// Parse the flags...
@@ -621,22 +631,13 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 		_fresh = false;
 	}
 
-	public static int idForPosition(Vector3f position) {
-		return MathHelper.cantorize(MathHelper.mapToPositive((int) position.x), MathHelper.mapToPositive((int) position.z));
-	}
-
-	public static int posXForId(int id) {
-		return MathHelper.redoMapToPositive(MathHelper.cantorX(id));
-	}
-
-	public static int posZForId(int id) {
-		return MathHelper.redoMapToPositive(MathHelper.cantorY(id));
-	}
-
 	/**
 	 * Generates the terrain mesh (creates the internal vertex arrays).
 	 */
-	public void generateMesh() {
+	public synchronized void generateMesh() {
+		if (!isCached())
+			return;
+
 		if (!_fresh) {
 			_newMesh = _meshGenerator.generateMesh();
 
@@ -649,7 +650,7 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 	/**
 	 * Generates the display lists and swaps the old mesh with the current mesh.
 	 */
-	public void generateVBOs() {
+	public synchronized void generateVBOs() {
 		if (!isCached())
 			return;
 
@@ -694,7 +695,7 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 		// Nothing to do
 	}
 
-	public void freeBuffers() {
+	public synchronized void freeBuffers() {
 		if (_newMesh != null)
 			_newMesh.disposeMesh();
 		_newMesh = null;
@@ -771,10 +772,6 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 		this._lightDirty = _lightDirty;
 	}
 
-	public Integer getChunkId() {
-		return _chunkId;
-	}
-
 	public void setCached(boolean b) {
 		_cached = b;
 	}
@@ -785,10 +782,31 @@ public class Chunk extends StaticEntity implements Comparable<Chunk>, Externaliz
 
 	public void setPosition(Vector3f position) {
 		super.setPosition(position);
-		_chunkId = Chunk.idForPosition(position);
 	}
 
 	public void setParent(WorldProvider parent) {
 		_parent = parent;
+	}
+
+	public static String getChunkSavePathForPosition(Vector3f position) {
+		String x36 = Integer.toString((int) position.x, 36);
+		String z36 = Integer.toString((int) position.z, 36);
+
+		return x36 + "/" + z36;
+	}
+
+	public static String getChunkFileNameForPosition(Vector3f position) {
+		String x36 = Integer.toString((int) position.x, 36);
+		String z36 = Integer.toString((int) position.z, 36);
+
+		return "bc_" + x36 + "." + z36;
+	}
+
+	public String getChunkSavePath() {
+		return Chunk.getChunkSavePathForPosition(_position);
+	}
+
+	public String getChunkFileName() {
+		return Chunk.getChunkFileNameForPosition(_position);
 	}
 }

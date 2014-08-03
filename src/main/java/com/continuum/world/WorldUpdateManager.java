@@ -1,16 +1,17 @@
 package com.continuum.world;
 
-import com.continuum.world.World;
 import com.continuum.world.chunk.Chunk;
 import javolution.util.FastList;
 import javolution.util.FastSet;
 
 import java.util.Collections;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public final class WorldUpdateManager {
 
-	private final FastList<Chunk> _vboUpdates = new FastList<Chunk>(128);
-	private final FastSet<Chunk> _currentProcessedChunks = new FastSet<Chunk>();
+	private final PriorityBlockingQueue<Chunk> _vboUpdates = new PriorityBlockingQueue<Chunk>();
+	private final FastSet<Chunk> _currentlyProcessedChunks = new FastSet<Chunk>();
+	private int _threadCount = 0;
 
 	private double _meanUpdateDuration = 0.0;
 	private final World _parent;
@@ -37,37 +38,48 @@ public final class WorldUpdateManager {
 				continue;
 			}
 
-			if (!(c.isDirty() || c.isFresh() || c.isLightDirty())) {
+			if (!(c.isDirty() || c.isFresh() || c.isLightDirty()) || !_parent.getPlayer().getViewFrustum().intersects(c.getAABB())) {
 				dirtyChunks.remove(i);
 			}
 		}
-
-		Collections.sort(dirtyChunks);
 
 		if (dirtyChunks.isEmpty()) {
 			return;
 		}
 
-		final Chunk chunkToProcess = dirtyChunks.removeFirst();
+		Collections.sort(dirtyChunks);
 
-		if (!_currentProcessedChunks.contains(chunkToProcess)) {
-			_currentProcessedChunks.add(chunkToProcess);
+		final Chunk chunkToProcess = dirtyChunks.getFirst();
+
+		if (!_currentlyProcessedChunks.contains(chunkToProcess)) {
+
+			_currentlyProcessedChunks.add(chunkToProcess);
 
 			Thread t = new Thread() {
 				@Override
 				public void run() {
-					synchronized (_currentProcessedChunks) {
-						if (_currentProcessedChunks.size() > Runtime.getRuntime().availableProcessors() / 2) {
+					while (_threadCount > Runtime.getRuntime().availableProcessors()) {
+						synchronized (_currentlyProcessedChunks) {
 							try {
-								_currentProcessedChunks.wait();
-							} catch (InterruptedException e) {}
+								_currentlyProcessedChunks.wait();
+							} catch (InterruptedException e) {
+							}
 						}
 					}
 
+					synchronized (_currentlyProcessedChunks) {
+						_threadCount++;
+					}
+
 					processChunkUpdate(chunkToProcess);
-					synchronized (_currentProcessedChunks) {
-						_currentProcessedChunks.remove(chunkToProcess);
-						_currentProcessedChunks.notify();
+					_currentlyProcessedChunks.remove(chunkToProcess);
+
+					synchronized (_currentlyProcessedChunks) {
+						_threadCount--;
+					}
+
+					synchronized (_currentlyProcessedChunks) {
+						_currentlyProcessedChunks.notify();
 					}
 				}
 			};
@@ -76,7 +88,6 @@ public final class WorldUpdateManager {
 		}
 
 		_chunkUpdateAmount = dirtyChunks.size();
-
 		_meanUpdateDuration += System.currentTimeMillis() - timeStart;
 		_meanUpdateDuration /= 2;
 	}
@@ -89,9 +100,11 @@ public final class WorldUpdateManager {
 	}
 
 	public void updateVBOs() {
-		while (!_vboUpdates.isEmpty()) {
-			Chunk c = _vboUpdates.removeFirst();
-			c.generateVBOs();
+		while (_vboUpdates.size() > 0) {
+			Chunk c = _vboUpdates.poll();
+
+			if (c != null)
+				c.generateVBOs();
 		}
 	}
 
@@ -105,5 +118,9 @@ public final class WorldUpdateManager {
 
 	public double getMeanUpdateDuration() {
 		return _meanUpdateDuration;
+	}
+
+	public int getThreadCount() {
+		return _threadCount;
 	}
 }

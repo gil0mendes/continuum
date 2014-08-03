@@ -2,6 +2,7 @@ package com.continuum.world.chunk;
 
 import com.continuum.main.Configuration;
 import com.continuum.main.Continuum;
+import com.continuum.utilities.MathHelper;
 import com.continuum.world.WorldProvider;
 import javolution.util.FastList;
 import javolution.util.FastMap;
@@ -13,7 +14,7 @@ import java.util.logging.Level;
 
 public final class ChunkCache {
 
-	private final FastMap<Integer, Chunk> _chunkCache = new FastMap<Integer, Chunk>(capacity()).shared();
+	private final FastMap<Integer, Chunk> _chunkCache = new FastMap<Integer, Chunk>(128000).shared();
 	private final WorldProvider _parent;
 
 	/**
@@ -34,10 +35,8 @@ public final class ChunkCache {
 	 * @return The chunk
 	 */
 	public Chunk loadOrCreateChunk(int x, int z) {
+		int chunkId = MathHelper.cantorize(MathHelper.mapToPositive(x), MathHelper.mapToPositive(z));
 		// Try to load the chunk from the cache
-
-
-		int chunkId = Chunk.idForPosition(new Vector3f(x, 0, z));
 		Chunk c = _chunkCache.get(chunkId);
 
 		// We got a chunk! Already! Great!
@@ -45,14 +44,15 @@ public final class ChunkCache {
 			return c;
 		}
 
+		Vector3f chunkPos = new Vector3f(x, 0, z);
 		// Init a new chunk
-		c = loadChunkFromDisk(chunkId);
+		c = loadChunkFromDisk(chunkPos);
 
 		if (c == null) {
-			c = new Chunk(_parent, new Vector3f(x, 0, z));
+			c = new Chunk(_parent, chunkPos);
 		}
 
-		_chunkCache.put(c.getChunkId(), c);
+		_chunkCache.put(chunkId, c);
 		c.setCached(true);
 
 		return c;
@@ -66,14 +66,14 @@ public final class ChunkCache {
 		FastList<Chunk> cachedChunks = new FastList<Chunk>(_chunkCache.values());
 		Collections.sort(cachedChunks);
 
-		while (_chunkCache.size() > capacity()) {
-			Chunk chunkToDelete = cachedChunks.removeLast();
-			_chunkCache.remove(chunkToDelete.getChunkId());
-
+		if (_chunkCache.size() > capacity()) {
+			Chunk chunkToDelete = cachedChunks.getLast();
+			// Prevent further updates to this chunk
 			chunkToDelete.setCached(false);
+			// Write the chunk to disk (but do not remove it from the cache just now)
 			writeChunkToDisk(chunkToDelete);
-
-			chunkToDelete.freeBuffers();
+			// When the chunk is written, finally remove it from the cache
+			_chunkCache.values().remove(chunkToDelete);
 		}
 	}
 
@@ -81,13 +81,9 @@ public final class ChunkCache {
 	 * Writes all chunks to disk and disposes them.
 	 */
 	public void saveAndDisposeAllChunks() {
-		for (FastMap.Entry<Integer, Chunk> e = _chunkCache.head(), end = _chunkCache.tail(); (e = e.getNext()) != end; ) {
-			Chunk c = e.getValue();
-
+		for (Chunk c : _chunkCache.values()) {
 			c.setCached(false);
 			writeChunkToDisk(c);
-
-			c.freeBuffers();
 		}
 
 		_chunkCache.clear();
@@ -104,7 +100,7 @@ public final class ChunkCache {
 	 * @return
 	 */
 	public static int capacity() {
-		return (Configuration.getSettingNumeric("V_DIST_X").intValue() * Configuration.getSettingNumeric("V_DIST_Z").intValue()) + 1024;
+		return (Configuration.getSettingNumeric("V_DIST_X").intValue() * Configuration.getSettingNumeric("V_DIST_Z").intValue() + 1024);
 	}
 
 	private void writeChunkToDisk(Chunk c) {
@@ -115,15 +111,15 @@ public final class ChunkCache {
 			return;
 		}
 
-		File dir = new File(_parent.getWorldSavePath());
-		if (!dir.exists()) {
-			if (!dir.mkdirs()) {
+		File dirPath = new File(_parent.getWorldSavePath() + "/" + c.getChunkSavePath());
+		if (!dirPath.exists()) {
+			if (!dirPath.mkdirs()) {
 				Continuum.getInstance().getLogger().log(Level.SEVERE, "Could not create save directory.");
 				return;
 			}
 		}
 
-		File f = new File((String.format("%s/%d.bc", _parent.getWorldSavePath(), c.getChunkId())));
+		File f = new File(_parent.getWorldSavePath() + "/" + c.getChunkSavePath() + "/" + c.getChunkFileName());
 
 		try {
 			FileOutputStream fileOut = new FileOutputStream(f);
@@ -136,8 +132,8 @@ public final class ChunkCache {
 		}
 	}
 
-	private Chunk loadChunkFromDisk(int id) {
-		File f = new File((String.format("%s/%d.bc", _parent.getWorldSavePath(), id)));
+	private Chunk loadChunkFromDisk(Vector3f chunkPos) {
+		File f = new File(_parent.getWorldSavePath() + "/" + Chunk.getChunkSavePathForPosition(chunkPos) + "/" + Chunk.getChunkFileNameForPosition(chunkPos));
 
 		if (!f.exists())
 			return null;
@@ -147,7 +143,6 @@ public final class ChunkCache {
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 
 			Chunk result = (Chunk) in.readObject();
-			result.setPosition(new Vector3f(Chunk.posXForId(id), 0, Chunk.posZForId(id)));
 			result.setParent(_parent);
 
 			in.close();
