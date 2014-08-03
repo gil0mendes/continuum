@@ -93,14 +93,14 @@ public final class ChunkUpdateManager {
     /**
      * @return
      */
-    public int updatesSize() {
+    public int getUpdatesSize() {
         return _chunkUpdateAmount;
     }
 
     /**
      * @return
      */
-    public int updatesDLSize() {
+    public int getVboUpdatesSize() {
         return _vboUpdates.size();
     }
 
