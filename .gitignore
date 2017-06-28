@@ -1,5 +1,51 @@
+# Ignore general
+*~
+._*
+*.bak
+/.*
+
+# Except this stuff
+!.gitattributes
+!.gitignore
+!.github
+
+# Ignore Gradle and some transient project config files (template versions available under /templates)
+build/
+/gradle.properties
+/override.cfg
+
+# Ignore IntelliJ
+/out/
+engine/engine.iml
+engine-tests/engine-tests.iml
+/*.iml
+/*.ipr
+/*.iws
+
+# Ignore Linux
+*.directory
+
+#Ignore OSX
+Icon
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.DocumentRevisions-V100
+.TemporaryItems
+.Trashes
+.dbfseventsd
+.fseventsd
+.VolumeIcon.icns
+
+#Ignore Windows
+ehthumbs.db
+Thumbs.db
+
+# Ignore Continnum output
+*.log
+/logs/
+config.cfg
+
 .idea/workspace.xml
 .idea/tasks.xml
 SAVED_WORLDS
-*.log*
-out
