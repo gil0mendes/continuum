@@ -95,3 +95,9 @@ task extractNatives {
     dependsOn extractMacOSNatives
     dependsOn extractWindowsNatives
 }
+
+// Include deletion of extracted natives in the global clean taks
+clean.doLast {
+    new File(dirNatives).deleteDir()
+    println "Cleaned root - don't forget to re-extract stuff! 'gradlew extractNatives' will do so, or 'gradlew idea'"
+}
