@@ -1,7 +1,6 @@
 package com.continuum.noise;
 
 import com.continuum.utilities.FastRandom;
-import com.continuum.utilities.MathHelper;
 
 /**
  * Improved Perlin noise based on the reference implementation by Ken Perlin.

@@ -9,6 +9,13 @@
 !.gitignore
 !.github
 
+# Ignore subdirs with their own Git roots. PC Facade and Core module are bundled with the main repo.
+/facades/*
+!/facades/PC
+!/facades/subprojects.gradle
+/libs/*
+!/libs/subprojects.gradle
+
 # Ignore Gradle and some transient project config files (template versions available under /templates)
 build/
 /gradle.properties

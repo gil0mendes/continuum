@@ -7,14 +7,12 @@ import com.continuum.datastructures.AABB;
 import com.continuum.datastructures.BlockPosition;
 import com.continuum.main.Configuration;
 import com.continuum.utilities.FastRandom;
-import com.continuum.utilities.MathHelper;
 import com.continuum.world.World;
 import javolution.util.FastList;
 import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.openal.Audio;
 
 import java.util.Collections;
-import java.util.Vector;
 
 public abstract class MovableEntity extends Entity {
 

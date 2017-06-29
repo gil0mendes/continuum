@@ -11,7 +11,6 @@ import com.continuum.world.chunk.Chunk;
 import com.continuum.world.chunk.ChunkMesh;
 import com.continuum.world.horizon.Clouds;
 import com.continuum.world.horizon.Skysphere;
-import com.continuum.world.horizon.SunMoon;
 import javolution.util.FastList;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;

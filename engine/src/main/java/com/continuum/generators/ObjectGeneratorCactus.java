@@ -1,6 +1,5 @@
 package com.continuum.generators;
 
-import com.continuum.world.World;
 import com.continuum.world.WorldProvider;
 
 public class ObjectGeneratorCactus extends ObjectGenerator {

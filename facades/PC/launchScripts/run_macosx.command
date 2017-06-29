@@ -1,0 +1,3 @@
+#!/bin/bash
+cd "$(dirname "$0")"
+java -Xms128m -Xmx1536m -jar libs/Continuum.jar

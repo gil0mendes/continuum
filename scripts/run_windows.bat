@@ -1,1 +1,0 @@
-java -Xms64m -Xmx256m -jar Continuum.jar
