@@ -1,3 +1,6 @@
+// Separate build file for structure heavy stuff like using Git to fetch other repos to embed within the project
+apply from: 'config/ide.gradle'
+
 // Needed for extending the "clean" task
 apply plugin: 'base'
 
@@ -30,6 +33,7 @@ assert org.gradle.api.JavaVersion.current().isJava8Compatible()
 
 ext {
     dirNatives = 'natives'
+    templatesDir = 'templates'
 
     // Lib dir for use in manifest entries etc
     subDirLibs = 'libs'
@@ -44,7 +48,7 @@ repositories {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Natives - Handles pulling in and extracting native libraries for LWJGL                                             //
+// Natives - Handles pulling in and extracting native libraries for LWJGL
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Define configurations for native an config
@@ -100,4 +104,75 @@ task extractNatives {
 clean.doLast {
     new File(dirNatives).deleteDir()
     println "Cleaned root - don't forget to re-extract stuff! 'gradlew extractNatives' will do so, or 'gradlew idea'"
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// General IDE customization
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+task copyInMissingTemplates {
+    description = "Copies in plaeholders from the /templates dir to project root if not present yet"
+    File gradlePropsFile = new File(rootDir, 'gradle.properties')
+    File overrideCfgFile = new File(rootDir, 'override.cfg')
+
+    if (!gradlePropsFile.exists()) {
+        new File(rootDir, 'gradle.properties') << new File(templatesDir, 'gradle.properties').text
+    }
+
+    if (!overrideCfgFile.exists()) {
+        new File(rootDir, 'override.cfg') << new File(templatesDir, 'override.cfg').text
+    }
+}
+
+// Make sure the IDE prep includes extraction of natives
+ideaModule.dependsOn extractNatives
+ideaModule.dependsOn copyInMissingTemplates
+
+// For IntelliJ add a bunch of excluded directories
+idea {
+    // Exclude native dirs
+    module.excludeDirs += file('natives')
+
+    // Exclude output dirs
+    module.excludeDirs += file('logs')
+    module.excludeDirs += file('saves')
+
+    // make download the source code from the dependent JARs
+    module.downloadSources = true
+
+    project {
+        // Set JDK
+        jdkName = "1.8"
+        wildcards -= '!?*.groovy'
+
+        ipr {
+            withXml { xmlProvider ->
+                // Apply a bunch of tweaks to IntelliJ config - all defined in ide.gradle
+                // Part reason for separate file was in case a module needs to define something it cannot do so in a
+                // project block
+                def iprNode = xmlProvider.asNode()
+                ideaActivateCheckstyle(iprNode)
+                ideaActivateCopyright(iprNode)
+                ideaActivateGit(iprNode)
+                ideaActivateGradle(iprNode)
+            }
+
+            // Sets sourceCompatibility with IntelliJ
+            whenMerged { project ->
+                project.jdk.languageLevel = 'JDK_1_8'
+            }
+        }
+    }
+
+    // Tweaks to the .iws
+    workspace.iws.withXml { xmlProvider ->
+        def iwsNode = xmlProvider.asNode()
+        ideaMakeAutomatically(iwsNode)
+        ideaRunConfig(iwsNode)
+    }
+}
+
+// Ensure that the iws file is removed
+cleanIdea.doLast {
+    new File('Continuum.iws').delete()
 }
