@@ -46,6 +46,7 @@ Thumbs.db
 /logs/
 config.cfg
 
-.idea/workspace.xml
-.idea/tasks.xml
+# Ignore stuff we extract for use with Continuum
+/natives/
+
 SAVED_WORLDS
