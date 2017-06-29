@@ -1,14 +1,97 @@
+// Needed for extending the "clean" task
+apply plugin: 'base'
+
+// For generating IntelliJ project files
+apply plugin: 'idea'
+
 apply plugin: 'java'
 
 sourceCompatibility = 1.5
 version = '1.0'
 
+buildscript {
+    repositories {
+        // External libs - jcenter is like a super set of the Maven Central
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencies {
+        // Artifactory plugin
+        classpath(group: 'org.jfrog.buildinfo', name: 'build-info-extractor-gradle', version: '4.0.0')
+
+        // Git plugin for Gradle
+        classpath 'org.ajoberstar:gradle-git:0.6.3'
+    }
+}
+
+// Test for right version of Java in use for running this script
+assert org.gradle.api.JavaVersion.current().isJava8Compatible()
+
+ext {
+    dirNatives = 'natives'
+
+    // Lib dir for use in manifest entries etc
+    subDirLibs = 'libs'
+
+    LwjglVersion = '2.9.3'
+}
+
 repositories {
+    // External libs - jcenter is like a super set of the Maven Central
+    jcenter()
     mavenCentral()
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Natives - Handles pulling in and extracting native libraries for LWJGL                                             //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Define configurations for native an config
+configurations {
+    natives
+}
+
 dependencies {
+    // For the "natives" configuration make it depend on the native files from LWJGL
+    natives group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: LwjglVersion
 
     // jUnit
     testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+task extractWindowsNatives(type: Sync) {
+    description = "Extract the Windows natives from the downloaded zip"
+    from {
+        configurations.natives.collect { it.getName().contains('-natives-window') ? zipTree(it) : [] }
+    }
+    into("$dirNatives/windows")
+    exclude('META-INF/**')
+}
+
+task extractMacOSNatives(type: Sync) {
+    description = "Extracts the macOS natives from the downloaded zip"
+    from {
+        configurations.natives.collect { it.getName().contains('-natives-osx') ? zipTree(it) : [] }
+    }
+    into("$dirNatives/macosx")
+    exclude('META-INF/**')
+}
+
+task extractLinuxNatives(type: Sync) {
+    description = "Extracts the Linux natives from the downloaded zip"
+
+    description = "Extracts the Linux natives from the downloaded zip"
+    from {
+        configurations.natives.collect { it.getName().contains('-natives-linux') ? zipTree(it) : [] }
+    }
+    into("$dirNatives/linux")
+    exclude('META-INF/**')
+}
+
+task extractNatives {
+    description = "Extracts all the natives lwjgl libraries from the downloaded zip"
+    dependsOn extractLinuxNatives
+    dependsOn extractMacOSNatives
+    dependsOn extractWindowsNatives
 }
