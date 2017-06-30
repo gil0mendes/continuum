@@ -17,11 +17,18 @@ package org.continuum.blocks;
 
 import org.continuum.utilities.Helper;
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector4f;
 
 /**
  * A high grass billboard block.
  */
 public class BlockHighGrass extends Block {
+
+    @Override
+    public Vector4f getColorOffsetFor(SIDE side, double temp, double hum) {
+        Vector4f grassColor = colorForTemperatureAndHumidity(temp, hum);
+        return new Vector4f(grassColor.x * 0.8f, grassColor.y * 0.8f, grassColor.z * 0.8f, 1.0f);
+    }
 
     @Override
     public boolean isBlockTypeTranslucent() {

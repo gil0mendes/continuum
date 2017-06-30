@@ -30,8 +30,8 @@ public class BlockLava extends Block {
     }
 
     @Override
-    public Vector4f getColorOffsetFor(Block.SIDE side) {
-        return new Vector4f(1f, 1f, 1f, 1.0f);
+    public Vector4f getColorOffsetFor(SIDE side, double temp, double hum) {
+        return this.colorForTemperatureAndHumidity(temp, hum);
     }
 
     @Override

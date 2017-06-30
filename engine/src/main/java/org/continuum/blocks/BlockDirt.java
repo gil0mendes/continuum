@@ -17,11 +17,16 @@ package org.continuum.blocks;
 
 import org.continuum.utilities.Helper;
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector4f;
 
 /**
  * A dirt block.
  */
 public class BlockDirt extends Block {
+    @Override
+    public Vector4f getColorOffsetFor(SIDE side, double temp, double hum) {
+        return this.colorForTemperatureAndHumidity(temp, hum);
+    }
 
     @Override
     public boolean isBlockTypeTranslucent() {

@@ -16,6 +16,22 @@
 package org.continuum.utilities;
 
 public class MathHelper {
+    /**
+     * Clamp a number between a minimum and maximum value.
+     *
+     * @param value
+     * @return
+     */
+    public static double clamp(double value) {
+        if (value > 1.0) {
+            return 1.0;
+        }
+        if (value < 0.0) {
+            return 0.0;
+        }
+
+        return value;
+    }
 
     public static double biLerp(double x, double y, double q11, double q12, double q21, double q22, double x1, double x2, double y1, double y2) {
         double r1 = lerp(x, x1, x2, q11, q21);

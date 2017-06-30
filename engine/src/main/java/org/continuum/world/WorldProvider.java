@@ -602,4 +602,26 @@ public class WorldProvider {
     public Vector3f getSpawningPoint() {
         return _spawningPoint;
     }
+
+    /**
+     * Get humidity on a given point on the map.
+     *
+     * @param x
+     * @param z
+     * @return
+     */
+    public double getHumidityAt(int x, int z) {
+        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcHumidityAtGlobalPosition(x, z);
+    }
+
+    /**
+     * Get humidity on a given point on the map.
+     *
+     * @param x
+     * @param z
+     * @return
+     */
+    public double getTemperatureAt(int x, int z) {
+        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcTemperatureAtGlobalPosition(x, z);
+    }
 }

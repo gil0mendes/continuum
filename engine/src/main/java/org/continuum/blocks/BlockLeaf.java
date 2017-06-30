@@ -17,11 +17,16 @@ package org.continuum.blocks;
 
 import org.continuum.utilities.Helper;
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector4f;
 
 /**
  * A leaf block.
  */
 public class BlockLeaf extends Block {
+
+    public Vector4f getColorOffsetFor(Block.SIDE side, double temp, double hum) {
+        return foliageColorForTemperatureAndHumidity(temp, hum);
+    }
 
     @Override
     public boolean isCastingShadows() {

@@ -29,9 +29,9 @@ public class BlockWood extends Block {
         return false;
     }
 
-    @Override
-    public Vector4f getColorOffsetFor(Block.SIDE side) {
-        return new Vector4f(1f, 1f, 1f, 1.0f);
+    public Vector4f getColorOffsetFor(Block.SIDE side, double temp, double hum) {
+        Vector4f leadColor = this.foliageColorForTemperatureAndHumidity(temp, hum);
+        return new Vector4f(leadColor.x * 1f, leadColor.y * 1f, leadColor.z * 1f, 1.0f);
     }
 
     @Override
