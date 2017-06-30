@@ -100,19 +100,39 @@ task extractNatives {
     dependsOn extractWindowsNatives
 }
 
-// Include deletion of extracted natives in the global clean taks
-clean.doLast {
-    new File(dirNatives).deleteDir()
-    println "Cleaned root - don't forget to re-extract stuff! 'gradlew extractNatives' will do so, or 'gradlew idea'"
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Helper tasks
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Helper that returns a list of all local Continuum module projects
+def continuumModules() {
+    subprojects.findAll { it.parent.name == 'modules' }
+}
+
 // Helpers that do magic things after having dependencies attached below
 task moduleClasses
 task moduleJars
+
+// This magically makes everything work - without this the desired module projects returned have no tasks :-(
+gradle.projectsEvaluated {
+    // Note how "classes"may indirectly trigger "jar" for module dependencies of modules (module compile dependency)
+    moduleClasses.dependsOn(continuumModules().classes)
+
+    // This makes it work for a full jar task
+    moduleJars.dependsOn(continuumModules().jar)
+}
+
+// This is a TEMPORARY tweak to make "changing" dependencies always ('0') check for newer snapshots available
+// TODO: Remove this when versioning and promotion works fully, then we shouldn't care about snapshots normally anyway
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+// Include deletion of extracted natives in the global clean task. Without the doLast it runs on *every* execution ...
+clean.doLast {
+    new File(dirNatives).deleteDir()
+    println "Cleaned root - don't forget to re-extract stuff! 'gradlew extractNatives extractConfig' will do so, or 'gradlew idea'"
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General IDE customization

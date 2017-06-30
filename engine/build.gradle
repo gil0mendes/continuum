@@ -66,6 +66,13 @@ configurations {
 
 // Primary dependencies definition
 dependencies {
+    // Graphics, 3D, UI, etc.
+    compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: LwjglVersion
+    compile group: 'org.lwjgl.lwjgl', name: 'lwjgl_util', version: LwjglVersion
+
+    // Other libs
+    compile group: 'javolution', name: 'javolution', version: '5.5.1'
+
     // Wildcard dependency to catch any libs provided with the project (remote repo preferred instead)
     compile fileTree(dir: 'libs', include: '*.jar')
 }

@@ -23,11 +23,9 @@ build/
 
 # Ignore IntelliJ
 /out/
-engine/engine.iml
-engine-tests/engine-tests.iml
-/*.iml
-/*.ipr
-/*.iws
+/**/*.iml
+/**/*.ipr
+/**/*.iws
 
 # Ignore Linux
 *.directory
