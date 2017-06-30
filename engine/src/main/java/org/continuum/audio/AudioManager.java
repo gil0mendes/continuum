@@ -26,42 +26,42 @@ import java.util.logging.Level;
 
 public class AudioManager {
 
-	private FastMap<String, Audio> _audioFiles = new FastMap();
-	private static AudioManager _instance = null;
+    private FastMap<String, Audio> _audioFiles = new FastMap();
+    private static AudioManager _instance = null;
 
-	/**
-	 * Returns (and creates – if necessary) the static instance
-	 * of this helper class.
-	 *
-	 * @return The instance
-	 */
-	public static AudioManager getInstance() {
-		if (_instance == null) {
-			_instance = new AudioManager();
-		}
+    /**
+     * Returns (and creates – if necessary) the static instance
+     * of this helper class.
+     *
+     * @return The instance
+     */
+    public static AudioManager getInstance() {
+        if (_instance == null) {
+            _instance = new AudioManager();
+        }
 
-		return _instance;
-	}
+        return _instance;
+    }
 
-	private AudioManager() {
-		loadAudioFiles();
-	}
+    private AudioManager() {
+        loadAudioFiles();
+    }
 
-	private void loadAudioFiles() {
-		_audioFiles.put("PlaceRemoveBlock", loadAudio("PlaceRemoveBlock"));
-	}
+    private void loadAudioFiles() {
+        _audioFiles.put("PlaceRemoveBlock", loadAudio("PlaceRemoveBlock"));
+    }
 
-	public Audio loadAudio(String s) {
-		try {
-			return AudioLoader.getAudio("OGG", ResourceLoader.getResourceAsStream("org/continuum/data/sounds/" + s + ".ogg"));
-		} catch (IOException e) {
-			Continuum.getInstance().getLogger().log(Level.SEVERE, e.getLocalizedMessage());
-		}
+    public Audio loadAudio(String s) {
+        try {
+            return AudioLoader.getAudio("OGG", ResourceLoader.getResourceAsStream("org/continuum/data/sounds/" + s + ".ogg"));
+        } catch (IOException e) {
+            Continuum.getInstance().getLogger().log(Level.SEVERE, e.getLocalizedMessage());
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	public Audio getAudio(String s) {
-		return _audioFiles.get(s);
-	}
+    public Audio getAudio(String s) {
+        return _audioFiles.get(s);
+    }
 }

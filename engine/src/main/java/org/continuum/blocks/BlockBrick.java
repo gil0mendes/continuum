@@ -23,8 +23,8 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class BlockBrick extends Block {
 
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(7, 0);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(7, 0);
+    }
 }

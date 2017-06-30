@@ -20,28 +20,28 @@ package org.continuum.blocks;
  */
 public class BlockNil extends Block {
 
-	@Override
-	public boolean isBlockTypeTranslucent() {
-		return false;
-	}
+    @Override
+    public boolean isBlockTypeTranslucent() {
+        return false;
+    }
 
-	@Override
-	public boolean isBlockInvisible() {
-		return true;
-	}
+    @Override
+    public boolean isBlockInvisible() {
+        return true;
+    }
 
-	@Override
-	public boolean isPenetrable() {
-		return true;
-	}
+    @Override
+    public boolean isPenetrable() {
+        return true;
+    }
 
-	@Override
-	public boolean isCastingShadows() {
-		return false;
-	}
+    @Override
+    public boolean isCastingShadows() {
+        return false;
+    }
 
-	@Override
-	public boolean isRemovable() {
-		return false;
-	}
+    @Override
+    public boolean isRemovable() {
+        return false;
+    }
 }

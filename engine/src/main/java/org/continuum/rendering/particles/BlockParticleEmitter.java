@@ -20,29 +20,29 @@ import org.continuum.world.World;
 
 public class BlockParticleEmitter extends ParticleEmitter {
 
-	private World _parent;
-	private byte _currentBlockType = 0x1;
+    private World _parent;
+    private byte _currentBlockType = 0x1;
 
-	public BlockParticleEmitter(World parent) {
-		_parent = parent;
-	}
+    public BlockParticleEmitter(World parent) {
+        _parent = parent;
+    }
 
-	public void emitParticles(int amount, byte blockType) {
-		_currentBlockType = blockType;
-		super.emitParticles(amount);
-	}
+    public void emitParticles(int amount, byte blockType) {
+        _currentBlockType = blockType;
+        super.emitParticles(amount);
+    }
 
-	public void render() {
-		TextureManager.getInstance().bindTexture("terrain");
-		super.render();
-	}
+    public void render() {
+        TextureManager.getInstance().bindTexture("terrain");
+        super.render();
+    }
 
-	public World getParent() {
-		return _parent;
-	}
+    public World getParent() {
+        return _parent;
+    }
 
-	@Override
-	protected Particle createParticle() {
-		return new BlockParticle(100, _origin, _currentBlockType, this);
-	}
+    @Override
+    protected Particle createParticle() {
+        return new BlockParticle(100, _origin, _currentBlockType, this);
+    }
 }

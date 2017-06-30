@@ -23,14 +23,14 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class BlockIce extends Block {
 
-	@Override
-	public boolean isBlockTypeTranslucent() {
-		return true;
-	}
+    @Override
+    public boolean isBlockTypeTranslucent() {
+        return true;
+    }
 
 
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(3, 4);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(3, 4);
+    }
 }

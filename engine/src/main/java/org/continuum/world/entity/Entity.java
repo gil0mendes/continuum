@@ -21,7 +21,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 public abstract class Entity implements RenderableObject {
 
-	protected Vector3f _position = new Vector3f();
+    protected Vector3f _position = new Vector3f();
 
     /**
      * Returns the position of the entity.

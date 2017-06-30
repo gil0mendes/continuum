@@ -23,8 +23,8 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class BlockGold extends Block {
 
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(0, 2);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(0, 2);
+    }
 }

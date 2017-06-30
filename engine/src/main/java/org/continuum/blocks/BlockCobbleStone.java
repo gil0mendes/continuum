@@ -22,8 +22,8 @@ import org.lwjgl.util.vector.Vector2f;
  * A cobble stone block.
  */
 public class BlockCobbleStone extends Block {
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(0, 1);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(0, 1);
+    }
 }

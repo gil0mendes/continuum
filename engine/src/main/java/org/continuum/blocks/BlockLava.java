@@ -24,41 +24,41 @@ import org.lwjgl.util.vector.Vector4f;
  */
 public class BlockLava extends Block {
 
-	@Override
-	public boolean isBlockTypeTranslucent() {
-		return false;
-	}
+    @Override
+    public boolean isBlockTypeTranslucent() {
+        return false;
+    }
 
-	@Override
-	public Vector4f getColorOffsetFor(Block.SIDE side) {
-		return new Vector4f(1f, 1f, 1f, 1.0f);
-	}
+    @Override
+    public Vector4f getColorOffsetFor(Block.SIDE side) {
+        return new Vector4f(1f, 1f, 1f, 1.0f);
+    }
 
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(0, 0);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(0, 0);
+    }
 
-	@Override
-	public Vector2f getTerrainTextureOffsetFor(SIDE side) {
-		return Helper.calcOffsetForTextureAt(15, 15);
-	}
+    @Override
+    public Vector2f getTerrainTextureOffsetFor(SIDE side) {
+        return Helper.calcOffsetForTextureAt(15, 15);
+    }
 
-	@Override
-	public boolean isPenetrable() {
-		return true;
-	}
+    @Override
+    public boolean isPenetrable() {
+        return true;
+    }
 
-	@Override
-	public boolean isCastingShadows() {
-		return false;
-	}
+    @Override
+    public boolean isCastingShadows() {
+        return false;
+    }
 
-	/**
-	 * @return
-	 */
-	@Override
-	public byte getLuminance() {
-		return 8;
-	}
+    /**
+     * @return
+     */
+    @Override
+    public byte getLuminance() {
+        return 8;
+    }
 }

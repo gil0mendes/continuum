@@ -23,26 +23,26 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class BlockLeaf extends Block {
 
-	@Override
-	public boolean isCastingShadows() {
-		return true;
-	}
+    @Override
+    public boolean isCastingShadows() {
+        return true;
+    }
 
-	@Override
-	public boolean isBlockTypeTranslucent() {
-		return true;
-	}
+    @Override
+    public boolean isBlockTypeTranslucent() {
+        return true;
+    }
 
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(4, 3);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(4, 3);
+    }
 
-	/**
-	 * @return
-	 */
-	@Override
-	public boolean doNotTessellate() {
-		return true;
-	}
+    /**
+     * @return
+     */
+    @Override
+    public boolean doNotTessellate() {
+        return true;
+    }
 }

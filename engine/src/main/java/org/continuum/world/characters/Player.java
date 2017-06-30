@@ -36,7 +36,7 @@ import org.newdawn.slick.openal.Audio;
 import static org.lwjgl.opengl.GL11.*;
 
 /**
- *  This class contains all functions regarding the player's actions,
+ * This class contains all functions regarding the player's actions,
  * movement and the orientation of the camera.
  */
 public final class Player extends Character {
@@ -224,14 +224,14 @@ public final class Player extends Character {
             RayBlockIntersection.Intersection is = calcSelectedBlock();
             if (is != null) {
                 Vector3f blockPos = is.getBlockPosition();
-				byte currentBlockType = getParent().getBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z);
+                byte currentBlockType = getParent().getBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z);
                 getParent().setBlock((int) blockPos.x, (int) blockPos.y, (int) blockPos.z, (byte) 0x0, true, true);
 
-				// Particle effect
-				_parent.getBlockParticleEmitter().setOrigin(blockPos);
-				_parent.getBlockParticleEmitter().emitParticles(128, currentBlockType);
+                // Particle effect
+                _parent.getBlockParticleEmitter().setOrigin(blockPos);
+                _parent.getBlockParticleEmitter().emitParticles(128, currentBlockType);
 
-				// Play audio effect
+                // Play audio effect
                 AudioManager.getInstance().getAudio("PlaceRemoveBlock").playAsSoundEffect(0.6f + (float) Math.abs(_rand.randomDouble()) * 0.4f, 0.7f + (float) Math.abs(_rand.randomDouble()) * 0.3f, false);
             }
         }
@@ -240,8 +240,8 @@ public final class Player extends Character {
     /**
      * Processes the keyboard input.
      *
-     * @param key Pressed key on the keyboard
-     * @param state The state of the key
+     * @param key         Pressed key on the keyboard
+     * @param state       The state of the key
      * @param repeatEvent True if repeat event
      */
     public void processKeyboardInput(int key, boolean state, boolean repeatEvent) {
@@ -278,7 +278,7 @@ public final class Player extends Character {
      * Processes the mouse input.
      *
      * @param button Pressed mouse button
-     * @param state State of the mouse button
+     * @param state  State of the mouse button
      */
     public void processMouseInput(int button, boolean state) {
         if (button == 0 && state) {

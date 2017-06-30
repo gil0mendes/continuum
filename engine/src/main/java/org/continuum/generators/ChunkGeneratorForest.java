@@ -84,7 +84,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
             double grassDens = calcGrassDensity(c.getBlockWorldPosX(x), c.getBlockWorldPosZ(z));
 
             if (grassDens > 0.0) {
-				// Generate high grass.
+                // Generate high grass.
                 double rand = _rand.standNormalDistrDouble();
                 if (rand > -0.4 && rand < 0.4) {
                     c.setBlock(x, y + 1, z, (byte) 0xB);
@@ -138,7 +138,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
      */
     double calcForestDensity(double x, double z) {
         double result = 0.0;
-		result += _pGen1.fBm(0.01 * x, 0, 0.01 * z, 7, 2.3614521, 0.85431);
+        result += _pGen1.fBm(0.01 * x, 0, 0.01 * z, 7, 2.3614521, 0.85431);
         return result;
     }
 
@@ -149,7 +149,7 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
      */
     double calcGrassDensity(double x, double z) {
         double result = 0.0;
-		result += _pGen3.fBm(0.05 * x, 0, 0.05 * z, 4, 2.37152, 0.8571);
+        result += _pGen3.fBm(0.05 * x, 0, 0.05 * z, 4, 2.37152, 0.8571);
         return result;
     }
 }

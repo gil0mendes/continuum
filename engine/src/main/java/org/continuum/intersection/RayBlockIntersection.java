@@ -174,11 +174,11 @@ public class RayBlockIntersection {
      * Calculates an intersection with the face of a block defined by 3 points.
      *
      * @param blockPos The position of the block to intersect with
-     * @param v0 Point 1
-     * @param v1 Point 2
-     * @param v2 Point 3
-     * @param origin Origin of the intersection ray
-     * @param ray Direction of the intersection ray
+     * @param v0       Point 1
+     * @param v1       Point 2
+     * @param v2       Point 3
+     * @param origin   Origin of the intersection ray
+     * @param ray      Direction of the intersection ray
      * @return Ray-face-intersection
      */
     private static Intersection executeBlockFaceIntersection(Vector3f blockPos, Vector3f v0, Vector3f v1, Vector3f v2, Vector3f origin, Vector3f ray) {

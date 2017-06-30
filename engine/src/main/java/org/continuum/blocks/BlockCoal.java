@@ -23,8 +23,8 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class BlockCoal extends Block {
 
-	@Override
-	public Vector2f getTextureOffsetFor(Block.SIDE side) {
-		return Helper.calcOffsetForTextureAt(2, 2);
-	}
+    @Override
+    public Vector2f getTextureOffsetFor(Block.SIDE side) {
+        return Helper.calcOffsetForTextureAt(2, 2);
+    }
 }

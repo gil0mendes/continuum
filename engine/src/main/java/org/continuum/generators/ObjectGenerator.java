@@ -23,31 +23,31 @@ import org.continuum.world.WorldProvider;
  */
 public abstract class ObjectGenerator {
 
-	/**
-	 *
-	 */
-	final FastRandom _rand;
-	/**
-	 *
-	 */
-	final WorldProvider _worldProvider;
+    /**
+     *
+     */
+    final FastRandom _rand;
+    /**
+     *
+     */
+    final WorldProvider _worldProvider;
 
-	/**
-	 * @param w
-	 * @param seed
-	 */
-	ObjectGenerator(WorldProvider w, String seed) {
-		_rand = new FastRandom(seed.hashCode());
-		_worldProvider = w;
-	}
+    /**
+     * @param w
+     * @param seed
+     */
+    ObjectGenerator(WorldProvider w, String seed) {
+        _rand = new FastRandom(seed.hashCode());
+        _worldProvider = w;
+    }
 
-	/**
-	 * Generates an object at the given position.
-	 *
-	 * @param posX   Position on the x-axis
-	 * @param posY   Position on the y-axis
-	 * @param posZ   Position on the z-axis
-	 * @param update If true, the chunk will be queued for updating
-	 */
-	public abstract void generate(int posX, int posY, int posZ, boolean update);
+    /**
+     * Generates an object at the given position.
+     *
+     * @param posX   Position on the x-axis
+     * @param posY   Position on the y-axis
+     * @param posZ   Position on the z-axis
+     * @param update If true, the chunk will be queued for updating
+     */
+    public abstract void generate(int posX, int posY, int posZ, boolean update);
 }
