@@ -103,11 +103,8 @@ public class Skysphere implements RenderableObject {
     }
 
     public void update() {
-        if (_parent.getActiveBiome() == ChunkGeneratorTerrain.BIOME_TYPE.SNOW) {
-            _turbidity = 14;
-        } else {
-            _turbidity = 10;
-        }
+        // define the concentration of particles on the atmosphere
+        _turbidity = (float) _parent.getActiveHumidity() * 5f + (float) _parent.getActiveTemperature() * 5f;
     }
 
     public float getSunPosAngle() {
