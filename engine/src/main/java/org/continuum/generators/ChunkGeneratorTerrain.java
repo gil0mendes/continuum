@@ -90,7 +90,7 @@ public class ChunkGeneratorTerrain extends ChunkGenerator {
 
                     double dens = densityMap[x][y][z];
 
-                    if ((dens >= 0.008 && dens < 0.01)) {
+                    if ((dens >= 0 && dens < 64)) {
 
                         // Some block was set...
                         if (firstBlockHeight == -1)
@@ -98,7 +98,7 @@ public class ChunkGeneratorTerrain extends ChunkGenerator {
 
                         GenerateOuterLayer(x, y, z, firstBlockHeight, c, type);
                         continue;
-                    } else if (dens >= 0.01) {
+                    } else if (dens >= 64) {
 
                         // Some block was set...
                         if (firstBlockHeight == -1)
@@ -245,41 +245,30 @@ public class ChunkGeneratorTerrain extends ChunkGenerator {
 
         if (type == BIOME_TYPE.DESERT) {
             freqY *= 1.0;
-            amp *= 1.1;
+            amp *= 0.3;
         } else if (type == BIOME_TYPE.PLAINS) {
             freqY *= 1.0;
-            amp *= 0.6;
+            amp *= 0.1;
         } else if (type == BIOME_TYPE.MOUNTAINS) {
-            freqY *= 0.75;
-            amp *= 4.0;
+            freqY *= 1.0;
+            amp *= 1.0;
         } else if (type == BIOME_TYPE.SNOW) {
-            freqY *= 1.2;
-            amp *= 1.2;
+            freqY *= 1.0;
+            amp *= 0.3;
         } else if (type == BIOME_TYPE.FOREST) {
-            freqY *= 1.1;
-            amp *= 1.1;
+            freqY *= 1.0;
+            amp *= 0.2;
         }
 
         double density = calcMountainDensity(x, y * freqY, z) * amp;
-        double divHeight = (y + 1) * 1.75;
 
-        if (y > 248)
-            divHeight *= 2.0;
-
-        return (height - density) / divHeight;
+        return -y + ((height * 64.0 + 32.0) - density * 128.0);
     }
 
-    /**
-     * Returns the roughness for the base terrain.
-     *
-     * @param x
-     * @param z
-     * @return
-     */
     protected double calcBaseTerrain(double x, double z) {
         double result = 0.0;
 
-        result += _pGen2.fBm(0.00008 * x, 0, 0.00008 * z, 3, 2.28371, 0.78) + 0.3;
+        result += _pGen2.fBm(0.0009 * x, 0, 0.0009 * z, 3, 2.28371, 0.78);
 
         return result;
     }
@@ -296,14 +285,14 @@ public class ChunkGeneratorTerrain extends ChunkGenerator {
         double x1, y1, z1;
 
         x1 = x * 0.0006;
-        y1 = y * 0.001;
+        y1 = y * 0.0005;
         z1 = z * 0.0006;
 
-        double freq[] = {1.232, 8.4281, 16.371, 22, 24, 28, 32, 36};
-        double amp[] = {1.0, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.8};
+        double freq[] = {1.232, 8.4281, 16.371, 32.47281, 64.457281, 66.0, 68.0};
+        double amp[] = {1.0, 2.0, 4.0, 8.0, 16.0, 17.0, 18.0};
 
         double ampSum = 0.0;
-        for (int i = 0; i < freq.length; i++) {
+        for (int i = 0; i < amp.length; i++) {
             result += _pGen5.noise(x1 * freq[i], y1 * freq[i], z1 * freq[i]) * amp[i];
             ampSum += amp[i];
         }
@@ -319,13 +308,13 @@ public class ChunkGeneratorTerrain extends ChunkGenerator {
 
     public double calcTemperatureAtGlobalPosition(double x, double z) {
         double result = 0.0;
-        result += _pGen4.fBm(x * 0.001, 0, 0.001 * z, 4, 2.12351, 0.81);
+        result += _pGen4.fBm(x * 0.004, 0, 0.004 * z, 4, 2.12351, 0.91);
         return MathHelper.clamp((result + 1.0) / 2.0);
     }
 
     public double calcHumidityAtGlobalPosition(double x, double z) {
         double result = 0.0;
-        result += _pGen5.fBm(x * 0.002, 0, 0.002 * z, 4, 2.221312, 0.91);
+        result += _pGen5.fBm(x * 0.004, 0, 0.004 * z, 4, 2.221312, 0.81);
         return MathHelper.clamp((result + 1.0) / 2.0);
     }
 
