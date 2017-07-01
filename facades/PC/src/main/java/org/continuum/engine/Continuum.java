@@ -25,6 +25,9 @@ public final class Continuum {
         } catch (Exception e) {
         }
 
+        // load debug
+        Configuration.loadDebug();
+
         // start engine
         org.continuum.main.Continuum.main(args);
     }

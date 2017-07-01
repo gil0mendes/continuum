@@ -20,9 +20,6 @@ import org.lwjgl.opengl.Display;
 import java.applet.Applet;
 import java.awt.*;
 
-/**
- * The heart and soul of Continuum.
- */
 public class ContinuumApple extends Applet {
 
     private Continuum _continuum;

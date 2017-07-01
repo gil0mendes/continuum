@@ -15,77 +15,60 @@
  */
 package org.continuum.world;
 
+import org.continuum.main.Continuum;
 import org.continuum.world.chunk.Chunk;
 import javolution.util.FastList;
 import javolution.util.FastSet;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.*;
 
 public final class WorldUpdateManager {
-    private static final int MAX_THREADS = Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
-    private static final Executor threadPoll = Executors.newFixedThreadPool(MAX_THREADS);
+    private static final int MAX_THREADS = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1);
+    private static final ExecutorService threadPoll = Executors.newFixedThreadPool(MAX_THREADS);
 
-    private final PriorityBlockingQueue<Chunk> _vboUpdates = new PriorityBlockingQueue<Chunk>();
+    private final LinkedBlockingQueue<Chunk> _vboUpdates = new LinkedBlockingQueue<Chunk>();
     private final FastSet<Chunk> _currentlyProcessedChunks = new FastSet<Chunk>();
 
     private double averageUpdateDuration = 0.0;
 
-    private final World _parent;
-
-    private int _chunkUpdateAmount;
-
-    /**
-     * @param _parent
-     */
-    public WorldUpdateManager(World _parent) {
-        this._parent = _parent;
-    }
-
-    public void queueChunkUpdates(FastList<Chunk> visibleChunks) {
-        for (FastList.Node<Chunk> n = visibleChunks.head(), end = visibleChunks.tail(); (n = n.getNext()) != end; ) {
-            if (n.getValue().isDirty() || n.getValue().isFresh() || n.getValue().isLightDirty()) {
-                queueChunkUpdate(n.getValue());
-            }
-        }
-    }
-
-    public void queueChunkUpdate(Chunk c) {
+    public boolean queueChunkUpdate(Chunk c) {
         final Chunk chunkToProcess = c;
 
         if (!_currentlyProcessedChunks.contains(chunkToProcess) && _currentlyProcessedChunks.size() < MAX_THREADS) {
             _currentlyProcessedChunks.add(chunkToProcess);
 
-            Runnable r = new Runnable() {
-                public void run() {
-                    long timeStart = System.currentTimeMillis();
+            Runnable r = () -> {
+                long timeStart = Continuum.getInstance().getTime();
 
-                    processChunkUpdate(chunkToProcess);
-                    _currentlyProcessedChunks.remove(chunkToProcess);
+                processChunkUpdate(chunkToProcess);
+                _currentlyProcessedChunks.remove(chunkToProcess);
 
-                    averageUpdateDuration += System.currentTimeMillis() - timeStart;
-                    averageUpdateDuration /= 2;
-                }
+                averageUpdateDuration += Continuum.getInstance().getTime() - timeStart;
+                averageUpdateDuration /= 2;
             };
 
             threadPoll.execute(r);
+            return true;
         }
+
+        return false;
     }
 
     private void processChunkUpdate(Chunk c) {
-        if (c != null) {
-            if (c.processChunk())
-                _vboUpdates.add(c);
+        // If the chunk was changed, update the VBOs
+        if (c.processChunk()) {
+            _vboUpdates.add(c);
         }
     }
 
+    /**
+     * Updates the VBOs of all currently queued chunks.
+     */
     public void updateVBOs() {
-        while (_vboUpdates.size() > 0) {
-            Chunk c = _vboUpdates.poll();
+        Chunk c = _vboUpdates.poll();
 
-            if (c != null)
-                c.generateVBOs();
+        if (c != null) {
+            c.generateVBOs();
         }
     }
 

@@ -77,7 +77,7 @@ public final class World extends WorldProvider {
         _clouds = new Clouds(this);
         _skysphere = new Skysphere(this);
 
-        _worldUpdateManager = new WorldUpdateManager(this);
+        _worldUpdateManager = new WorldUpdateManager();
         _updateThread = new Thread(new Runnable() {
 
             public void run() {
@@ -257,8 +257,10 @@ public final class World extends WorldProvider {
 
         // Update the player
         _player.update();
+
         // Generate new VBOs if available
         _worldUpdateManager.updateVBOs();
+
         // Update the clouds
         _clouds.update();
 
@@ -267,9 +269,11 @@ public final class World extends WorldProvider {
         // Update chunks
         for (FastList.Node<Chunk> n = visibleChunks.head(), end = visibleChunks.tail(); (n = n.getNext()) != end; ) {
             n.getValue().update();
-        }
 
-        _worldUpdateManager.queueChunkUpdates(visibleChunks);
+            if (n.getValue().isDirty() || n.getValue().isFresh() || n.getValue().isLightDirty()) {
+                _worldUpdateManager.queueChunkUpdate(n.getValue());
+            }
+        }
 
         // Update the particle emitters
         _blockParticleEmitter.update();

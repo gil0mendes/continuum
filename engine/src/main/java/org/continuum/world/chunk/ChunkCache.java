@@ -120,8 +120,9 @@ public final class ChunkCache {
     }
 
     private void writeChunkToDisk(Chunk c) {
-        if (Continuum.getInstance().isSandboxed())
+        if (Configuration.getSettingBoolean("SANDBOXED") || !Configuration.getSettingBoolean("SAVE_CHUNKS")) {
             return;
+        }
 
         if (c.isFresh()) {
             return;

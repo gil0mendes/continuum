@@ -79,8 +79,6 @@ public final class Continuum {
     /* ------- */
     private final Logger _logger = Logger.getLogger("continuum");
     /* ------- */
-    private boolean _sandbox = false;
-    /* ------- */
 
     /**
      * Get game instance
@@ -624,13 +622,5 @@ public final class Continuum {
 
     public Logger getLogger() {
         return _logger;
-    }
-
-    public void setSandboxed(boolean b) {
-        _sandbox = b;
-    }
-
-    public boolean isSandboxed() {
-        return _sandbox;
     }
 }

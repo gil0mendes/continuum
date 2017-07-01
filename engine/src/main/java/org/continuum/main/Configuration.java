@@ -74,10 +74,19 @@ public final class Configuration {
 
     /* -------- */
     private static final FastMap<String, Double> _settingsNumeric = new FastMap<String, Double>();
-    private static final FastMap<String, Boolean> _settingsBoolean = new FastMap<String, Boolean>();
+    private static final FastMap<String, Boolean> settingsBoolean = new FastMap<String, Boolean>();
 
     static {
-        loadSettings();
+        // load the default configurations
+        loadDefaults();
+
+        if (Boolean.getBoolean("continuum.demo")) {
+            loadDemo();
+        } else if (Boolean.getBoolean("continuum.debug")) {
+            loadDebug();
+        } else if (Boolean.getBoolean("continuum.sandboxed")) {
+            loadSandboxed();
+        }
     }
 
     /**
@@ -97,7 +106,7 @@ public final class Configuration {
      * @return The boolean value
      */
     public static Boolean getSettingBoolean(String key) {
-        return _settingsBoolean.get(key);
+        return settingsBoolean.get(key);
     }
 
     /**
@@ -107,7 +116,7 @@ public final class Configuration {
      * @param value The boolean value
      */
     public static void setSetting(String key, Boolean value) {
-        _settingsBoolean.put(key, value);
+        settingsBoolean.put(key, value);
     }
 
     /**
@@ -124,16 +133,18 @@ public final class Configuration {
      * Loads the default values for the global settings.
      */
     private static void loadDefaults() {
-        _settingsBoolean.put("ROTATING_BLOCK", true);
-        _settingsBoolean.put("REPLANT_DIRT", true);
-        _settingsBoolean.put("PLACING_BOX", true);
-        _settingsBoolean.put("CHUNK_OUTLINES", false);
-        _settingsBoolean.put("DEBUG", false);
-        _settingsBoolean.put("DEBUG_COLLISION", false);
-        _settingsBoolean.put("CROSSHAIR", true);
-        _settingsBoolean.put("BOBBING", true);
-        _settingsBoolean.put("DEMO_FLIGHT", false);
-        _settingsBoolean.put("GOD_MODE", false);
+        settingsBoolean.put("SANDBOXED", false);
+        settingsBoolean.put("SAVE_CHUNKS", true);
+        settingsBoolean.put("ROTATING_BLOCK", true);
+        settingsBoolean.put("REPLANT_DIRT", true);
+        settingsBoolean.put("PLACING_BOX", true);
+        settingsBoolean.put("CHUNK_OUTLINES", false);
+        settingsBoolean.put("DEBUG", false);
+        settingsBoolean.put("DEBUG_COLLISION", false);
+        settingsBoolean.put("CROSSHAIR", true);
+        settingsBoolean.put("BOBBING", true);
+        settingsBoolean.put("DEMO_FLIGHT", false);
+        settingsBoolean.put("GOD_MODE", false);
         _settingsNumeric.put("JUMP_INTENSITY", 0.125);
         _settingsNumeric.put("MAX_GRAVITY", 0.7);
         _settingsNumeric.put("WALKING_SPEED", 0.03);
@@ -146,38 +157,24 @@ public final class Configuration {
         _settingsNumeric.put("V_DIST_Z", 32.0);
     }
 
-    private static void loadDebug() {
-        _settingsBoolean.put("CHUNK_OUTLINES", false);
-        _settingsBoolean.put("DEBUG", true);
-        _settingsBoolean.put("DEBUG_COLLISION", false);
-        _settingsBoolean.put("GOD_MODE", true);
+    public static void loadDebug() {
+        settingsBoolean.put("CHUNK_OUTLINES", false);
+        settingsBoolean.put("DEBUG", true);
+        settingsBoolean.put("DEBUG_COLLISION", false);
+        settingsBoolean.put("GOD_MODE", true);
         _settingsNumeric.put("WALKING_SPEED", 0.5);
     }
 
-    private static void loadDemo() {
-        _settingsBoolean.put("DEBUG", false);
-        _settingsBoolean.put("PLACING_BOX", false);
-        _settingsBoolean.put("CROSSHAIR", false);
-        _settingsBoolean.put("DEMO_FLIGHT", true);
-        _settingsBoolean.put("GOD_MODE", true);
+    public static void loadDemo() {
+        settingsBoolean.put("DEBUG", false);
+        settingsBoolean.put("PLACING_BOX", false);
+        settingsBoolean.put("CROSSHAIR", false);
+        settingsBoolean.put("DEMO_FLIGHT", true);
+        settingsBoolean.put("GOD_MODE", true);
     }
 
-    private static void loadSandboxed() {
+    public static void loadSandboxed() {
         _settingsNumeric.put("V_DIST_X", 8.0);
         _settingsNumeric.put("V_DIST_Z", 8.0);
-    }
-
-    private static void loadSettings() {
-        loadDefaults();
-
-        if (!Continuum.getInstance().isSandboxed()) {
-            if (Boolean.getBoolean("continuum.demo")) {
-                loadDemo();
-            } else if (Boolean.getBoolean("continuum.debugMode")) {
-                loadDebug();
-            }
-        } else {
-            loadSandboxed();
-        }
     }
 }

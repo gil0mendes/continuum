@@ -456,7 +456,7 @@ public class WorldProvider {
      * @return
      */
     public boolean saveMetaData() {
-        if (Continuum.getInstance().isSandboxed()) {
+        if (Configuration.getSettingBoolean("SANDBOXED")) {
             return false;
         }
 
@@ -511,7 +511,7 @@ public class WorldProvider {
      * @return
      */
     private boolean loadMetaData() {
-        if (Continuum.getInstance().isSandboxed()) {
+        if (Configuration.getSettingBoolean("SANDBOXED")) {
             return false;
         }
 
