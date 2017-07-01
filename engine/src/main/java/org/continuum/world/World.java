@@ -329,7 +329,7 @@ public final class World extends WorldProvider {
      */
     @Override
     public String toString() {
-        return String.format("world (biome: %s, time: %f, sun: %f, cdl: %d, cn: %d, cache: %d, ud: %fs, seed: \"%s\", title: \"%s\")", getTime(), _skysphere.getSunPosAngle(), _worldUpdateManager.getVboUpdatesSize(), _worldUpdateManager.getUpdatesSize(), _chunkCache.size(), _worldUpdateManager.getMeanUpdateDuration() / 1000d, _seed, _title);
+        return String.format("world (biome: %s, time: %f, sun: %f, cdl: %d, cn: %d, cache: %d, ud: %fs, seed: \"%s\", title: \"%s\")", getActiveBiome(), getTime(), _skysphere.getSunPosAngle(), _worldUpdateManager.getVboUpdatesSize(), _worldUpdateManager.getUpdatesSize(), _chunkCache.size(), _worldUpdateManager.getMeanUpdateDuration() / 1000d, _seed, _title);
     }
 
     /**
