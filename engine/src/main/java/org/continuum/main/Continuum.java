@@ -66,8 +66,7 @@ public final class Continuum {
     private boolean _runGame = true;
     private boolean _saveWorldOnExit = true;
     /* ------- */
-    private float _meanFps;
-    private float _memoryUsage;
+    private double averageFps;
     /* ------- */
     private Player _player;
     private World _world;
@@ -389,7 +388,9 @@ public final class Continuum {
         * Draw debugging information.
         */
         if (Configuration.getSettingBoolean("DEBUG")) {
-            FontManager.getInstance().getFont("default").drawString(4, 4, String.format("%s (fps: %.2f, mem usage: %.2f MB)", Configuration.GAME_TITLE, _meanFps, _memoryUsage));
+            double memoryUsage = ((double) Runtime.getRuntime().totalMemory() - (double) Runtime.getRuntime().freeMemory()) / 1048576.0;
+
+            FontManager.getInstance().getFont("default").drawString(4, 4, String.format("%s (fps: %.2f, mem usage: %.2f MB, total mem: %.2f, max mem: %.2f)", Configuration.GAME_TITLE, averageFps, memoryUsage, Runtime.getRuntime().totalMemory() / 1048576.0, Runtime.getRuntime().maxMemory() / 1048576.0));
             FontManager.getInstance().getFont("default").drawString(4, 22, String.format("%s", _player));
             FontManager.getInstance().getFont("default").drawString(4, 38, String.format("%s", _world));
             FontManager.getInstance().getFont("default").drawString(4, 54, String.format("total vus: %s", Chunk.getVertexArrayUpdateCount()));
@@ -603,11 +604,8 @@ public final class Continuum {
         if (_lastFpsTime >= 1000) {
             _lastFpsTime = 0;
 
-            _meanFps += _fps;
-            _meanFps /= 2;
-
-            // Calculate the current memory usage in MB
-            _memoryUsage = (Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory()) / 1048576;
+            averageFps += _fps;
+            averageFps /= 2;
 
             _fps = 0;
         }

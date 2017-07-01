@@ -31,7 +31,6 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
 
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Level;
 
@@ -339,7 +338,7 @@ public final class World extends WorldProvider {
      */
     @Override
     public String toString() {
-        return String.format("world (biome: %s, time: %f, sun: %f, cdl: %d, cache: %d, ud: %fs, seed: \"%s\", title: \"%s\")", getActiveBiome(), getTime(), _skysphere.getSunPosAngle(), _worldUpdateManager.getVboUpdatesSize(), _chunkCache.size(), _worldUpdateManager.getMeanUpdateDuration() / 1000d, _seed, _title);
+        return String.format("world (biome: %s, time: %f, sun: %f, vbo-updates: %d, cache: %d, cu-duration: %fs, seed: \"%s\", title: \"%s\")", getActiveBiome(), getTime(), _skysphere.getSunPosAngle(), _worldUpdateManager.getVboUpdatesSize(), _chunkCache.size(), _worldUpdateManager.getAverageUpdateDuration() / 1000d, _seed, _title);
     }
 
     /**
