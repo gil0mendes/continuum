@@ -73,6 +73,8 @@ public abstract class Block implements RenderableObject {
         NORMAL, CACTUS, LOWERED_BOCK, BILLBOARD
     }
 
+    private int displayList = -1;
+
     private static final Block[] _blocks = {
             new BlockAir(), new BlockGrass(), new BlockDirt(), new BlockStone(), // 0-3
             new BlockWater(), new BlockTreeTrunk(), new BlockLeaf(), new BlockSand(), // 4-7
@@ -125,7 +127,7 @@ public abstract class Block implements RenderableObject {
      * @param side The block side
      * @return The color offset
      */
-    public Vector4f getColorOffsetFor(SIDE side, double temp, double hum) {
+    public Vector4f getColorOffsetFor(SIDE side, double temperature, double humidity) {
         return _colorOffset;
     }
 
@@ -209,13 +211,14 @@ public abstract class Block implements RenderableObject {
         return false;
     }
 
-    public void render() {
-        if (isBlockInvisible())
+    public void generateDisplayList() {
+        if (displayList > 0) {
             return;
+        }
 
-        glEnable(GL_TEXTURE_2D);
-        TextureManager.getInstance().bindTexture("terrain");
+        displayList = glGenLists(1);
 
+        glNewList(displayList, GL11.GL_COMPILE);
         glBegin(GL_QUADS);
         GL11.glColor3f(1.0f, 1.0f, 1.0f);
 
@@ -282,6 +285,26 @@ public abstract class Block implements RenderableObject {
         GL11.glVertex3f(-0.5f, -0.5f, 0.5f);
 
         GL11.glEnd();
+        glEndList();
+    }
+
+    /**
+     * Render the block.
+     */
+    public void render() {
+        // ignore invisible blocks
+        if (isBlockInvisible()) {
+            return;
+        }
+
+        if (displayList == -1) {
+            generateDisplayList();
+        }
+
+        glEnable(GL_TEXTURE_2D);
+        TextureManager.getInstance().bindTexture("terrain");
+
+        glCallList(displayList);
 
         glDisable(GL11.GL_TEXTURE_2D);
     }
@@ -311,7 +334,7 @@ public abstract class Block implements RenderableObject {
 
     public Vector4f foliageColorForTemperatureAndHumidity(double temp, double hum) {
         hum *= temp;
-        int rgbValue = colorLut.getRGB((int) ((1.0 - temp) * 255.0), (int) ((1.0 - hum) * 255.0));
+        int rgbValue = foliageLut.getRGB((int) ((1.0 - temp) * 255.0), (int) ((1.0 - hum) * 255.0));
 
         Color c = new Color(rgbValue);
         return new Vector4f((float) c.getRed() / 255f, (float) c.getGreen() / 255f, (float) c.getBlue() / 255f, 1.0f);

@@ -17,6 +17,7 @@ package org.continuum.blocks;
 
 import org.continuum.utilities.Helper;
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector4f;
 
 /**
  * A flower billboard block.
@@ -51,5 +52,11 @@ public class BlockYellowFlower extends Block {
     @Override
     public BLOCK_FORM getBlockForm() {
         return BLOCK_FORM.BILLBOARD;
+    }
+
+    @Override
+    public Vector4f getColorOffsetFor(SIDE side, double temperature, double humidity) {
+        Vector4f foliageColor = foliageColorForTemperatureAndHumidity(temperature, humidity);
+        return new Vector4f(foliageColor.x, foliageColor.y, foliageColor.z, 1.0f);
     }
 }

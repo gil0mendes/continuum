@@ -21,8 +21,8 @@ import org.lwjgl.util.vector.Vector4f;
 
 public class Primitives {
 
-    private static final Vector4f CLOUD_COLOR_1 = new Vector4f(0.92f, 0.92f, 0.92f, 0.5f);
-    private static final Vector4f CLOUD_COLOR_2 = new Vector4f(1.0f, 1.0f, 1.0f, 0.5f);
+    private static final Vector4f CLOUD_COLOR_1 = new Vector4f(0.96f, 0.96f, 0.96f, 0.7f);
+    private static final Vector4f CLOUD_COLOR_2 = new Vector4f(1.0f, 1.0f, 1.0f, 0.7f);
 
     /**
      * @param scaleX    Scale along the x-axis

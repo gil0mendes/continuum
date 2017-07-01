@@ -20,15 +20,19 @@ import javolution.util.FastList;
 import javolution.util.FastSet;
 
 import java.util.Collections;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public final class WorldUpdateManager {
+    private static final int MAX_THREADS = Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
+    private static final Executor threadPoll = Executors.newFixedThreadPool(MAX_THREADS);
 
     private final PriorityBlockingQueue<Chunk> _vboUpdates = new PriorityBlockingQueue<Chunk>();
     private final FastSet<Chunk> _currentlyProcessedChunks = new FastSet<Chunk>();
-    private int _threadCount = 0;
 
-    private double _meanUpdateDuration = 0.0;
+    private double averageUpdateDuration = 0.0;
+
     private final World _parent;
 
     private int _chunkUpdateAmount;
@@ -40,71 +44,34 @@ public final class WorldUpdateManager {
         this._parent = _parent;
     }
 
-    public void processChunkUpdates() {
-        long timeStart = System.currentTimeMillis();
-
-        final FastList<Chunk> dirtyChunks = new FastList<Chunk>(_parent.getChunksInProximity());
-
-        for (int i = dirtyChunks.size() - 1; i >= 0; i--) {
-            Chunk c = dirtyChunks.get(i);
-
-            if (c == null) {
-                dirtyChunks.remove(i);
-                continue;
-            }
-
-            if (!(c.isDirty() || c.isFresh() || c.isLightDirty()) || !_parent.getPlayer().getViewFrustum().intersects(c.getAABB())) {
-                dirtyChunks.remove(i);
+    public void queueChunkUpdates(FastList<Chunk> visibleChunks) {
+        for (FastList.Node<Chunk> n = visibleChunks.head(), end = visibleChunks.tail(); (n = n.getNext()) != end; ) {
+            if (n.getValue().isDirty() || n.getValue().isFresh() || n.getValue().isLightDirty()) {
+                queueChunkUpdate(n.getValue());
             }
         }
+    }
 
-        if (dirtyChunks.isEmpty()) {
-            return;
-        }
+    public void queueChunkUpdate(Chunk c) {
+        final Chunk chunkToProcess = c;
 
-        Collections.sort(dirtyChunks);
-
-        final Chunk chunkToProcess = dirtyChunks.getFirst();
-
-        if (!_currentlyProcessedChunks.contains(chunkToProcess)) {
-
+        if (!_currentlyProcessedChunks.contains(chunkToProcess) && _currentlyProcessedChunks.size() < MAX_THREADS) {
             _currentlyProcessedChunks.add(chunkToProcess);
 
-            Thread t = new Thread() {
-                @Override
+            Runnable r = new Runnable() {
                 public void run() {
-                    while (_threadCount > Math.max(Runtime.getRuntime().availableProcessors() - 2, 1)) {
-                        synchronized (_currentlyProcessedChunks) {
-                            try {
-                                _currentlyProcessedChunks.wait();
-                            } catch (InterruptedException e) {
-                            }
-                        }
-                    }
-
-                    synchronized (_currentlyProcessedChunks) {
-                        _threadCount++;
-                    }
+                    long timeStart = System.currentTimeMillis();
 
                     processChunkUpdate(chunkToProcess);
                     _currentlyProcessedChunks.remove(chunkToProcess);
 
-                    synchronized (_currentlyProcessedChunks) {
-                        _threadCount--;
-                    }
-
-                    synchronized (_currentlyProcessedChunks) {
-                        _currentlyProcessedChunks.notify();
-                    }
+                    averageUpdateDuration += System.currentTimeMillis() - timeStart;
+                    averageUpdateDuration /= 2;
                 }
             };
 
-            t.start();
+            threadPoll.execute(r);
         }
-
-        _chunkUpdateAmount = dirtyChunks.size();
-        _meanUpdateDuration += System.currentTimeMillis() - timeStart;
-        _meanUpdateDuration /= 2;
     }
 
     private void processChunkUpdate(Chunk c) {
@@ -123,19 +90,11 @@ public final class WorldUpdateManager {
         }
     }
 
-    public int getUpdatesSize() {
-        return _chunkUpdateAmount;
-    }
-
     public int getVboUpdatesSize() {
         return _vboUpdates.size();
     }
 
     public double getMeanUpdateDuration() {
-        return _meanUpdateDuration;
-    }
-
-    public int getThreadCount() {
-        return _threadCount;
+        return averageUpdateDuration;
     }
 }

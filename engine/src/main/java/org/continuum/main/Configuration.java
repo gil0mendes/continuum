@@ -24,11 +24,6 @@ import org.lwjgl.util.vector.Vector3f;
  * Helper class to allow global access to properties and game settings.
  */
 public final class Configuration {
-
-    /**
-     * Maximum amount frames to skip.
-     */
-    public static final int FRAME_SKIP_MAX_FRAMES = 10;
     /**
      * The mouse sensitivity.
      */
