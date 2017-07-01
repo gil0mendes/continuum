@@ -40,7 +40,7 @@ public final class Configuration {
     /**
      * The three dimensions of a chunk.
      */
-    public static final Vector3f CHUNK_DIMENSIONS;
+    public static final Vector3f CHUNK_DIMENSIONS = new Vector3f(16, 256, 16);
     /**
      * The size of the sun.
      */
@@ -82,12 +82,6 @@ public final class Configuration {
     private static final FastMap<String, Boolean> _settingsBoolean = new FastMap<String, Boolean>();
 
     static {
-        if (Continuum.getInstance().isSandboxed()) {
-            CHUNK_DIMENSIONS = new Vector3f(16, 128, 16);
-        } else {
-            CHUNK_DIMENSIONS = new Vector3f(16, 128, 16);
-        }
-
         loadSettings();
     }
 
@@ -174,8 +168,8 @@ public final class Configuration {
     }
 
     private static void loadSandboxed() {
-        _settingsNumeric.put("V_DIST_X", 16.0);
-        _settingsNumeric.put("V_DIST_Z", 16.0);
+        _settingsNumeric.put("V_DIST_X", 8.0);
+        _settingsNumeric.put("V_DIST_Z", 8.0);
     }
 
     private static void loadSettings() {

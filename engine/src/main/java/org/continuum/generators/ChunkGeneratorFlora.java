@@ -22,14 +22,14 @@ import org.continuum.world.chunk.Chunk;
 /**
  * Generates some trees, flowers and high grass.
  */
-public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
+public class ChunkGeneratorFlora extends ChunkGeneratorTerrain {
 
     /**
      * Init. the forest generator.
      *
      * @param seed
      */
-    public ChunkGeneratorForest(String seed) {
+    public ChunkGeneratorFlora(String seed) {
         super(seed);
     }
 
@@ -48,39 +48,41 @@ public class ChunkGeneratorForest extends ChunkGeneratorTerrain {
             }
         }
 
-        FastRandom rand = new FastRandom(c.hashCode());
-
         for (int y = 32; y < Configuration.CHUNK_DIMENSIONS.y; y++) {
             for (int x = 0; x < Configuration.CHUNK_DIMENSIONS.x; x += 4) {
                 for (int z = 0; z < Configuration.CHUNK_DIMENSIONS.z; z += 4) {
-                    double treeRand = (_rand.randomDouble() + 1.0) / 2.0;
-                    double treeProb = 1.0;
+                    double rand = (_rand.randomDouble() + 1.0) / 2.0;
+                    double prob = 1.0;
 
                     BIOME_TYPE biome = calcBiomeTypeForGlobalPosition(c.getBlockWorldPosX(x), c.getBlockWorldPosX(z));
+                    double humidity = calcHumidityAtGlobalPosition(c.getBlockWorldPosX(x), c.getBlockWorldPosZ(z));
+                    double temperature = calcTemperatureAtGlobalPosition(c.getBlockWorldPosX(x), c.getBlockWorldPosZ(z));
 
                     switch (biome) {
                         case PLAINS:
-                            treeProb = 0.98;
+                            prob = 0.98;
                             break;
                         case MOUNTAINS:
-                            treeProb = 0.9;
+                            prob = 0.9;
                             break;
                         case SNOW:
-                            treeProb = 0.92;
+                            prob = 0.92;
                             break;
                         case FOREST:
-                            treeProb = 0.1;
+                            prob = 0.1;
                             break;
                     }
 
-                    if (treeRand > treeProb) {
-                        int randX = x + rand.randomInt() % 12 + 6;
-                        int randZ = z + rand.randomInt() % 12 + 6;
+                    if (rand > prob) {
+                        int randX = x + _rand.randomInt() % 12 + 6;
+                        int randZ = z + _rand.randomInt() % 12 + 6;
 
-                        if (c.getBlock(randX, y, randZ) == 0x1 || c.getBlock(randX, y, randZ) == 0x17) {
-                            generateTree(c, randX, y, randZ);
-                        } else if (c.getBlock(randX, y, randZ) == 0x7) {
-                            c.getParent().getObjectGenerator("cactus").generate(c.getBlockWorldPosX(randX), y + 1, c.getBlockWorldPosZ(randZ), false);
+                        if (c.getBlock(randX, y, randZ) == 0x1 || c.getBlock(randX, y, randZ) == 0x17 || c.getBlock(randX, y, randZ) == 0x7) {
+                            if (temperature > 0.55 && humidity < 0.33) {
+                                c.getParent().getObjectGenerator("cactus").generate(c.getBlockWorldPosX(randX), y + 1, c.getBlockWorldPosZ(randZ), false);
+                            } else {
+                                generateTree(c, randX, y, randZ);
+                            }
                         }
                     }
                 }

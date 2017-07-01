@@ -74,7 +74,6 @@ public final class World extends WorldProvider {
 
         // Init. horizon
         _clouds = new Clouds(this);
-        //_sunMoon = new SunMoon(this);
         _skysphere = new Skysphere(this);
 
         _worldUpdateManager = new WorldUpdateManager(this);
@@ -115,31 +114,15 @@ public final class World extends WorldProvider {
      * Renders the world.
      */
     public void render() {
-
+        // Skysphere
         _skysphere.render();
 
+        // World rendering
         _player.applyPlayerModelViewMatrix();
-
-        // _sunMoon.render();
-
-        if (!_player.isHeadUnderWater())
-            _clouds.render();
-
-        /*
-        * Render the world from the player's view.
-        */
+        _clouds.render();
         _player.render();
-
         renderChunks();
-        renderParticleEmitters();
-    }
-
-    private void renderParticleEmitters() {
         _blockParticleEmitter.render();
-    }
-
-    private void updateParticleEmitters() {
-        _blockParticleEmitter.update();
     }
 
     private void updateChunksInProximity() {
@@ -197,7 +180,6 @@ public final class World extends WorldProvider {
     }
 
     private void renderChunks() {
-
         ShaderManager.getInstance().enableShader("chunk");
         int daylight = GL20.glGetUniformLocation(ShaderManager.getInstance().getShader("chunk"), "daylight");
         int swimmimg = GL20.glGetUniformLocation(ShaderManager.getInstance().getShader("chunk"), "swimming");
@@ -262,9 +244,6 @@ public final class World extends WorldProvider {
         glDisable(GL_TEXTURE_2D);
     }
 
-    /**
-     * Update all dirty display lists.
-     */
     public void update() {
         updateDaylight();
         updateTicks();
@@ -284,7 +263,7 @@ public final class World extends WorldProvider {
             n.getValue().update();
 
         // Update the particle emitters
-        updateParticleEmitters();
+        _blockParticleEmitter.update();
     }
 
     private void updateTicks() {
@@ -324,31 +303,6 @@ public final class World extends WorldProvider {
     }
 
     /**
-     * Returns the active biome at the player's position.
-     */
-    public ChunkGeneratorTerrain.BIOME_TYPE getActiveBiome() {
-        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcBiomeTypeForGlobalPosition((int) _player.getPosition().x, (int) _player.getPosition().z);
-    }
-
-    /**
-     * Returns the humidity at the player's position;
-     *
-     * @return
-     */
-    public double getActiveHumidity() {
-        return getHumidityAt((int) _player.getPosition().x, (int) _player.getPosition().z);
-    }
-
-    /**
-     * Returns the temperature at the player's position.
-     *
-     * @return
-     */
-    public double getActiveTemperature() {
-        return getTemperatureAt((int) _player.getPosition().x, (int) _player.getPosition().z);
-    }
-
-    /**
      * Stops the updating thread and writes all chunks to disk.
      */
     public void dispose() {
@@ -375,7 +329,7 @@ public final class World extends WorldProvider {
      */
     @Override
     public String toString() {
-        return String.format("world (time: %f, sun: %f, cdl: %d, cn: %d, cache: %d, ud: %fs, seed: \"%s\", title: \"%s\")", getTime(), _skysphere.getSunPosAngle(), _worldUpdateManager.getVboUpdatesSize(), _worldUpdateManager.getUpdatesSize(), _chunkCache.size(), _worldUpdateManager.getMeanUpdateDuration() / 1000d, _seed, _title);
+        return String.format("world (biome: %s, time: %f, sun: %f, cdl: %d, cn: %d, cache: %d, ud: %fs, seed: \"%s\", title: \"%s\")", getTime(), _skysphere.getSunPosAngle(), _worldUpdateManager.getVboUpdatesSize(), _worldUpdateManager.getUpdatesSize(), _chunkCache.size(), _worldUpdateManager.getMeanUpdateDuration() / 1000d, _seed, _title);
     }
 
     /**
@@ -435,5 +389,30 @@ public final class World extends WorldProvider {
 
     public BlockParticleEmitter getBlockParticleEmitter() {
         return _blockParticleEmitter;
+    }
+
+    /**
+     * Returns the active biome at the player's position.
+     */
+    public ChunkGeneratorTerrain.BIOME_TYPE getActiveBiome() {
+        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcBiomeTypeForGlobalPosition((int) _player.getPosition().x, (int) _player.getPosition().z);
+    }
+
+    /**
+     * Returns the humidity at the player's position;
+     *
+     * @return
+     */
+    public double getActiveHumidity() {
+        return getHumidityAt((int) _player.getPosition().x, (int) _player.getPosition().z);
+    }
+
+    /**
+     * Returns the temperature at the player's position.
+     *
+     * @return
+     */
+    public double getActiveTemperature() {
+        return getTemperatureAt((int) _player.getPosition().x, (int) _player.getPosition().z);
     }
 }

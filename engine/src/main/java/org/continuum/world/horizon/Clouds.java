@@ -93,6 +93,11 @@ public class Clouds implements RenderableObject {
     }
 
     public void render() {
+        // Nothing to do if the player is swimming
+        if (_parent.getPlayer().isHeadUnderWater()) {
+            return;
+        }
+
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

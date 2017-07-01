@@ -18,7 +18,6 @@ package org.continuum.world;
 import org.continuum.generators.*;
 import org.continuum.main.Continuum;
 import org.continuum.blocks.Block;
-import org.continuum.generators.*;
 import org.continuum.main.Configuration;
 import org.continuum.utilities.FastRandom;
 import org.continuum.world.chunk.Chunk;
@@ -37,23 +36,28 @@ import java.io.*;
 import java.util.logging.Level;
 
 public class WorldProvider {
+    /* CONST */
+    protected final long DAY_NIGHT_LENGTH_IN_MS = (60 * 1000) * 20; // 20 minutes in miliseconds
 
     /* WORLD GENERATION */
     protected final FastMap<String, ChunkGenerator> _chunkGenerators = new FastMap<String, ChunkGenerator>();
     protected final FastMap<String, ObjectGenerator> _objectGenerators = new FastMap<String, ObjectGenerator>();
+
     /* PROPERTIES */
     protected String _title, _seed;
     protected long _creationTime = Continuum.getInstance().getTime();
-    protected final long DAY_NIGHT_LENGTH_IN_MS = (60 * 1000) * 20; // 20 Minutes;
+
     /* UPDATING & CACHING */
     protected final ChunkCache _chunkCache = new ChunkCache(this);
-    /* ETC. */
+
+    /* RANDOMNESS. */
     protected final FastRandom _random;
+
     /* SPAWNING POINT */
     protected Vector3f _spawningPoint;
 
     /**
-     * Initializes a new world for the single player mode.
+     * Initializes a new world.
      *
      * @param title The title/description of the world
      * @param seed  The seed string used to generate the terrain
@@ -69,32 +73,32 @@ public class WorldProvider {
 
         if (seed == null) {
             throw new IllegalArgumentException("No seed provided.");
-        }
-
-        if (seed.isEmpty()) {
+        } else if (seed.isEmpty()) {
             throw new IllegalArgumentException("No seed provided.");
         }
 
         _title = title;
         _seed = seed;
+
         // Init. random generator
         _random = new FastRandom(seed.hashCode());
 
         // Initial time
-        setTime(0.05);
+        setTime(0.01);
 
         // Load the meta data of this world
         loadMetaData();
 
         // Init. generators
         _chunkGenerators.put("terrain", new ChunkGeneratorTerrain(_seed));
-        _chunkGenerators.put("forest", new ChunkGeneratorForest(_seed));
+        _chunkGenerators.put("forest", new ChunkGeneratorFlora(_seed));
         _chunkGenerators.put("resources", new ChunkGeneratorResources(_seed));
         _objectGenerators.put("tree", new ObjectGeneratorTree(this, _seed));
         _objectGenerators.put("pineTree", new ObjectGeneratorPineTree(this, _seed));
         _objectGenerators.put("firTree", new ObjectGeneratorFirTree(this, _seed));
         _objectGenerators.put("cactus", new ObjectGeneratorCactus(this, _seed));
 
+        // Find a new spawning point if none was loaded
         if (_spawningPoint == null) {
             _spawningPoint = findNewSpawningPoint();
         }
@@ -177,7 +181,7 @@ public class WorldProvider {
         if (overwrite || c.getBlock(blockPosX, y, blockPosZ) == 0x0) {
 
             byte oldBlock = c.getBlock(blockPosX, y, blockPosZ);
-            byte newBlock = oldBlock;
+            byte newBlock;
 
             if (Block.getBlockForType(c.getBlock(blockPosX, y, blockPosZ)).isRemovable()) {
                 c.setBlock(blockPosX, y, blockPosZ, type);
@@ -194,7 +198,7 @@ public class WorldProvider {
                 c.refreshSunlightAtLocalPos(blockPosX, blockPosZ, true, true);
 
                 byte blockLightPrev = getLight(x, y, z, Chunk.LIGHT_TYPE.BLOCK);
-                byte blockLightCurrent = blockLightPrev;
+                byte blockLightCurrent;
 
                 // New block placed
                 if (oldBlock == 0x0 && newBlock != 0x0) {
@@ -260,25 +264,7 @@ public class WorldProvider {
         int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
         Chunk c = _chunkCache.loadOrCreateChunk(calcChunkPosX(x), calcChunkPosZ(z));
-
-        if (c != null) {
-            return c.getBlock(blockPosX, y, blockPosZ);
-        }
-
-        return 0;
-    }
-
-    /**
-     * Returns true if the block is surrounded by blocks within the N4-neighborhood on the xz-plane.
-     *
-     * @param x The X-coordinate
-     * @param y The Y-coordinate
-     * @param z The Z-coordinate
-     * @return
-     */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final boolean isBlockSurrounded(int x, int y, int z) {
-        return (getBlock(x + 1, y, z) > 0 || getBlock(x - 1, y, z) > 0 || getBlock(x, y, z + 1) > 0 || getBlock(x, y, z - 1) > 0);
+        return c.getBlock(blockPosX, y, blockPosZ);
     }
 
     /**
@@ -312,27 +298,19 @@ public class WorldProvider {
         int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
         Chunk c = _chunkCache.loadOrCreateChunk(calcChunkPosX(x), calcChunkPosZ(z));
-
-        if (c != null) {
-            return c.getLight(blockPosX, y, blockPosZ, type);
-        }
-
-        if (type == Chunk.LIGHT_TYPE.SUN)
-            return 15;
-        else
-            return 0;
+        return c.getLight(blockPosX, y, blockPosZ, type);
     }
 
     /**
      * Sets the light value at the given position.
      *
-     * @param x      The X-coordinate
-     * @param y      The Y-coordinate
-     * @param z      The Z-coordinate
-     * @param intens The light intensity value
+     * @param x         The X-coordinate
+     * @param y         The Y-coordinate
+     * @param z         The Z-coordinate
+     * @param intensity The light intensity value
      * @param type
      */
-    public void setLight(int x, int y, int z, byte intens, Chunk.LIGHT_TYPE type) {
+    public void setLight(int x, int y, int z, byte intensity, Chunk.LIGHT_TYPE type) {
         int chunkPosX = calcChunkPosX(x);
         int chunkPosZ = calcChunkPosZ(z);
 
@@ -340,10 +318,7 @@ public class WorldProvider {
         int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
         Chunk c = _chunkCache.loadOrCreateChunk(calcChunkPosX(x), calcChunkPosZ(z));
-
-        if (c != null) {
-            c.setLight(blockPosX, y, blockPosZ, intens, type);
-        }
+        c.setLight(blockPosX, y, blockPosZ, intensity, type);
     }
 
     /**
@@ -362,10 +337,7 @@ public class WorldProvider {
         int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
         Chunk c = _chunkCache.loadOrCreateChunk(calcChunkPosX(x), calcChunkPosZ(z));
-
-        if (c != null) {
-            c.refreshSunlightAtLocalPos(blockPosX, blockPosZ, spreadLight, refreshSunlight);
-        }
+        c.refreshSunlightAtLocalPos(blockPosX, blockPosZ, spreadLight, refreshSunlight);
     }
 
     /**
@@ -386,9 +358,7 @@ public class WorldProvider {
         int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
         Chunk c = _chunkCache.loadOrCreateChunk(calcChunkPosX(x), calcChunkPosZ(z));
-        if (c != null) {
-            c.unspreadLight(blockPosX, y, blockPosZ, lightValue, depth, type, brightSpots);
-        }
+        c.unspreadLight(blockPosX, y, blockPosZ, lightValue, depth, type, brightSpots);
     }
 
     /**
@@ -409,9 +379,7 @@ public class WorldProvider {
         int blockPosZ = calcBlockPosZ(z, chunkPosZ);
 
         Chunk c = _chunkCache.loadOrCreateChunk(calcChunkPosX(x), calcChunkPosZ(z));
-        if (c != null) {
-            c.spreadLight(blockPosX, y, blockPosZ, lightValue, depth, type);
-        }
+        c.spreadLight(blockPosX, y, blockPosZ, lightValue, depth, type);
     }
 
     public ObjectGenerator getObjectGenerator(String s) {
@@ -456,6 +424,28 @@ public class WorldProvider {
     }
 
     /**
+     * Get humidity on a given point on the map.
+     *
+     * @param x
+     * @param z
+     * @return
+     */
+    public double getHumidityAt(int x, int z) {
+        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcHumidityAtGlobalPosition(x, z);
+    }
+
+    /**
+     * Get humidity on a given point on the map.
+     *
+     * @param x
+     * @param z
+     * @return
+     */
+    public double getTemperatureAt(int x, int z) {
+        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcTemperatureAtGlobalPosition(x, z);
+    }
+
+    /**
      * @return
      */
     public String getWorldSavePath() {
@@ -482,12 +472,14 @@ public class WorldProvider {
         File f = new File(String.format("%s/Metadata.xml", getWorldSavePath()));
 
         try {
-            f.createNewFile();
+            if (!f.createNewFile()) {
+                return false;
+            }
         } catch (IOException ex) {
-            Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
+            return false;
         }
 
-        Element root = new Element("World");
+        Element root = new Element("SPWorld");
         Document doc = new Document(root);
 
         // Save the world metadata
@@ -506,23 +498,16 @@ public class WorldProvider {
 
         try {
             output = new FileOutputStream(f);
-
-            try {
-                outputter.output(doc, output);
-            } catch (IOException ex) {
-                Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
-            }
-
+            outputter.output(doc, output);
             return true;
-        } catch (FileNotFoundException ex) {
-            Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            return false;
         }
-
-
-        return false;
     }
 
     /**
+     * Loads the meta data of this world.
+     *
      * @return
      */
     private boolean loadMetaData() {
@@ -538,30 +523,19 @@ public class WorldProvider {
         try {
             SAXBuilder builder = new SAXBuilder();
             InputSource is = new InputSource(new FileInputStream(f));
-            Document doc;
-            try {
-                doc = builder.build(is);
-                Element root = doc.getRootElement();
-                Element spawningPoint = root.getChild("SpawningPoint");
+            Document doc = builder.build(is);
+            Element root = doc.getRootElement();
+            Element spawningPoint = root.getChild("SpawningPoint");
 
-                _seed = root.getAttribute("seed").getValue();
-                _title = root.getAttributeValue("title");
-                setTime(Double.parseDouble(root.getAttributeValue("time")));
-                _spawningPoint = new Vector3f(Float.parseFloat(spawningPoint.getAttributeValue("x")), Float.parseFloat(spawningPoint.getAttributeValue("y")), Float.parseFloat(spawningPoint.getAttributeValue("z")));
+            _seed = root.getAttribute("seed").getValue();
+            _title = root.getAttributeValue("title");
+            setTime(Double.parseDouble(root.getAttributeValue("time")));
+            _spawningPoint = new Vector3f(Float.parseFloat(spawningPoint.getAttributeValue("x")), Float.parseFloat(spawningPoint.getAttributeValue("y")), Float.parseFloat(spawningPoint.getAttributeValue("z")));
 
-                return true;
-
-            } catch (JDOMException ex) {
-                Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Continuum.getInstance().getLogger().log(Level.SEVERE, null, ex);
-            }
-
-        } catch (FileNotFoundException ex) {
-            // Metadata.xml not present
+            return true;
+        } catch (Exception ex) {
+            return false;
         }
-
-        return false;
     }
 
     public ChunkCache getChunkCache() {
@@ -601,27 +575,5 @@ public class WorldProvider {
 
     public Vector3f getSpawningPoint() {
         return _spawningPoint;
-    }
-
-    /**
-     * Get humidity on a given point on the map.
-     *
-     * @param x
-     * @param z
-     * @return
-     */
-    public double getHumidityAt(int x, int z) {
-        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcHumidityAtGlobalPosition(x, z);
-    }
-
-    /**
-     * Get humidity on a given point on the map.
-     *
-     * @param x
-     * @param z
-     * @return
-     */
-    public double getTemperatureAt(int x, int z) {
-        return ((ChunkGeneratorTerrain) _chunkGenerators.get("terrain")).calcTemperatureAtGlobalPosition(x, z);
     }
 }
