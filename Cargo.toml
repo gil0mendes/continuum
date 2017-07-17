@@ -1,0 +1,6 @@
+[package]
+name = "continuum"
+version = "0.1.0"
+authors = ["Gil Mendes <gil00mendes@gmail.com>"]
+
+[dependencies]
