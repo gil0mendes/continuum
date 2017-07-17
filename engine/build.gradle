@@ -66,6 +66,9 @@ configurations {
 
 // Primary dependencies definition
 dependencies {
+    // Math
+    compile group: 'com.google.guava', name: 'guava', version: '19.0'
+
     // Graphics, 3D, UI, etc.
     compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: LwjglVersion
     compile group: 'org.lwjgl.lwjgl', name: 'lwjgl_util', version: LwjglVersion

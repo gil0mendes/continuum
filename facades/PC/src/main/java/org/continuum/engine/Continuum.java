@@ -26,7 +26,7 @@ public final class Continuum {
         }
 
         // load debug
-        Configuration.loadDebug();
+        // Configuration.loadDebug();
 
         // start engine
         org.continuum.main.Continuum.main(args);
