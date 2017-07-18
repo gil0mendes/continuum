@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 
 [dependencies]
-find_folder = "0.3.0"
 gfx = "0.16.1"
 gfx_core = "0.7.1"
 gfx_device_gl = "0.14.1"

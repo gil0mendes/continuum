@@ -1,4 +1,3 @@
-extern crate find_folder;
 extern crate glutin_window;
 #[macro_use]
 extern crate gfx;
@@ -11,7 +10,6 @@ extern crate vecmath;
 pub use gfx_voxel::{array, cube};
 
 use array::*;
-use find_folder::Search;
 use gfx_voxel::texture::{AtlasBuilder, ImageSize, Texture};
 use glutin_window::*;
 use piston::window::{Size, Window, OpenGLWindow, WindowSettings};
