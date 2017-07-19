@@ -1,0 +1,18 @@
+[package]
+name = "argon"
+version = "0.1.0"
+authors = ["Gil Mendes <gil00mendes@gmail.com>"]
+description = "A set of utilities over Gfx"
+
+[lib]
+
+[features]
+default = ["opengl"]
+"opengl" = ["gfx_device_gl", "gfx_window_glutin", "glutin"]
+
+[dependencies]
+gfx = "0.16.1"
+# OpenGL
+gfx_device_gl = { version = "0.14.1", optional = true }
+gfx_window_glutin = { version = "0.17", optional = true }
+glutin = { version = "0.9.1", optional = true }

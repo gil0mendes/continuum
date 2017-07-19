@@ -7,7 +7,6 @@ authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 gfx = "0.16.1"
 gfx_core = "0.7.1"
 gfx_device_gl = "0.14.1"
-piston = "0.32.0"
 piston3d-gfx_voxel = "0.18.0"
-pistoncore-glutin_window = "0.38.0"
 vecmath = "0.3.0"
+argon = { path = "./Argon" }

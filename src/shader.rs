@@ -94,6 +94,11 @@ impl<R: gfx::Resources, F: gfx::Factory<R>, C: gfx::CommandBuffer<R>> Renderer<R
         vbuf
     }
 
+    /// Create a new buffer with
+    pub fn create_buffer_with_indices(&mut self, data: &[Vertex], indices: &[u16]) -> (gfx::handle::Buffer<R, Vertex>, gfx::Slice<R>) {
+        self.factory.create_vertex_buffer_with_slice(data, indices)
+    }
+
     /// Render the buffer
     ///
     /// Render a new frame
@@ -101,5 +106,13 @@ impl<R: gfx::Resources, F: gfx::Factory<R>, C: gfx::CommandBuffer<R>> Renderer<R
         self.data.vbuf = buffer.clone();
         self.slice.end = buffer.len() as u32;
         self.encoder.draw(&self.slice, &self.pipeline, &self.data);
+    }
+
+    pub fn render_with_slice(&mut self, buffer: &mut gfx::handle::Buffer<R, Vertex>, slice: &gfx::Slice<R>) {
+        // update the local slice
+        self.slice = slice.clone();
+
+        // render the vertex set
+        self.render(buffer);
     }
 }
