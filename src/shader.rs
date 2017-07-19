@@ -2,20 +2,17 @@ use gfx::traits::FactoryExt;
 use gfx;
 use vecmath::{self, Matrix4};
 
-gfx_pipeline!(pipe {
-    vbuf: gfx::VertexBuffer<Vertex> = (),
-    transform: gfx::Global<[[f32; 4]; 4]> = "u_projection",
-    view: gfx::Global<[[f32; 4]; 4]> = "u_view",
-    color: gfx::TextureSampler<[f32; 4]> = "s_texture",
-    out_color: gfx::RenderTarget<gfx::format::Srgba8> = "out_color",
-    out_depth: gfx::DepthTarget<gfx::format::DepthStencil> = gfx::preset::depth::LESS_EQUAL_WRITE,
-});
+gfx_defines! {
+    vertex Vertex {
+        pos: [f32; 2] = "a_Pos",
+        color: [f32; 3] = "a_Color",
+    }
 
-gfx_vertex_struct!(Vertex {
-    xyz: [f32; 3] = "at_position",
-    uv: [f32; 2] = "at_tex_coord",
-    rgb: [f32; 3] = "at_color",
-});
+    pipeline pipe {
+        vbuf: gfx::VertexBuffer<Vertex> = (),
+        out: gfx::RenderTarget<gfx::format::Srgba8> = "Target0",
+    }
+}
 
 pub struct Renderer<R: gfx::Resources, F: gfx::Factory<R>, C: gfx::CommandBuffer<R>> {
     factory: F,
@@ -61,11 +58,7 @@ impl<R: gfx::Resources, F: gfx::Factory<R>, C: gfx::CommandBuffer<R>> Renderer<R
 
         let data = pipe::Data {
             vbuf: vbuf,
-            transform: vecmath::mat4_id(),
-            view: vecmath::mat4_id(),
-            color: (texture_view, sampler),
-            out_color: target,
-            out_depth: depth,
+            out: target
         };
 
         Renderer {
@@ -82,9 +75,9 @@ impl<R: gfx::Resources, F: gfx::Factory<R>, C: gfx::CommandBuffer<R>> Renderer<R
 
     /// Clear the previous frame.
     pub fn clear(&mut self) {
-        self.encoder.clear(&self.data.out_color, self.clear_color);
-        self.encoder.clear_depth(&self.data.out_depth, self.clear_depth);
-        self.encoder.clear_stencil(&self.data.out_depth, self.clear_stencil);
+        self.encoder.clear(&self.data.out, self.clear_color);
+        // self.encoder.clear_depth(&self.data.out_depth, self.clear_depth);
+        // self.encoder.clear_stencil(&self.data.out_depth, self.clear_stencil);
     }
 
     /// Flush the buffer
@@ -92,6 +85,13 @@ impl<R: gfx::Resources, F: gfx::Factory<R>, C: gfx::CommandBuffer<R>> Renderer<R
     /// This makes send a new frame to the screen.
     pub fn flush<D: gfx::Device<Resources=R, CommandBuffer=C> + Sized>(&mut self, device: &mut D) {
         self.encoder.flush(device);
+    }
+
+    pub fn create_buffer(&mut self, data: &[Vertex]) -> gfx::handle::Buffer<R, Vertex> {
+        let vbuf = self.factory.create_vertex_buffer(data);
+        self.slice = gfx::Slice::new_match_vertex_buffer(&vbuf);
+
+        vbuf
     }
 
     /// Render the buffer

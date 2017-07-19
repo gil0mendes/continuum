@@ -15,6 +15,7 @@ use glutin_window::*;
 use piston::window::{Size, Window, OpenGLWindow, WindowSettings};
 use piston::event_loop::{Events, EventSettings, EventLoop};
 use shader::Renderer;
+use shader::Vertex;
 use std::path::{Path, PathBuf};
 
 mod shader;
@@ -65,8 +66,25 @@ fn main() {
     let mut atlas = AtlasBuilder::new(texture_file_path, 16, 16);
     let texture = atlas.complete(&mut factory);
 
+    // --- EXAMPLE
+
+    const WHITE: [f32; 3] = [1.0, 1.0, 1.0];
+
+    const SQUARE: [Vertex; 3] = [
+        Vertex { pos: [0.5, -0.5], color: WHITE },
+        Vertex { pos: [-0.5, -0.5], color: WHITE },
+        Vertex { pos: [-0.5, 0.5], color: WHITE }
+    ];
+
+
+    // --- END EXAMPLE
+
     // create a render
     let mut renderer = Renderer::new(factory, encoder, target_view, depth_view, texture.surface.clone());
+
+    // --- EXAMPLE
+    let mut vertex_buffer = renderer.create_buffer(&SQUARE);
+    // --- END EXAMPLE
 
     // create the event loop
     let mut events = Events::new(EventSettings::new().ups(120).max_fps(200));
@@ -80,6 +98,7 @@ fn main() {
                 renderer.clear();
 
                 // TODO: render things
+                renderer.render(&mut vertex_buffer);
 
                 // flush the device
                 renderer.flush(&mut device);
